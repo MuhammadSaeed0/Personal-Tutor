@@ -118,10 +118,21 @@ public static partial class StructureDetector
             }
         }
 
+        // Chapter keywords alone when there are enough; otherwise keyword and Markdown headings together
+        // (e.g. a chapter title followed by its lessons), as long as headings are not on most pages.
+        var combined = keyworded.Concat(marked).OrderBy(c => c.Page).ToList();
         var chosen = keyworded.Count >= 2 ? keyworded
-            : marked.Count >= 2 && marked.Count <= Math.Max(2, pageCount / 2) ? marked
+            : combined.Count >= 2 && marked.Count <= Math.Max(2, pageCount / 2) ? combined
             : [];
         return BuildRanges(chosen.Take(MaxSections).ToList(), pageCount, ChapterSource.HeadingHeuristic);
+    }
+
+    /// <summary>Sections from topics found in a video transcript (start = segment number).</summary>
+    public static List<DetectedSection> FromTopics(IReadOnlyList<(string Title, int StartPage)> topics, int pageCount)
+    {
+        var entries = topics.Where(t => t.StartPage >= 1 && t.StartPage <= pageCount)
+            .OrderBy(t => t.StartPage).Take(MaxSections).Select(t => (t.Title, t.StartPage, 1)).ToList();
+        return BuildRanges(entries, pageCount, ChapterSource.Topics);
     }
 
     private static List<DetectedSection> BuildRanges(List<(string Title, int Page, int Level)> entries, int pageCount, ChapterSource source)

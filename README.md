@@ -2,8 +2,8 @@
 
 **Every textbook becomes a personal tutor, an interactive classroom, a revision system and an exam-preparation space.**
 
-Riwaq is a full-stack, AI-assisted study platform for Arabic-speaking high-school students. A student uploads a PDF
-textbook; Riwaq extracts its text page by page, detects chapters, indexes it for search, and builds a study environment
+Riwaq is a full-stack, AI-assisted study platform for Arabic-speaking high-school students. A student adds a PDF
+textbook, photos of pages or a YouTube lesson; Riwaq extracts its text page by page, detects chapters, indexes it for search, and builds a study environment
 around it: an interactive PDF reader, a tutor whose answers cite the exact pages they rely on, summaries, FSRS
 flashcards, validated quizzes and mock exams, an adaptive study plan, focus sessions and learning analytics.
 The interface is Arabic-first (RTL) with a full English (LTR) mode.
@@ -16,7 +16,7 @@ The interface is Arabic-first (RTL) with a full English (LTR) mode.
 | Backend | ASP.NET Core 10 (LTS) Web API · EF Core 10 · SQL Server (tested on 2025) · ASP.NET Core Identity + JWT · SignalR · background job worker |
 | Frontend | Angular 22 (standalone, zoneless, signals, strict) · Angular CDK · pdf.js 6 · KaTeX + mhchem · Chart.js · Lucide icons |
 | AI | Provider abstraction: your own Claude account through Claude Code, Anthropic Claude API (official C# SDK, default `claude-opus-5-5`), any OpenAI-compatible endpoint; embeddings via Voyage, OpenAI-compatible, or a built-in lexical fallback |
-| Documents | PdfPig text/layout extraction with Arabic RTL repair, Tesseract OCR for scanned pages, PDFium page rendering |
+| Sources | PDFs (PdfPig extraction with Arabic RTL repair, Claude vision or Tesseract for scanned pages), photos (SkiaSharp + Claude vision), YouTube lessons (captions via YoutubeExplode, tidied and split by topic with Claude) |
 
 ## Quick start (local development)
 

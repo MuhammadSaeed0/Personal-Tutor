@@ -355,6 +355,10 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 
+                    b.Property<string>("Author")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
                     b.Property<string>("Collection")
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
@@ -370,8 +374,18 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("LastOpenedAt")
                         .HasPrecision(3)
@@ -393,6 +407,10 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -756,6 +774,9 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                     b.Property<int>("CharCount")
                         .HasColumnType("int");
 
+                    b.Property<int?>("EndSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("ExtractionMethod")
                         .HasColumnType("int");
 
@@ -772,6 +793,9 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("PageNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StartSeconds")
                         .HasColumnType("int");
 
                     b.Property<string>("Text")
@@ -1545,6 +1569,31 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId", "UpdatedAt");
 
                     b.ToTable("ReadingProgress");
+                });
+
+            modelBuilder.Entity("Riwaq.Domain.Entities.RecognizedPage", b =>
+                {
+                    b.Property<Guid>("BookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("PageNumber")
+                        .HasColumnType("int");
+
+                    b.Property<double?>("Confidence")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("BookId", "PageNumber");
+
+                    b.ToTable("RecognizedPages");
                 });
 
             modelBuilder.Entity("Riwaq.Domain.Entities.RefreshToken", b =>
@@ -2358,6 +2407,15 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Riwaq.Domain.Entities.ReadingProgress", b =>
+                {
+                    b.HasOne("Riwaq.Domain.Entities.Book", null)
+                        .WithMany()
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Riwaq.Domain.Entities.RecognizedPage", b =>
                 {
                     b.HasOne("Riwaq.Domain.Entities.Book", null)
                         .WithMany()

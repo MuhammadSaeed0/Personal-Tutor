@@ -43,12 +43,17 @@ This page summarises the conventions and endpoints.
 |---|---|---|
 | GET | `/api/books?subjectId=` | with reading progress and live processing status |
 | POST | `/api/books/upload` | multipart: `file`, `subjectId`, `title?`, `academicYear?`, `semester?`, `collection?`, `tags?` (comma separated) |
-| GET / PATCH / DELETE | `/api/books/{id}` | detail = book + chapters + warnings + page info |
+| POST | `/api/books/images` | multipart: `files` (photos, in page order), `subjectId`, optional fields as above → a photo source |
+| POST | `/api/books/{id}/images` | multipart `files`: append photos to a photo source (only new pages are read) |
+| POST | `/api/books/youtube` | `{url, subjectId, title?, …}` → a video source; rejects invalid links (`video_url_invalid`), unreadable videos (`video_unavailable`) and videos without captions (`video_no_captions`) |
+| GET / PATCH / DELETE | `/api/books/{id}` | detail = book (incl. `kind`: `pdf` / `images` / `youTube`) + chapters + warnings + page info (video pages carry `startSeconds`/`endSeconds`) |
 | GET | `/api/books/{id}/processing-status` | stage, progress, error code |
 | POST | `/api/books/{id}/reprocess` | |
 | GET | `/api/books/{id}/chapters` · PATCH `/chapters/{chapterId}` | correct chapter titles |
 | GET | `/api/books/{id}/pages/{n}/text` | extracted text of one page |
-| GET | `/api/books/{id}/file` | the PDF (range requests supported) |
+| GET | `/api/books/{id}/pages/text` | text of every page in order (video transcript) |
+| GET | `/api/books/{id}/images/{n}` | one photo of a photo source (JPEG) |
+| GET | `/api/books/{id}/file` | the PDF (range requests supported; 404 for photo and video sources) |
 | GET | `/api/books/{id}/reader-state` | last page, read pages, bookmarks |
 | PUT | `/api/books/{id}/progress` | `{page, secondsOnPage}` reading heartbeat |
 | PUT | `/api/books/{id}/chapters/{chapterId}/status` | `notStarted` / `inProgress` / `completed` / `alreadyKnown` |

@@ -45,7 +45,7 @@ import { SUMMARY_STYLES } from '../reader/study-tools-panel.component';
             <textarea class="textarea editor" [(ngModel)]="content" dir="auto" [attr.aria-label]="'summaries.content' | t"></textarea>
             <p class="xsmall subtle">{{ 'summaries.editHint' | t }}</p>
           } @else {
-            <rw-markdown [content]="s.content" [citations]="s.citations" (citationClick)="open($event)" />
+            <rw-markdown [content]="s.content" [citations]="s.citations" [bookId]="s.bookId" (citationClick)="open($event)" />
           }
         </article>
 

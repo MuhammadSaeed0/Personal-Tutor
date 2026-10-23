@@ -34,6 +34,8 @@ public static class DependencyInjection
         services.AddSingleton<TesseractOcrEngine>();
         services.AddSingleton<AiVisionOcrEngine>();
         services.AddSingleton<IOcrEngine, OcrEngineSelector>();
+        services.AddSingleton<IImageProcessor, Media.SkiaImageProcessor>();
+        services.AddHttpClient<IVideoTranscriptSource, Media.YouTubeTranscriptSource>(c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddSingleton<IProcessingSignal, ProcessingSignal>();
         services.AddSingleton(TimeProvider.System);
 

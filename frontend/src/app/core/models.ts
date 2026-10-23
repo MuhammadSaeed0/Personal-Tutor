@@ -64,7 +64,10 @@ export interface Exam {
 export type BookStatus = 'uploaded' | 'processing' | 'ready' | 'readyWithWarnings' | 'failed';
 export type ProcessingStage =
   | 'queued' | 'validating' | 'extractingText' | 'recognizingScannedPages' | 'detectingStructure'
-  | 'processingTablesAndFigures' | 'preparingSearch' | 'generatingResources' | 'completed';
+  | 'processingTablesAndFigures' | 'preparingSearch' | 'generatingResources' | 'completed' | 'cleaningTranscript';
+
+export type SourceKind = 'pdf' | 'images' | 'youTube';
+export type ExtractionMethod = 'none' | 'embeddedText' | 'ocr' | 'transcript';
 
 export interface ProcessingStatus {
   bookId: string;
@@ -96,6 +99,12 @@ export interface Book {
   lastPage: number | null;
   readingProgress: number;
   processing: ProcessingStatus | null;
+  kind: SourceKind;
+  sourceUrl: string | null;
+  /** YouTube video id for video sources. */
+  externalId: string | null;
+  author: string | null;
+  durationSeconds: number | null;
 }
 
 export type ChapterStatus = 'notStarted' | 'inProgress' | 'completed' | 'alreadyKnown';
@@ -109,7 +118,7 @@ export interface Chapter {
   order: number;
   startPage: number;
   endPage: number;
-  source: 'pdfOutline' | 'headingHeuristic' | 'user';
+  source: 'pdfOutline' | 'headingHeuristic' | 'user' | 'topics';
   status: ChapterStatus;
 }
 
@@ -124,11 +133,13 @@ export interface DocWarning {
 export interface PageInfo {
   pageNumber: number;
   charCount: number;
-  extractionMethod: 'none' | 'embeddedText' | 'ocr';
+  extractionMethod: ExtractionMethod;
   isScanned: boolean;
   imageCount: number;
   hasMath: boolean;
   hasTable: boolean;
+  startSeconds: number | null;
+  endSeconds: number | null;
 }
 
 export interface BookDetail {
@@ -386,4 +397,4 @@ export interface AppNotification { id: string; type: string; entityId: string | 
 
 export interface ApiProblem { status: number; code: string; title?: string; errors?: Record<string, string[]>; [key: string]: unknown; }
 
-export interface PageTextDto { pageNumber: number; text: string; extractionMethod: 'none' | 'embeddedText' | 'ocr'; isScanned: boolean; }
+export interface PageTextDto { pageNumber: number; text: string; extractionMethod: ExtractionMethod; isScanned: boolean; startSeconds: number | null; endSeconds: number | null; }

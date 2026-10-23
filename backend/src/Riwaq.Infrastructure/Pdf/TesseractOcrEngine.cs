@@ -59,10 +59,7 @@ public sealed class TesseractOcrEngine : IOcrEngine
                     options: new RenderOptions { Dpi = _options.Dpi });
             }
 
-            var (exitCode, stdout) = await RunAsync(_options.TesseractPath, $"\"{imagePath}\" stdout -l {languages} --psm 3 tsv", cancellationToken);
-            if (exitCode != 0) return new OcrResult(false, string.Empty, null, "ocr_failed");
-            var (text, confidence) = ParseTsv(stdout);
-            return new OcrResult(text.Length > 0, text, confidence, text.Length > 0 ? null : "ocr_no_text");
+            return await RecognizeFileAsync(imagePath, languages, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -77,6 +74,34 @@ public sealed class TesseractOcrEngine : IOcrEngine
         {
             try { File.Delete(imagePath); } catch { /* temp file */ }
         }
+    }
+
+    public async Task<OcrResult> RecognizeImageAsync(byte[] jpeg, string languages, CancellationToken cancellationToken)
+    {
+        if (!IsAvailable) return new OcrResult(false, string.Empty, null, "ocr_unavailable");
+        var imagePath = Path.Combine(Path.GetTempPath(), $"riwaq-ocr-{Guid.NewGuid():N}.jpg");
+        try
+        {
+            await File.WriteAllBytesAsync(imagePath, jpeg, cancellationToken);
+            return await RecognizeFileAsync(imagePath, languages, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "OCR failed for an uploaded image");
+            return new OcrResult(false, string.Empty, null, "ocr_failed");
+        }
+        finally
+        {
+            try { File.Delete(imagePath); } catch { /* temp file */ }
+        }
+    }
+
+    private async Task<OcrResult> RecognizeFileAsync(string imagePath, string languages, CancellationToken cancellationToken)
+    {
+        var (exitCode, stdout) = await RunAsync(_options.TesseractPath, $"\"{imagePath}\" stdout -l {languages} --psm 3 tsv", cancellationToken);
+        if (exitCode != 0) return new OcrResult(false, string.Empty, null, "ocr_failed");
+        var (text, confidence) = ParseTsv(stdout);
+        return new OcrResult(text.Length > 0, text, confidence, text.Length > 0 ? null : "ocr_no_text");
     }
 
     /// <summary>Rebuilds text from Tesseract TSV (level 5 = word), keeping line and paragraph breaks.</summary>

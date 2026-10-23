@@ -53,6 +53,21 @@ Design decisions:
 
 ## Document ingestion pipeline
 
+A study source is one of three kinds (`Book.Kind`), and each is turned into numbered **pages of text** so that structure,
+search, the tutor, summaries, cards and quizzes work the same for all of them:
+
+| Kind | Created by | A "page" is | Text comes from |
+|---|---|---|---|
+| `Pdf` | `POST /api/books/upload` | a PDF page | embedded text; Claude vision (or Tesseract) for scanned pages |
+| `Images` | `POST /api/books/images` | one photo (normalised: EXIF orientation, ≤ 2400 px, JPEG) | Claude vision: verbatim text + figure descriptions |
+| `YouTube` | `POST /api/books/youtube` | a ~2-minute transcript segment with start/end seconds | the video's captions (YoutubeExplode), punctuated and tidied by Claude, which also names the topics (→ sections) |
+
+Recognised pages and cleaned transcript segments are saved as soon as they are produced (`RecognizedPages`,
+`*.transcript.json`), so an interrupted or repeated run never pays for the same page twice. Video passages reach the
+tutor with a `time` attribute so it can say "at 12:30", and the reader shows page references of videos as times.
+
+The PDF path in detail:
+
 Upload (`POST /api/books/upload`) streams the file to a temp file while hashing and enforcing the size limit, checks the
 `%PDF-` header, opens it with PdfPig (rejects encrypted/corrupt files), rejects duplicates per student, stores the file
 and queues a `DocumentProcessingJob`. The background worker then runs:

@@ -8,6 +8,7 @@ import { I18nService, TranslatePipe } from '../../core/i18n.service';
 import { Book, ProcessingStatus } from '../../core/models';
 import { RealtimeService } from '../../core/realtime.service';
 import { StoreService } from '../../core/store.service';
+import { formatClock } from '../../core/source-times.service';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { ConfirmService, EmptyStateComponent } from '../../shared/ui';
@@ -99,5 +100,9 @@ export class LibraryComponent {
     } catch (e) {
       this.toast.error(e);
     }
+  }
+
+  protected clock(seconds: number): string {
+    return formatClock(seconds);
   }
 }

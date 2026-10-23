@@ -20,7 +20,8 @@ public enum ProcessingStage
     ProcessingTablesAndFigures = 5,
     PreparingSearch = 6,
     GeneratingResources = 7,
-    Completed = 8
+    Completed = 8,
+    CleaningTranscript = 9
 }
 
 public enum JobStatus
@@ -36,14 +37,30 @@ public enum ExtractionMethod
 {
     None = 0,
     EmbeddedText = 1,
-    Ocr = 2
+    Ocr = 2,
+    Transcript = 3
 }
 
 public enum ChapterSource
 {
     PdfOutline = 0,
     HeadingHeuristic = 1,
-    User = 2
+    User = 2,
+
+    /// <summary>Topics identified by the AI in a video transcript.</summary>
+    Topics = 3
+}
+
+/// <summary>What a study source was created from. Every kind is turned into numbered pages of text.</summary>
+public enum SourceKind
+{
+    Pdf = 0,
+
+    /// <summary>Photos uploaded together (book or notebook pages, worksheets, a whiteboard); each photo is a page.</summary>
+    Images = 1,
+
+    /// <summary>A YouTube video read from its captions; each page is a time segment of the transcript.</summary>
+    YouTube = 2
 }
 
 public enum WarningSeverity

@@ -45,9 +45,20 @@
       @for (book of filtered(); track book.id) {
         @let subject = store.subject(book.subjectId);
         <article class="book card interactive" (click)="open(book)" (keydown.enter)="open(book)" tabindex="0" [attr.aria-label]="book.title">
-          <div class="cover" [style.--c]="subject?.color">
-            <rw-icon [name]="subject?.icon ?? 'book-open'" [size]="26" />
-            <span class="pages num">{{ i18n.number(book.pageCount) }} {{ 'common.pagesShort' | t }}</span>
+          <div class="cover" [style.--c]="subject?.color" [class.video]="book.kind === 'youTube'">
+            @if (book.kind === 'youTube' && book.externalId) {
+              <img class="thumb" [src]="'https://i.ytimg.com/vi/' + book.externalId + '/mqdefault.jpg'" alt="" referrerpolicy="no-referrer" loading="lazy" />
+              <span class="kind-badge"><rw-icon name="play" [size]="14" /></span>
+            } @else {
+              <rw-icon [name]="book.kind === 'images' ? 'image' : (subject?.icon ?? 'book-open')" [size]="26" />
+            }
+            <span class="pages num">
+              @switch (book.kind) {
+                @case ('youTube') { {{ clock(book.durationSeconds ?? 0) }} }
+                @case ('images') { {{ 'book.photoCount' | t: { n: book.pageCount } }} }
+                @default { {{ i18n.number(book.pageCount) }} {{ 'common.pagesShort' | t }} }
+              }
+            </span>
           </div>
           <div class="body">
             <span class="subject-name" [style.color]="subject?.color">{{ i18n.subjectName(subject) }}</span>
@@ -66,7 +77,7 @@
                 <span class="xsmall subtle num">{{ i18n.number(book.readingProgress) }}%</span>
               </div>
               <div class="meta xsmall subtle">
-                @if (book.lastPage) { <span>{{ 'library.lastPage' | t: { page: book.lastPage } }}</span> }
+                @if (book.lastPage && book.kind !== 'youTube') { <span>{{ 'library.lastPage' | t: { page: book.lastPage } }}</span> }
                 @if (book.status === 'readyWithWarnings') { <span class="badge warning">{{ 'library.warnings' | t }}</span> }
                 @for (tag of book.tags.slice(0, 2); track tag) { <span class="badge">{{ tag }}</span> }
               </div>

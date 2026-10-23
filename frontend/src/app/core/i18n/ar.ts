@@ -14,7 +14,7 @@ export const AR: typeof EN = {
     account: 'الحساب', analytics: 'التقدّم', flashcards: 'البطاقات', focus: 'وضع التركيز', home: 'الرئيسية', library: 'المكتبة', logout: 'تسجيل الخروج',
     mainNavigation: 'التنقل الرئيسي', notes: 'الدفتر', notifications: 'الإشعارات', openMenu: 'فتح القائمة', plan: 'خطة المذاكرة',
     practice: 'التدريب', quizzes: 'الاختبارات', searchPlaceholder: 'ابحث في كتبك…', settings: 'الإعدادات', skipToContent: 'تخطَّ إلى المحتوى',
-    subjects: 'المواد', summaries: 'الملخصات', switchLanguage: 'تغيير اللغة', toggleTheme: 'الوضع الداكن', tutor: 'المعلّم الذكي', uploadBook: 'رفع كتاب'
+    subjects: 'المواد', summaries: 'الملخصات', switchLanguage: 'تغيير اللغة', toggleTheme: 'الوضع الداكن', tutor: 'المعلّم الذكي', uploadBook: 'إضافة مصدر'
   },
   auth: {
     heroTitle: 'كل كتاب مدرسي يصبح معلّمك الخاص.',
@@ -60,29 +60,39 @@ export const AR: typeof EN = {
     exams: 'الامتحانات القادمة', daysShort: 'يوم', noExams: 'لا امتحانات قادمة. أضفها لتحصل على خطة أدق.', achievements: 'محطات الإنجاز'
   },
   library: {
-    title: 'كتبك المدرسية', subtitle: 'ارفع كتبك ونظّمها وأدرها من مكان واحد.', allYears: 'كل الأعوام', filter: 'تصفية الكتب…',
+    title: 'مصادر المذاكرة', subtitle: 'كتب PDF وصور ودروس يوتيوب، منظّمة في مكان واحد.', allYears: 'كل الأعوام', filter: 'تصفية المصادر…',
     emptyTitle: 'مكتبتك فارغة', emptyText: 'ارفع كتابًا بصيغة PDF، وسيقرؤه رِواق ويستخرج فصوله ويجهّزه للمذاكرة.',
     failed: 'فشلت المعالجة', lastPage: 'آخر قراءة: ص {page}', warnings: 'ملاحظات', open: 'فتح', manage: 'إدارة', noMatches: 'لا توجد كتب مطابقة لهذه التصفية.',
     deleteTitle: 'حذف هذا الكتاب؟', deleteMessage: 'سيُحذف «{title}» وكل ما اشتُق منه (الصفحات والتظليلات والمحادثات والملخصات). أما البطاقات وسجل الاختبارات فتبقى.',
     deleted: 'تم حذف الكتاب'
   },
   upload: {
-    title: 'رفع كتاب مدرسي', subtitle: 'ملفات PDF فقط. تستمر المعالجة في الخلفية.', drop: 'أفلت ملف PDF هنا أو انقر للاختيار',
+    title: 'إضافة مصدر للمذاكرة', subtitle: { pdf: 'كتاب أو ورقة عمل بصيغة PDF. تستمر المعالجة في الخلفية.', images: 'صور لصفحات كتاب أو كراسة أو أوراق عمل أو السبورة، وتصبح صفحاتٍ لمصدر واحد.', youTube: 'درس على يوتيوب. تُقرأ ترجمته النصية وتُنظَّم حسب الموضوعات.' },
+    drop: 'أفلت ملف PDF هنا أو انقر للاختيار',
     limits: 'PDF · حتى {mb} ميغابايت', change: 'انقر للتغيير', chooseSubject: 'اختر المادة', bookTitle: 'عنوان الكتاب', academicYear: 'العام الدراسي',
     tags: 'وسوم', tagsPlaceholder: 'مثال: الفصل الأول، مراجعة', notPdf: 'هذا الملف ليس PDF.', tooLarge: 'حجم الملف أكبر من {mb} ميغابايت.',
     start: 'رفع', uploading: 'جارٍ الرفع…', cancelUpload: 'إلغاء الرفع', processingLead: 'يجري تجهيز كتابك. يمكنك إغلاق هذه النافذة وسنواصل العمل.',
     ready: 'كتابك جاهز للمذاكرة.', readyWithWarnings: 'كتابك جاهز، لكن بعض الصفحات واجهت مشكلات — اطّلع على التفاصيل.',
-    viewDetails: 'عرض التفاصيل', startStudying: 'ابدأ المذاكرة', continueInBackground: 'المتابعة في الخلفية', openExisting: 'فتح الكتاب الموجود'
+    viewDetails: 'عرض التفاصيل', startStudying: 'ابدأ المذاكرة', continueInBackground: 'المتابعة في الخلفية', openExisting: 'فتح الكتاب الموجود',
+    kind: 'نوع المصدر', kinds: { pdf: 'PDF', images: 'صور', youTube: 'يوتيوب' },
+    dropPhotos: 'أفلت الصور هنا أو انقر للاختيار', addMorePhotos: 'إضافة صور أخرى', photoLimits: 'حتى {n} صورة · {mb} ميجابايت لكل صورة',
+    photoOrder: '{n} صور، وستُقرأ بهذا الترتيب', moveEarlier: 'تقديم', moveLater: 'تأخير',
+    notImage: 'بعض الملفات ليست صورًا فتم تجاهلها.', photoTooLarge: 'حجم «{name}» أكبر من {mb} ميجابايت.', tooManyPhotos: 'يتسع المصدر الواحد لـ{n} صورة كحد أقصى.',
+    videoUrl: 'رابط يوتيوب', videoUrlInvalid: 'هذا ليس رابط فيديو على يوتيوب.', videoHint: 'تُقرأ الترجمة النصية للفيديو (ومنها الترجمة التلقائية من يوتيوب)، ثم ينقّحها الذكاء الاصطناعي ويقسّمها حسب الموضوعات. لا يمكن إضافة فيديو بلا ترجمة نصية.',
+    sourceTitle: 'العنوان', titleFromVideo: 'يُؤخذ من الفيديو', readingVideo: 'جارٍ فحص الفيديو وقراءة ترجمته النصية…',
+    preparingPhotos: 'جارٍ تجهيز {n} صور…', addVideo: 'إضافة الفيديو'
   },
   processing: {
     timeline: 'مراحل المعالجة',
     stages: {
       uploading: 'تم الرفع', queued: 'في الانتظار', validating: 'فحص المستند', extractingText: 'استخراج النص',
       recognizingScannedPages: 'قراءة الصفحات الممسوحة ضوئيًا', detectingStructure: 'اكتشاف الفصول والعناوين', processingTablesAndFigures: 'فحص الجداول والأشكال',
-      preparingSearch: 'تجهيز البحث والمعلّم', generatingResources: 'توليد المواد', completed: 'جاهز للمذاكرة'
+      preparingSearch: 'تجهيز البحث والمعلّم', generatingResources: 'توليد المواد', completed: 'جاهز للمذاكرة',
+      cleaningTranscript: 'تنقيح النص المكتوب', readingPhotos: 'قراءة الصور', readingCaptions: 'قراءة الترجمة النصية', findingTopics: 'تحديد الموضوعات'
     }
   },
   processingErrors: {
+    video_no_captions: 'هذا الفيديو بلا ترجمة نصية، لذا لا يمكن قراءة محتواه.', video_unavailable: 'تعذّرت قراءة الفيديو، فربما يكون خاصًا أو محذوفًا.',
     pdf_invalid_header: 'هذا الملف ليس PDF صالحًا.', pdf_unreadable: 'تعذّرت قراءة ملف PDF، وقد يكون تالفًا.',
     pdf_encrypted: 'الملف محمي بكلمة مرور. أزل كلمة المرور ثم ارفعه مجددًا.', pdf_no_pages: 'الملف لا يحتوي على صفحات.',
     pdf_too_many_pages: 'عدد صفحات الملف أكبر من المسموح.', processing_error: 'حدث خطأ أثناء المعالجة. حاول مرة أخرى.',
@@ -98,9 +108,14 @@ export const AR: typeof EN = {
     tables_flattened: 'اكتُشفت جداول؛ حُفظ نصها لكن قد تندمج الصفوف والأعمدة.',
     embeddings_unavailable: 'تعذّر إنشاء متجهات البحث الدلالي؛ البحث بالكلمات ما زال يعمل. أعد المعالجة لاحقًا.',
     no_text_extracted: 'لم يُستخرج أي نص مقروء، لذلك لا يستطيع المعلّم والبحث استخدام هذا الكتاب بعد.',
-    ocr_rate_limited: 'بلغ استخدام الذكاء الاصطناعي حدّه قبل قراءة هذه الصفحة الممسوحة. أعد معالجة الكتاب لاحقًا، وستبقى الصفحات المقروءة كما هي.'
+    ocr_rate_limited: 'بلغ استخدام الذكاء الاصطناعي حدّه قبل قراءة هذه الصفحة الممسوحة. أعد معالجة الكتاب لاحقًا، وستبقى الصفحات المقروءة كما هي.',
+    transcript_auto_generated: 'الترجمة النصية مولّدة تلقائيًا من يوتيوب، وقد تحتوي على أخطاء في التعرّف على الكلام.',
+    transcript_not_cleaned: 'تعذّر تنقيح جزء من النص بالذكاء الاصطناعي فيظهر كما هو. أعد المعالجة لاحقًا لإكماله.',
+    topics_generated: 'سمّى الذكاء الاصطناعي الأقسام من موضوعات الفيديو، ويمكنك تعديل أسمائها.'
   },
   book: {
+    watch: 'مشاهدة', openOnYouTube: 'فتح على يوتيوب', photoCount: '{n} صور', addPhotos: 'إضافة صور', fromTopics: 'من موضوعات الفيديو',
+    segments: 'مقاطع النص', duration: 'المدة', photos: 'الصور', photosRead: 'قُرئت بالذكاء الاصطناعي', photoN: 'صورة {n}', photoRange: 'الصور {from}–{to}',
     read: 'قراءة', quiz: 'إنشاء اختبار', processing: 'المعالجة', details: 'بيانات الكتاب', semester: 'الفصل الدراسي', collection: 'المجموعة',
     structure: 'الفصول', estimated: 'تقديري', fromOutline: 'من فهرس الملف', noStructure: 'لم تُكتشف فصول لهذا الكتاب.',
     structurePending: 'تظهر الفصول بعد انتهاء المعالجة.', chapterTitle: 'عنوان الفصل', pages: 'ص {from}–{to}', chapterStatus: 'حالة الفصل',
@@ -113,6 +128,7 @@ export const AR: typeof EN = {
   languages: { ar: 'العربية', en: 'الإنجليزية', fr: 'الفرنسية', mixed: 'متعدد اللغات' },
   extraction: { none: 'بلا نص', embeddedText: 'نص مضمّن', ocr: 'تعرّف ضوئي' },
   reader: {
+    showText: 'إظهار النص', hideText: 'إخفاء النص', noPageText: 'لم يُقرأ نص من هذه الصورة.', followVideo: 'متابعة الفيديو', playFrom: 'تشغيل من',
     toolbar: 'شريط أدوات القارئ', toggleContents: 'إظهار الفهرس', previousPage: 'الصفحة السابقة', nextPage: 'الصفحة التالية', goToPage: 'انتقل إلى صفحة',
     zoomIn: 'تكبير', zoomOut: 'تصغير', fit: 'الملاءمة', fitWidth: 'العرض', fitPage: 'الصفحة', bookmark: 'إضافة إشارة مرجعية', nightMode: 'القراءة الليلية',
     focusMode: 'وضع بلا مشتتات', fullscreen: 'ملء الشاشة', tutor: 'المعلّم', notes: 'ملاحظات', tools: 'أدوات', contents: 'الفهرس',
@@ -368,7 +384,11 @@ export const AR: typeof EN = {
     not_found: 'غير موجود — ربما حُذف.', validation_failed: 'راجع الحقول المحددة.', invalid_credentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
     email_taken: 'يوجد حساب بهذا البريد الإلكتروني بالفعل.', weak_password: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل وتحتوي على رقم.',
     account_locked: 'محاولات فاشلة كثيرة. حاول بعد بضع دقائق.', wrong_password: 'كلمة المرور غير صحيحة.', invalid_reset_token: 'رابط الاستعادة غير صالح أو منتهي الصلاحية.',
-    file_not_pdf: 'يمكن رفع ملفات PDF فقط.', file_too_large: 'حجم الملف كبير جدًا.', file_empty: 'الملف فارغ.',
+    file_not_pdf: 'يمكن رفع ملفات PDF فقط.',
+    video_url_invalid: 'هذا ليس رابط فيديو على يوتيوب.', video_no_captions: 'هذا الفيديو بلا ترجمة نصية، لذا لا يمكن قراءة محتواه.',
+    video_unavailable: 'تعذّرت قراءة الفيديو، فربما يكون خاصًا أو محذوفًا أو مقيّدًا بالعمر.', video_too_long: 'هذا الفيديو طويل جدًا.',
+    image_unreadable: 'أحد الملفات ليس صورة مدعومة.', image_too_large: 'حجم إحدى الصور كبير جدًا.', too_many_images: 'عدد الصور أكبر من المسموح للمصدر الواحد.',
+    not_a_photo_source: 'يمكن إضافة الصور إلى مصدر صور فقط.', file_too_large: 'حجم الملف كبير جدًا.', file_empty: 'الملف فارغ.',
     duplicate_book: 'سبق أن رفعت هذا الكتاب.', pdf_invalid_header: 'هذا الملف ليس PDF صالحًا.', pdf_unreadable: 'تعذّرت قراءة ملف PDF.',
     pdf_encrypted: 'الملف محمي بكلمة مرور.', pdf_no_pages: 'الملف لا يحتوي على صفحات.', pdf_too_many_pages: 'عدد صفحات الملف كبير جدًا.',
     invalid_subject: 'اختر مادة صحيحة.', book_not_ready: 'ما زال هذا الكتاب قيد المعالجة.', no_text_in_scope: 'لم يُعثر على نص مقروء في الصفحات المحددة.',

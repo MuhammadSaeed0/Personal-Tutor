@@ -25,6 +25,7 @@ public sealed class DocumentProcessingWorker(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await RecoverStaleJobsAsync(stoppingToken);
+        var lastRecovery = clock.GetUtcNow();
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -34,6 +35,12 @@ public sealed class DocumentProcessingWorker(
                 jobId = await ClaimNextJobAsync(stoppingToken);
                 if (jobId is null)
                 {
+                    // A job interrupted shortly before this start (heartbeat not yet stale) is picked up once it goes stale.
+                    if (clock.GetUtcNow() - lastRecovery > TimeSpan.FromMinutes(1))
+                    {
+                        await RecoverStaleJobsAsync(stoppingToken);
+                        lastRecovery = clock.GetUtcNow();
+                    }
                     await signal.WaitAsync(TimeSpan.FromSeconds(10), stoppingToken);
                     continue;
                 }

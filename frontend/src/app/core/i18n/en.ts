@@ -11,7 +11,7 @@ export const EN = {
     account: 'Account', analytics: 'Progress', flashcards: 'Flashcards', focus: 'Focus mode', home: 'Home', library: 'Library', logout: 'Sign out',
     mainNavigation: 'Main navigation', notes: 'Notebook', notifications: 'Notifications', openMenu: 'Open menu', plan: 'Study plan',
     practice: 'Practice', quizzes: 'Quizzes', searchPlaceholder: 'Search your books…', settings: 'Settings', skipToContent: 'Skip to content',
-    subjects: 'Subjects', summaries: 'Summaries', switchLanguage: 'Switch language', toggleTheme: 'Toggle dark mode', tutor: 'AI tutor', uploadBook: 'Upload textbook'
+    subjects: 'Subjects', summaries: 'Summaries', switchLanguage: 'Switch language', toggleTheme: 'Toggle dark mode', tutor: 'AI tutor', uploadBook: 'Add a source'
   },
   auth: {
     heroTitle: 'Every textbook becomes your personal tutor.',
@@ -57,29 +57,39 @@ export const EN = {
     exams: 'Upcoming exams', daysShort: 'd', noExams: 'No upcoming exams. Add them to get a better plan.', achievements: 'Milestones'
   },
   library: {
-    title: 'Your textbooks', subtitle: 'Upload, organise and manage the books you study from.', allYears: 'All years', filter: 'Filter books…',
+    title: 'Your study sources', subtitle: 'PDF books, photos and YouTube lessons, organised in one place.', allYears: 'All years', filter: 'Filter sources…',
     emptyTitle: 'Your library is empty', emptyText: 'Upload a PDF textbook. Riwaq will read it, find its chapters and prepare it for studying.',
     failed: 'Processing failed', lastPage: 'Last read: p. {page}', warnings: 'Notes', open: 'Open', manage: 'Manage', noMatches: 'No books match these filters.',
     deleteTitle: 'Delete this book?', deleteMessage: '"{title}" and everything derived from it (pages, highlights, conversations, summaries) will be deleted. Flashcards and quiz history are kept.',
     deleted: 'Book deleted'
   },
   upload: {
-    title: 'Upload a textbook', subtitle: 'PDF files only. Processing continues in the background.', drop: 'Drop a PDF here or click to choose',
+    title: 'Add a study source', subtitle: { pdf: 'A PDF textbook or worksheet. Processing continues in the background.', images: 'Photos of book or notebook pages, worksheets or a board — they become the pages of one source.', youTube: 'A YouTube lesson. Its captions are read and organised by topic.' },
+    drop: 'Drop a PDF here or click to choose',
     limits: 'PDF · up to {mb} MB', change: 'click to change', chooseSubject: 'Choose a subject', bookTitle: 'Book title', academicYear: 'Academic year',
     tags: 'Tags', tagsPlaceholder: 'e.g. term 1, revision', notPdf: 'This file is not a PDF.', tooLarge: 'The file is larger than {mb} MB.',
     start: 'Upload', uploading: 'Uploading…', cancelUpload: 'Cancel upload', processingLead: 'Your book is being prepared. You can close this window — we will keep working.',
     ready: 'Your book is ready to study.', readyWithWarnings: 'Your book is ready. Some pages had issues — see the details.',
-    viewDetails: 'View details', startStudying: 'Start studying', continueInBackground: 'Continue in background', openExisting: 'Open existing book'
+    viewDetails: 'View details', startStudying: 'Start studying', continueInBackground: 'Continue in background', openExisting: 'Open existing book',
+    kind: 'Source type', kinds: { pdf: 'PDF', images: 'Photos', youTube: 'YouTube' },
+    dropPhotos: 'Drop photos here or click to choose', addMorePhotos: 'Add more photos', photoLimits: 'Up to {n} photos · {mb} MB each',
+    photoOrder: '{n} photos — they will be read in this order', moveEarlier: 'Move earlier', moveLater: 'Move later',
+    notImage: 'Some files are not images and were skipped.', photoTooLarge: '“{name}” is larger than {mb} MB.', tooManyPhotos: 'A source can hold up to {n} photos.',
+    videoUrl: 'YouTube link', videoUrlInvalid: 'This is not a YouTube video link.', videoHint: 'The video’s captions (including YouTube’s automatic captions) are read, tidied by AI and split by topic. Videos without captions cannot be added.',
+    sourceTitle: 'Title', titleFromVideo: 'Taken from the video', readingVideo: 'Checking the video and reading its captions…',
+    preparingPhotos: 'Preparing {n} photos…', addVideo: 'Add video'
   },
   processing: {
     timeline: 'Processing steps',
     stages: {
       uploading: 'Uploaded', queued: 'Waiting to start', validating: 'Checking the document', extractingText: 'Extracting text',
       recognizingScannedPages: 'Reading scanned pages', detectingStructure: 'Finding chapters and headings', processingTablesAndFigures: 'Checking tables and figures',
-      preparingSearch: 'Preparing search and the tutor', generatingResources: 'Generating resources', completed: 'Ready to study'
+      preparingSearch: 'Preparing search and the tutor', generatingResources: 'Generating resources', completed: 'Ready to study',
+      cleaningTranscript: 'Tidying the transcript', readingPhotos: 'Reading the photos', readingCaptions: 'Reading the captions', findingTopics: 'Finding the topics'
     }
   },
   processingErrors: {
+    video_no_captions: 'This video has no captions, so its content cannot be read.', video_unavailable: 'The video could not be read. It may be private or removed.',
     pdf_invalid_header: 'This file is not a valid PDF.', pdf_unreadable: 'The PDF could not be read. It may be damaged.',
     pdf_encrypted: 'The PDF is password-protected. Remove the password and upload it again.', pdf_no_pages: 'The PDF has no pages.',
     pdf_too_many_pages: 'The PDF has too many pages.', processing_error: 'Something went wrong while processing. Please retry.',
@@ -95,9 +105,14 @@ export const EN = {
     tables_flattened: 'Tables were detected; their text is kept but rows and columns may be merged.',
     embeddings_unavailable: 'Semantic search vectors could not be created; keyword search still works. Reprocess later.',
     no_text_extracted: 'No readable text could be extracted, so the tutor and search cannot use this book yet.',
-    ocr_rate_limited: 'The AI usage limit was reached before this scanned page could be read. Reprocess the book later; pages already read are kept.'
+    ocr_rate_limited: 'The AI usage limit was reached before this scanned page could be read. Reprocess the book later; pages already read are kept.',
+    transcript_auto_generated: 'The captions were generated automatically by YouTube and may contain recognition errors.',
+    transcript_not_cleaned: 'Part of the transcript could not be tidied by AI and is shown as raw captions. Reprocess later to finish it.',
+    topics_generated: 'Sections were named by AI from the video’s topics. You can rename them.'
   },
   book: {
+    watch: 'Watch', openOnYouTube: 'Open on YouTube', photoCount: '{n} photos', addPhotos: 'Add photos', fromTopics: 'From the video’s topics',
+    segments: 'Transcript segments', duration: 'Length', photos: 'Photos', photosRead: 'Read by AI', photoN: 'Photo {n}', photoRange: 'Photos {from}–{to}',
     read: 'Read', quiz: 'Make a quiz', processing: 'Processing', details: 'Book details', semester: 'Semester', collection: 'Collection',
     structure: 'Chapters', estimated: 'Estimated', fromOutline: 'From the PDF outline', noStructure: 'No chapters were detected for this book.',
     structurePending: 'Chapters appear after processing.', chapterTitle: 'Chapter title', pages: 'pp. {from}–{to}', chapterStatus: 'Chapter status',
@@ -110,6 +125,7 @@ export const EN = {
   languages: { ar: 'Arabic', en: 'English', fr: 'French', mixed: 'Mixed' },
   extraction: { none: 'No text', embeddedText: 'Embedded text', ocr: 'Recognised with OCR' },
   reader: {
+    showText: 'Show the text', hideText: 'Hide the text', noPageText: 'No text was read from this photo.', followVideo: 'Follow the video', playFrom: 'Play from',
     toolbar: 'Reader toolbar', toggleContents: 'Show contents', previousPage: 'Previous page', nextPage: 'Next page', goToPage: 'Go to page',
     zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit', fitWidth: 'Width', fitPage: 'Page', bookmark: 'Bookmark this page', nightMode: 'Night reading',
     focusMode: 'Distraction-free mode', fullscreen: 'Full screen', tutor: 'Tutor', notes: 'Notes', tools: 'Tools', contents: 'Contents',
@@ -365,7 +381,11 @@ export const EN = {
     not_found: 'Not found — it may have been deleted.', validation_failed: 'Please check the highlighted fields.', invalid_credentials: 'Email or password is incorrect.',
     email_taken: 'An account with this email already exists.', weak_password: 'The password must be at least 8 characters and include a number.',
     account_locked: 'Too many failed attempts. Try again in a few minutes.', wrong_password: 'The password is incorrect.', invalid_reset_token: 'The reset link is invalid or has expired.',
-    file_not_pdf: 'Only PDF files can be uploaded.', file_too_large: 'The file is too large.', file_empty: 'The file is empty.',
+    file_not_pdf: 'Only PDF files can be uploaded.',
+    video_url_invalid: 'This is not a YouTube video link.', video_no_captions: 'This video has no captions, so its content cannot be read.',
+    video_unavailable: 'The video could not be read. It may be private, removed or age-restricted.', video_too_long: 'This video is too long.',
+    image_unreadable: 'One of the files is not a supported image.', image_too_large: 'One of the photos is too large.', too_many_images: 'Too many photos for one source.',
+    not_a_photo_source: 'Photos can only be added to a photo source.', file_too_large: 'The file is too large.', file_empty: 'The file is empty.',
     duplicate_book: 'You have already uploaded this book.', pdf_invalid_header: 'This file is not a valid PDF.', pdf_unreadable: 'The PDF could not be read.',
     pdf_encrypted: 'The PDF is password-protected.', pdf_no_pages: 'The PDF has no pages.', pdf_too_many_pages: 'The PDF has too many pages.',
     invalid_subject: 'Choose a valid subject.', book_not_ready: 'This book is still being processed.', no_text_in_scope: 'No readable text was found in the selected pages.',

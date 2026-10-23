@@ -12,20 +12,28 @@
 
     <div class="tb-group center">
       <button class="btn ghost icon sm" type="button" (click)="step(-1)" [disabled]="store.currentPage() <= 1" [attr.aria-label]="'reader.previousPage' | t"><rw-icon name="chevron-up" /></button>
-      <label class="page-box">
-        <span class="visually-hidden">{{ 'reader.goToPage' | t }}</span>
-        <input class="input num" inputmode="numeric" [ngModel]="pageInput()" (ngModelChange)="pageInput.set($event)" (keydown.enter)="goToInput()" (blur)="goToInput()" />
-        <span class="subtle small num">/ {{ store.pageCount() }}</span>
-      </label>
+      @if (store.kind() === 'youTube') {
+        <span class="page-box time-box num small">{{ store.pageLabel(store.currentPage()) }}</span>
+      } @else {
+        <label class="page-box">
+          <span class="visually-hidden">{{ 'reader.goToPage' | t }}</span>
+          <input class="input num" inputmode="numeric" [ngModel]="pageInput()" (ngModelChange)="pageInput.set($event)" (keydown.enter)="goToInput()" (blur)="goToInput()" />
+          <span class="subtle small num">/ {{ store.pageCount() }}</span>
+        </label>
+      }
       <button class="btn ghost icon sm" type="button" (click)="step(1)" [disabled]="store.currentPage() >= store.pageCount()" [attr.aria-label]="'reader.nextPage' | t"><rw-icon name="chevron-down" /></button>
-      <span class="sep desktop"></span>
-      <button class="btn ghost icon sm desktop" type="button" (click)="zoom(-0.1)" [attr.aria-label]="'reader.zoomOut' | t"><rw-icon name="zoom-out" /></button>
-      <span class="zoom num small desktop">{{ i18n.number(scale() * 100) }}%</span>
-      <button class="btn ghost icon sm desktop" type="button" (click)="zoom(0.1)" [attr.aria-label]="'reader.zoomIn' | t"><rw-icon name="zoom-in" /></button>
-      <div class="segmented desktop" role="group" [attr.aria-label]="'reader.fit' | t">
-        <button type="button" [attr.aria-pressed]="fitMode() === 'width'" (click)="fit('width')">{{ 'reader.fitWidth' | t }}</button>
-        <button type="button" [attr.aria-pressed]="fitMode() === 'page'" (click)="fit('page')">{{ 'reader.fitPage' | t }}</button>
-      </div>
+      @if (store.kind() !== 'youTube') {
+        <span class="sep desktop"></span>
+        <button class="btn ghost icon sm desktop" type="button" (click)="zoom(-0.1)" [attr.aria-label]="'reader.zoomOut' | t"><rw-icon name="zoom-out" /></button>
+        <span class="zoom num small desktop">{{ i18n.number((store.kind() === 'images' ? photoZoom() : scale()) * 100) }}%</span>
+        <button class="btn ghost icon sm desktop" type="button" (click)="zoom(0.1)" [attr.aria-label]="'reader.zoomIn' | t"><rw-icon name="zoom-in" /></button>
+      }
+      @if (store.kind() === 'pdf') {
+        <div class="segmented desktop" role="group" [attr.aria-label]="'reader.fit' | t">
+          <button type="button" [attr.aria-pressed]="fitMode() === 'width'" (click)="fit('width')">{{ 'reader.fitWidth' | t }}</button>
+          <button type="button" [attr.aria-pressed]="fitMode() === 'page'" (click)="fit('page')">{{ 'reader.fitPage' | t }}</button>
+        </div>
+      }
     </div>
 
     <div class="tb-group end">
@@ -50,7 +58,15 @@
     </aside>
 
     <section class="center" #viewerArea>
-      @if (doc(); as d) {
+      @if (sourceReady() && store.book(); as book) {
+        @if (book.kind === 'images') {
+          <rw-image-viewer [bookId]="book.id" [pageCount]="store.pageCount()" [zoom]="photoZoom()" [goTo]="store.goTo()"
+            (pageChange)="onPageChange($event)" (selectionChange)="onSelection($event)" />
+        } @else {
+          <rw-video-viewer [book]="book" [chapters]="store.chapters()" [goTo]="store.goTo()"
+            (pageChange)="onPageChange($event)" (selectionChange)="onSelection($event)" />
+        }
+      } @else if (doc(); as d) {
         <rw-pdf-viewer [doc]="d" [scale]="scale()" [highlights]="store.highlights()" [goTo]="store.goTo()"
           (pageChange)="onPageChange($event)" (selectionChange)="onSelection($event)" (highlightClick)="openHighlight($event)" (baseSize)="onBaseSize($event)" />
       } @else if (loadError()) {
@@ -63,11 +79,11 @@
         </div>
       }
 
-      @if (store.currentPageInfo()?.isScanned && store.currentPageInfo()?.extractionMethod !== 'ocr') {
+      @if (store.kind() === 'pdf' && store.currentPageInfo()?.isScanned && store.currentPageInfo()?.extractionMethod !== 'ocr') {
         <div class="page-notice alert warning small"><rw-icon name="info" [size]="16" /> {{ 'reader.scannedNotice' | t }}
           <button class="btn sm" type="button" (click)="store.askTutor({ action: 'explain_page', question: '', selectedText: null, page: store.currentPage() })">{{ 'reader.askAboutPage' | t }}</button>
         </div>
-      } @else if (store.currentPageInfo()?.extractionMethod === 'ocr') {
+      } @else if (store.kind() === 'pdf' && store.currentPageInfo()?.extractionMethod === 'ocr') {
         <div class="page-notice alert info small"><rw-icon name="info" [size]="16" /> {{ 'reader.ocrNotice' | t }}</div>
       }
     </section>
@@ -93,11 +109,13 @@
       <button type="button" (click)="selectionAction('questions')">{{ 'reader.actions.questions' | t }}</button>
       <button type="button" (click)="selectionAction('flashcard')"><rw-icon name="layers" [size]="15" /> {{ 'reader.actions.flashcard' | t }}</button>
       <button type="button" (click)="selectionAction('note')"><rw-icon name="sticky-note" [size]="15" /></button>
-      <span class="colors">
-        @for (c of ['yellow', 'green', 'blue', 'pink']; track c) {
-          <button type="button" class="swatch" [class]="'swatch sw-' + c" (click)="highlight(c)" [attr.aria-label]="('reader.highlight' | t) + ' ' + c"></button>
-        }
-      </span>
+      @if (store.selection()!.rects.length > 0) {
+        <span class="colors">
+          @for (c of ['yellow', 'green', 'blue', 'pink']; track c) {
+            <button type="button" class="swatch" [class]="'swatch sw-' + c" (click)="highlight(c)" [attr.aria-label]="('reader.highlight' | t) + ' ' + c"></button>
+          }
+        </span>
+      }
     </div>
   }
 

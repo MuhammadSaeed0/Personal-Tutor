@@ -64,11 +64,21 @@ public sealed class AiVisionOcrEngine(IChatModel chat, IOptions<OcrOptions> opti
             return new OcrResult(false, string.Empty, null, "ocr_failed");
         }
 
+        return await RecognizeAsync(image, $"Transcribe page {pageNumber} of this textbook. Expected language(s): {LanguageNames(languages)}.", languages, cancellationToken);
+    }
+
+    public Task<OcrResult> RecognizeImageAsync(byte[] jpeg, string languages, CancellationToken cancellationToken) =>
+        IsAvailable
+            ? RecognizeAsync(jpeg, $"Transcribe this photographed study page (a book or notebook page, worksheet or board). Expected language(s): {LanguageNames(languages)}.", languages, cancellationToken)
+            : Task.FromResult(new OcrResult(false, string.Empty, null, "ocr_unavailable"));
+
+    private async Task<OcrResult> RecognizeAsync(byte[] image, string instruction, string languages, CancellationToken cancellationToken)
+    {
         var request = new ChatRequest
         {
             Feature = "ocr",
             SystemPrompt = SystemPrompt,
-            Messages = [new ChatTurn(ChatRole.User, $"Transcribe page {pageNumber} of this textbook. Expected language(s): {LanguageNames(languages)}.")],
+            Messages = [new ChatTurn(ChatRole.User, instruction)],
             Images = [new ChatImage("image/jpeg", image)],
             JsonSchema = Schema,
             Effort = "low",
@@ -82,7 +92,7 @@ public sealed class AiVisionOcrEngine(IChatModel chat, IOptions<OcrOptions> opti
         }
         catch (AiUnavailableException ex)
         {
-            logger.LogWarning("Vision OCR failed for page {Page}: {Code}", pageNumber, ex.Code);
+            logger.LogWarning("Vision OCR failed: {Code}", ex.Code);
             return new OcrResult(false, string.Empty, null, ex.Code switch
             {
                 "ai_rate_limited" or "ai_quota_exceeded" => "ocr_rate_limited",
@@ -160,15 +170,21 @@ public sealed class OcrEngineSelector(AiVisionOcrEngine ai, TesseractOcrEngine t
     public bool IsAvailable => Primary is not null;
     public string Name => Primary?.Name ?? "none";
 
-    public async Task<OcrResult> RecognizePageAsync(string pdfPath, int pageNumber, string languages, CancellationToken cancellationToken)
+    public Task<OcrResult> RecognizePageAsync(string pdfPath, int pageNumber, string languages, CancellationToken cancellationToken) =>
+        RunAsync(engine => engine.RecognizePageAsync(pdfPath, pageNumber, languages, cancellationToken));
+
+    public Task<OcrResult> RecognizeImageAsync(byte[] jpeg, string languages, CancellationToken cancellationToken) =>
+        RunAsync(engine => engine.RecognizeImageAsync(jpeg, languages, cancellationToken));
+
+    private async Task<OcrResult> RunAsync(Func<IOcrEngine, Task<OcrResult>> recognize)
     {
         var primary = Primary;
         if (primary is null) return new OcrResult(false, string.Empty, null, "ocr_unavailable");
 
-        var result = await primary.RecognizePageAsync(pdfPath, pageNumber, languages, cancellationToken);
-        // In Auto mode a failed AI read falls back to Tesseract when it is installed.
-        if (!result.Success && primary == ai && _engine == "auto" && tesseract.IsAvailable && result.ErrorCode != "ocr_no_text")
-            result = await tesseract.RecognizePageAsync(pdfPath, pageNumber, languages, cancellationToken);
+        var result = await recognize(primary);
+        // In Auto mode a failed AI read falls back to Tesseract when it is installed (not when the plan's limit is hit).
+        if (!result.Success && primary == ai && _engine == "auto" && tesseract.IsAvailable && result.ErrorCode is not ("ocr_no_text" or "ocr_rate_limited"))
+            result = await recognize(tesseract);
         return result;
     }
 }

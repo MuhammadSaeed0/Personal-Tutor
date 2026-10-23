@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Book> Books => Set<Book>();
     public DbSet<DocumentProcessingJob> ProcessingJobs => Set<DocumentProcessingJob>();
     public DbSet<DocumentPage> DocumentPages => Set<DocumentPage>();
+    public DbSet<RecognizedPage> RecognizedPages => Set<RecognizedPage>();
     public DbSet<Chapter> Chapters => Set<Chapter>();
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
     public DbSet<ChunkEmbedding> ChunkEmbeddings => Set<ChunkEmbedding>();
@@ -141,6 +142,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         b.Entity<DocumentPage>(e =>
         {
             e.HasIndex(x => new { x.BookId, x.PageNumber }).IsUnique();
+            e.Property(x => x.Text).HasColumnType("nvarchar(max)");
+            e.HasOne<Book>().WithMany().HasForeignKey(x => x.BookId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<RecognizedPage>(e =>
+        {
+            e.HasKey(x => new { x.BookId, x.PageNumber });
             e.Property(x => x.Text).HasColumnType("nvarchar(max)");
             e.HasOne<Book>().WithMany().HasForeignKey(x => x.BookId).OnDelete(DeleteBehavior.Cascade);
         });

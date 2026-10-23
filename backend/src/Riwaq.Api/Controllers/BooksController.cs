@@ -39,6 +39,57 @@ public sealed class BooksController(BooksService books) : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = book.Id }, book);
     }
 
+    /// <summary>Creates a source from photos (multipart field "files", in page order). Processing continues in the background.</summary>
+    [HttpPost("images")]
+    [EnableRateLimiting(RateLimitPolicies.Upload)]
+    [RequestSizeLimit(160L * 1024 * 1024)]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<BookDto>> UploadImages(
+        [FromForm] List<IFormFile> files,
+        [FromForm] int subjectId,
+        [FromForm] string? title,
+        [FromForm] string? academicYear,
+        [FromForm] string? semester,
+        [FromForm] string? collection,
+        [FromForm] string? tags,
+        CancellationToken ct)
+    {
+        var tagList = tags?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var book = await books.UploadImagesAsync(User.GetUserId(), ToUploaded(files),
+            new UploadBookRequest(subjectId, title, academicYear, semester, collection, tagList), ct);
+        return CreatedAtAction(nameof(Get), new { id = book.Id }, book);
+    }
+
+    /// <summary>Adds photos to the end of a photo source; only the new pages are read.</summary>
+    [HttpPost("{id:guid}/images")]
+    [EnableRateLimiting(RateLimitPolicies.Upload)]
+    [RequestSizeLimit(160L * 1024 * 1024)]
+    [Consumes("multipart/form-data")]
+    public Task<BookDto> AddImages(Guid id, [FromForm] List<IFormFile> files, CancellationToken ct) =>
+        books.AddImagesAsync(User.GetUserId(), id, ToUploaded(files), ct);
+
+    /// <summary>Creates a source from a YouTube link; the video's captions are read in the background.</summary>
+    [HttpPost("youtube")]
+    [EnableRateLimiting(RateLimitPolicies.Upload)]
+    public async Task<ActionResult<BookDto>> AddVideo(AddVideoRequest request, CancellationToken ct)
+    {
+        var book = await books.AddVideoAsync(User.GetUserId(), request, ct);
+        return CreatedAtAction(nameof(Get), new { id = book.Id }, book);
+    }
+
+    /// <summary>One photo of a photo source, to its owner.</summary>
+    [HttpGet("{id:guid}/images/{page:int}")]
+    [Produces("image/jpeg")]
+    public async Task<IActionResult> Image(Guid id, int page, CancellationToken ct)
+    {
+        var stream = await books.OpenImageAsync(User.GetUserId(), id, page, ct);
+        Response.Headers.CacheControl = "private, max-age=3600";
+        return File(stream, "image/jpeg");
+    }
+
+    private static List<UploadedFile> ToUploaded(List<IFormFile> files) =>
+        files.Select(f => new UploadedFile(f.FileName, f.Length, f.OpenReadStream)).ToList();
+
     [HttpGet("{id:guid}")]
     public Task<BookDetailDto> Get(Guid id, CancellationToken ct) => books.GetAsync(User.GetUserId(), id, ct);
 
@@ -65,6 +116,9 @@ public sealed class BooksController(BooksService books) : ControllerBase
     [HttpPatch("{id:guid}/chapters/{chapterId:guid}")]
     public Task<ChapterDto> UpdateChapter(Guid id, Guid chapterId, UpdateChapterRequest request, CancellationToken ct) =>
         books.UpdateChapterAsync(User.GetUserId(), id, chapterId, request, ct);
+
+    [HttpGet("{id:guid}/pages/text")]
+    public Task<IReadOnlyList<PageTextDto>> AllPageTexts(Guid id, CancellationToken ct) => books.GetAllPageTextsAsync(User.GetUserId(), id, ct);
 
     [HttpGet("{id:guid}/pages/{page:int}/text")]
     public Task<PageTextDto> PageText(Guid id, int page, CancellationToken ct) => books.GetPageTextAsync(User.GetUserId(), id, page, ct);

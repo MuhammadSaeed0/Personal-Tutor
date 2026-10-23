@@ -25,7 +25,9 @@ public sealed record RetrievedPassage(
     int PageEnd,
     string Text,
     double Score,
-    string MatchType);
+    string MatchType,
+    int? StartSeconds = null,
+    int? EndSeconds = null);
 
 /// <summary>
 /// Hybrid retrieval over a student's own books: BM25 keyword scoring plus vector similarity, fused with
@@ -116,7 +118,9 @@ public sealed class RetrievalService(
         return results.Values
             .Select(r => new RetrievedPassage(r.Chunk.Id, r.Index.BookId, r.Index.BookTitle, r.Chunk.ChapterId,
                 r.Chunk.ChapterId is { } cid ? r.Index.ChapterTitles.GetValueOrDefault(cid) : null,
-                r.Chunk.PageStart, r.Chunk.PageEnd, r.Chunk.Text, Math.Round(r.Score, 5), r.Type))
+                r.Chunk.PageStart, r.Chunk.PageEnd, r.Chunk.Text, Math.Round(r.Score, 5), r.Type,
+                r.Index.Times.TryGetValue(r.Chunk.PageStart, out var from) ? from.Start : null,
+                r.Index.Times.TryGetValue(r.Chunk.PageEnd, out var to) ? to.End : null))
             .ToList();
     }
 
@@ -159,6 +163,9 @@ public sealed class RetrievalService(
             .ToDictionaryAsync(e => e.ChunkId, e => e.Vector, ct);
         var chapterTitles = await db.Chapters.AsNoTracking().Where(c => c.BookId == bookId)
             .ToDictionaryAsync(c => c.Id, c => c.Title, ct);
+        // Video sources: the time span of each transcript segment, so passages can be cited by time.
+        var times = await db.DocumentPages.AsNoTracking().Where(p => p.BookId == bookId && p.StartSeconds != null)
+            .ToDictionaryAsync(p => p.PageNumber, p => (Start: p.StartSeconds!.Value, End: p.EndSeconds ?? p.StartSeconds!.Value), ct);
 
         var indexed = chunks.Select(c =>
         {
@@ -169,7 +176,7 @@ public sealed class RetrievalService(
                 vectors.TryGetValue(c.Id, out var v) ? VectorCodec.FromBytes(v) : null);
         }).ToList();
 
-        var index = new BookIndex(bookId, title, indexed, chapterTitles, vectors.Count > 0);
+        var index = new BookIndex(bookId, title, indexed, chapterTitles, vectors.Count > 0, times);
         cache.Set(key, index, new MemoryCacheEntryOptions
         {
             Size = 1,
@@ -182,5 +189,5 @@ public sealed class RetrievalService(
         Dictionary<string, int> TermFrequency, int Length, float[]? Vector);
 
     private sealed record BookIndex(Guid BookId, string BookTitle, List<IndexedChunk> Chunks,
-        Dictionary<Guid, string> ChapterTitles, bool HasVectors);
+        Dictionary<Guid, string> ChapterTitles, bool HasVectors, Dictionary<int, (int Start, int End)> Times);
 }

@@ -58,6 +58,8 @@ public sealed class RiwaqApiFactory : WebApplicationFactory<Program>, IAsyncLife
         {
             services.RemoveAll<IChatModel>();
             services.AddSingleton<IChatModel>(Chat);
+            services.RemoveAll<IVideoTranscriptSource>();
+            services.AddSingleton<IVideoTranscriptSource>(new FakeVideoSource());
         });
     }
 

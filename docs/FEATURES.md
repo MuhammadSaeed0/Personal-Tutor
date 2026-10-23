@@ -6,6 +6,11 @@ and revoke, profile, Arabic/English interface, light/dark/system theme, explanat
 terms, teaching style, optional onboarding (grade, curriculum, exams, daily time, difficult subjects, target), exam
 management, data export, account deletion.
 
+**Sources** — besides PDFs: **YouTube lessons** (captions, including YouTube's automatic ones, tidied by AI, split into
+timed segments and topic sections; embedded player with a clickable, auto-following transcript; citations as video
+times) and **photos** of book or notebook pages, worksheets or a board (read by Claude vision with figure descriptions;
+photo viewer with the read text underneath; more photos can be added later).
+
 **Library & processing** — drag-and-drop upload with progress and cancel, PDF/size validation, duplicate detection,
 subject/year/semester/collection/tags, live processing timeline (SignalR + polling), restart-safe background jobs with
 retries, embedded-text extraction with Arabic RTL repair, scanned pages read by Claude vision (verbatim transcription plus
@@ -48,6 +53,11 @@ isolation and opt-in live-model tests), 30 frontend tests,
 i18n coverage check, browser smoke test.
 
 ## Known limitations
+- **YouTube videos need captions.** Videos without any captions are rejected; automatic captions can contain
+  recognition errors (flagged per video). Captions are read with YoutubeExplode, an unofficial client that can break
+  when YouTube changes; only public videos work. What is shown on screen (slides, drawings) is not read — only speech.
+- **Photos** are read one request per photo; blurry or skewed photos give lower-quality text (flagged as low legibility).
+  HEIC photos only work where the browser or server can decode them; JPEG/PNG are safest.
 - **Live AI verified at the provider level, not yet for every feature.** The Claude-account provider passed real
   streaming, structured-output and multi-turn tests; summaries, quiz generation and rubric grading were tested end to
   end with a scripted model. Prompt quality should still be reviewed on real textbooks.

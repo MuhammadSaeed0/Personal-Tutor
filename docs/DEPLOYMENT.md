@@ -29,6 +29,8 @@ user-secrets (development) or a vault — never from committed files.
 | `Ocr:AiImageHeight` | 2000 | pixel height of the page image sent to Claude |
 | `Ocr:TesseractPath` / `Dpi` | `tesseract` / 300 | Tesseract settings |
 | `Processing:OcrParallelism` | 2 | scanned pages read at the same time |
+| `Processing:MaxImagesPerSource` / `MaxImageMb` | 100 / 25 | photo sources |
+| `Processing:MaxVideoMinutes` | 240 | longest YouTube video accepted |
 | `Storage:RootPath` | `App_Data/storage` | where PDFs are stored |
 | `Email:AppBaseUrl` | `http://localhost:4200` | base for reset links |
 | `Cors:AllowedOrigins` | `[]` | only needed when the SPA is served from another origin |

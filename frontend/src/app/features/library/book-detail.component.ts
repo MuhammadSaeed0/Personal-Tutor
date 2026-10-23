@@ -4,6 +4,8 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { I18nService, TranslatePipe } from '../../core/i18n.service';
 import { Book, BookDetail, Chapter, ChapterStatus, ProcessingStatus } from '../../core/models';
+import { formatClock } from '../../core/source-times.service';
+import { shrinkPhoto } from './upload-dialog.component';
 import { RealtimeService } from '../../core/realtime.service';
 import { StoreService } from '../../core/store.service';
 import { ToastService } from '../../core/toast.service';
@@ -106,6 +108,52 @@ export class BookDetailComponent {
       this.detail.set({ ...d, chapters: d.chapters.map(c => (c.id === chapter.id ? { ...c, status } : c)) });
     } catch (e) {
       this.toast.error(e);
+    }
+  }
+
+  protected readonly addingPhotos = signal(false);
+
+  protected clock(seconds: number): string {
+    return formatClock(seconds);
+  }
+
+  /** "p. 12" for documents, "photo 3" for photos, "▶ 4:10" for videos. */
+  protected pageLabel(page: number): string {
+    const d = this.detail();
+    if (d?.book.kind === 'youTube') {
+      const start = d.pages.find(p => p.pageNumber === page)?.startSeconds;
+      if (start !== null && start !== undefined) return `▶ ${formatClock(start)}`;
+    }
+    return this.i18n.t(d?.book.kind === 'images' ? 'book.photoN' : 'common.pageN', { n: page });
+  }
+
+  protected rangeLabel(chapter: Chapter): string {
+    const d = this.detail();
+    if (d?.book.kind === 'youTube') {
+      const from = d.pages.find(p => p.pageNumber === chapter.startPage)?.startSeconds ?? 0;
+      const to = d.pages.find(p => p.pageNumber === chapter.endPage)?.endSeconds ?? from;
+      return `${formatClock(from)} – ${formatClock(to)}`;
+    }
+    return this.i18n.t(d?.book.kind === 'images' ? 'book.photoRange' : 'book.pages', { from: chapter.startPage, to: chapter.endPage });
+  }
+
+  protected async addPhotos(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    input.value = '';
+    const d = this.detail();
+    if (!d || files.length === 0) return;
+    this.addingPhotos.set(true);
+    try {
+      const form = new FormData();
+      const blobs = await Promise.all(files.map(f => shrinkPhoto(f)));
+      blobs.forEach((blob, i) => form.append('files', blob, files[i].name));
+      await this.api.post<Book>(`/api/books/${d.book.id}/images`, form);
+      await this.load(d.book.id);
+    } catch (e) {
+      this.toast.error(e);
+    } finally {
+      this.addingPhotos.set(false);
     }
   }
 

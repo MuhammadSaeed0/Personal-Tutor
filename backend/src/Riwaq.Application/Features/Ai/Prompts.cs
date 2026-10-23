@@ -1,5 +1,7 @@
 using System.Text;
 using Riwaq.Application.Features.Retrieval;
+using Riwaq.Application.Ingestion;
+using Riwaq.Domain;
 
 namespace Riwaq.Application.Features.Ai;
 
@@ -44,7 +46,8 @@ public static class Prompts
         _ => "Adapt explanations to the subject."
     };
 
-    public static string Tutor(string? subjectCode, string subjectName, string? bookTitle, string language, bool bilingual, string teachingStyle)
+    public static string Tutor(string? subjectCode, string subjectName, string? bookTitle, string language, bool bilingual, string teachingStyle,
+        SourceKind kind = SourceKind.Pdf)
     {
         var style = teachingStyle == "concise"
             ? "Teaching style: concise. Answer directly and clearly in as few words as needed, then offer to go deeper."
@@ -54,7 +57,12 @@ public static class Prompts
 
         return $"""
             You are Riwaq, a patient and expert personal tutor for a high-school student.
-            Subject: {subjectName}.{(bookTitle is null ? "" : $" The student is studying the textbook \"{bookTitle}\".")}
+            Subject: {subjectName}.{(bookTitle is null ? "" : kind switch
+            {
+                SourceKind.YouTube => $" The student is studying the video \"{bookTitle}\"; the passages are parts of its transcript.",
+                SourceKind.Images => $" The student is studying photographed pages \"{bookTitle}\".",
+                _ => $" The student is studying the textbook \"{bookTitle}\"."
+            })}
 
             Language: write your answer in {LanguageName(language)}, even if the textbook or question is in another language.{(bilingual ? " When you use a subject term whose textbook form is in another language, give the original term in parentheses the first time." : "")}
             Formatting: Markdown. Math in LaTeX: inline $...$, display $$...$$. Chemical formulas with {CeHint}. Keep paragraphs short.
@@ -66,6 +74,7 @@ public static class Prompts
             - The student's message may include <textbook_passages>. Each <passage> has an id. When a statement is supported by a passage, cite it right after the statement with the id in square brackets, e.g. [2] or [1][3]. Only cite ids that exist. Never invent page numbers or quotations, and do not write page numbers yourself — citations show them.
             - If you add knowledge that is not in the passages, put it in a separate paragraph that starts with "{BeyondTextbookLabel(language)}".
             - If the passages do not contain what is needed, say so clearly. Then either give a general explanation clearly labelled as not from the textbook, or ask the student which page or section they mean.
+            - Passages from a video have a time attribute. When you say where something is explained in the video, refer to that time (for example "at 12:30") rather than to pages.
             - <selected_text> is the exact text the student highlighted; focus on it when present.
 
             {SecurityRules}
@@ -104,7 +113,9 @@ public static class Prompts
             {
                 var p = passages[i];
                 var pages = p.PageStart == p.PageEnd ? $"{p.PageStart}" : $"{p.PageStart}-{p.PageEnd}";
-                sb.Append($"<passage id=\"{i + 1}\" pages=\"{pages}\"");
+                sb.Append(p.StartSeconds is { } from
+                    ? $"<passage id=\"{i + 1}\" time=\"{TranscriptSegmenter.FormatTime(from)}-{TranscriptSegmenter.FormatTime(p.EndSeconds ?? from)}\""
+                    : $"<passage id=\"{i + 1}\" pages=\"{pages}\"");
                 if (crossBook) sb.Append($" book=\"{Attr(p.BookTitle)}\"");
                 if (p.ChapterTitle is not null) sb.Append($" chapter=\"{Attr(p.ChapterTitle)}\"");
                 sb.AppendLine(">");

@@ -12,6 +12,9 @@ import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { BookNotesPanelComponent } from './book-notes-panel.component';
 import { PdfViewerComponent } from './pdf-viewer.component';
+import { ImageViewerComponent } from './image-viewer.component';
+import { VideoViewerComponent } from './video-viewer.component';
+import { SourceTimesService } from '../../core/source-times.service';
 import { ReaderContentsComponent } from './reader-contents.component';
 import { ReaderStore, RightTab, TextSelection } from './reader-store';
 import { orientSelection } from './selection-text';
@@ -24,7 +27,7 @@ const HEARTBEAT_MS = 30_000;
 
 @Component({
   selector: 'rw-reader',
-  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, PdfViewerComponent, ReaderContentsComponent, TutorPanelComponent, BookNotesPanelComponent, StudyToolsPanelComponent],
+  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, PdfViewerComponent, ImageViewerComponent, VideoViewerComponent, ReaderContentsComponent, TutorPanelComponent, BookNotesPanelComponent, StudyToolsPanelComponent],
   providers: [ReaderStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './reader.component.html',
@@ -42,8 +45,13 @@ export class ReaderComponent implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly sourceTimes = inject(SourceTimesService);
 
   protected readonly doc = signal<PDFDocumentProxy | null>(null);
+  /** Photo and video sources have no PDF; they are ready once the book details are loaded. */
+  protected readonly sourceReady = signal(false);
+  /** Photo width relative to the available space. */
+  protected readonly photoZoom = signal(1);
   protected readonly loadProgress = signal(0);
   protected readonly loadError = signal<string | null>(null);
   protected readonly scale = signal(1.2);
@@ -98,6 +106,7 @@ export class ReaderComponent implements OnDestroy {
         this.api.get<Highlight[]>(`/api/books/${id}/highlights`)
       ]);
       this.store.detail.set(detail);
+      this.sourceTimes.remember(detail);
       this.store.pageCount.set(detail.book.pageCount);
       this.store.highlights.set(highlights);
       this.bookmarks.set(state.bookmarks);
@@ -109,6 +118,13 @@ export class ReaderComponent implements OnDestroy {
       const requested = Number(this.route.snapshot.queryParamMap.get('page'));
       const startPage = requested > 0 ? requested : state.lastPage;
       this.store.currentPage.set(startPage);
+
+      if (detail.book.kind !== 'pdf') {
+        this.sourceReady.set(true);
+        setTimeout(() => this.store.navigate(startPage), 150);
+        this.startHeartbeat();
+        return;
+      }
 
       const data = await this.downloadPdf(id);
       const doc = await pdfjs.getDocument({
@@ -163,6 +179,10 @@ export class ReaderComponent implements OnDestroy {
   }
 
   protected zoom(delta: number): void {
+    if (this.store.kind() === 'images') {
+      this.photoZoom.update(z => Math.max(0.3, Math.min(1, Math.round((z + delta) * 10) / 10)));
+      return;
+    }
     this.fitMode.set('custom');
     this.scale.update(s => Math.max(0.4, Math.min(3.5, Math.round((s + delta) * 10) / 10)));
   }
@@ -190,7 +210,7 @@ export class ReaderComponent implements OnDestroy {
 
   protected async onSelection(selection: TextSelection | null): Promise<void> {
     this.store.selection.set(selection);
-    if (!selection) return;
+    if (!selection || this.store.kind() !== 'pdf') return;
     // pdf.js returns Arabic selections in visual order and presentation forms; restore logical text
     // by comparing with the page text the server extracted.
     const text = orientSelection(selection.text, await this.pageText(selection.page));

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Riwaq.Application.Abstractions;
@@ -13,6 +14,8 @@ public sealed class BooksService(
     IAppDbContext db,
     IFileStorage storage,
     IPdfExtractor extractor,
+    IImageProcessor images,
+    IVideoTranscriptSource videos,
     IProcessingSignal signal,
     IOptions<ProcessingOptions> options,
     TimeProvider clock)
@@ -80,7 +83,7 @@ public sealed class BooksService(
                 Tags = NormalizeTags(request.Tags),
                 Status = BookStatus.Uploaded,
                 PageCount = validation.PageCount,
-                StorageKey = $"books/{userId:N}/{bookId:N}.pdf",
+                StorageKey = SourceFiles.PdfKey(userId, bookId),
                 OriginalFileName = Path.GetFileName(fileName).Length > 200 ? Path.GetFileName(fileName)[..200] : Path.GetFileName(fileName),
                 FileSizeBytes = size,
                 Sha256 = sha256,
@@ -104,6 +107,178 @@ public sealed class BooksService(
         {
             try { File.Delete(tempPath); } catch { /* best effort */ }
         }
+    }
+
+    /// <summary>Creates a source from photos uploaded together; each photo becomes a page, in upload order.</summary>
+    public async Task<BookDto> UploadImagesAsync(Guid userId, IReadOnlyList<UploadedFile> files, UploadBookRequest request, CancellationToken ct)
+    {
+        if (!await db.Subjects.AnyAsync(s => s.Id == request.SubjectId, ct))
+            throw new ValidationException("invalid_subject", "Unknown subject.");
+        var normalized = await NormalizeImagesAsync(files, _options.MaxImagesPerSource, ct);
+
+        var sha256 = Convert.ToHexString(SHA256.HashData(normalized.SelectMany(i => SHA256.HashData(i.Jpeg)).ToArray()));
+        await ThrowIfDuplicateAsync(userId, sha256, ct);
+
+        var now = clock.GetUtcNow().UtcDateTime;
+        var bookId = Ids.New();
+        var first = Path.GetFileName(files[0].FileName);
+        var book = new Book
+        {
+            Id = bookId,
+            UserId = userId,
+            SubjectId = request.SubjectId,
+            Kind = SourceKind.Images,
+            Title = CleanTitle(request.Title) ?? CleanTitle(Path.GetFileNameWithoutExtension(first)) ?? "Photos",
+            AcademicYear = request.AcademicYear?.Trim(),
+            Semester = request.Semester?.Trim(),
+            Collection = request.Collection?.Trim(),
+            Tags = NormalizeTags(request.Tags),
+            Status = BookStatus.Uploaded,
+            PageCount = normalized.Count,
+            StorageKey = SourceFiles.ImagesKey(userId, bookId),
+            OriginalFileName = first.Length > 200 ? first[..200] : first,
+            FileSizeBytes = normalized.Sum(i => (long)i.Jpeg.Length),
+            Sha256 = sha256,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        await SaveImagesAsync(book, normalized, 1, ct);
+
+        var job = NewJob(book, now);
+        db.Books.Add(book);
+        db.ProcessingJobs.Add(job);
+        await db.SaveChangesAsync(ct);
+        signal.Notify();
+        return BookMappings.ToDto(book, job, null);
+    }
+
+    /// <summary>Appends photos to a photo source and reads only the new pages.</summary>
+    public async Task<BookDto> AddImagesAsync(Guid userId, Guid bookId, IReadOnlyList<UploadedFile> files, CancellationToken ct)
+    {
+        var book = await GetOwnedAsync(userId, bookId, ct);
+        if (book.Kind != SourceKind.Images) throw new ValidationException("not_a_photo_source", "Photos can only be added to a photo source.");
+        if (await db.ProcessingJobs.AnyAsync(j => j.BookId == bookId && (j.Status == JobStatus.Queued || j.Status == JobStatus.Running), ct))
+            throw new ConflictException("processing_in_progress", "This source is still being processed.");
+        var normalized = await NormalizeImagesAsync(files, _options.MaxImagesPerSource - book.PageCount, ct);
+
+        await SaveImagesAsync(book, normalized, book.PageCount + 1, ct);
+        var now = clock.GetUtcNow().UtcDateTime;
+        book.PageCount += normalized.Count;
+        book.FileSizeBytes += normalized.Sum(i => (long)i.Jpeg.Length);
+        book.Status = BookStatus.Uploaded;
+        book.UpdatedAt = now;
+        var job = NewJob(book, now);
+        db.ProcessingJobs.Add(job);
+        await db.SaveChangesAsync(ct);
+        signal.Notify();
+        return BookMappings.ToDto(book, job, null);
+    }
+
+    /// <summary>Creates a source from a YouTube video's captions. Fails fast when the video cannot be used.</summary>
+    public async Task<BookDto> AddVideoAsync(Guid userId, AddVideoRequest request, CancellationToken ct)
+    {
+        var videoId = YouTubeUrl.TryGetVideoId(request.Url)
+                      ?? throw new ValidationException("video_url_invalid", "This is not a YouTube video link.");
+        var subject = await db.Subjects.FirstOrDefaultAsync(s => s.Id == request.SubjectId, ct)
+                      ?? throw new ValidationException("invalid_subject", "Unknown subject.");
+        var sha256 = $"youtube:{videoId}";
+        await ThrowIfDuplicateAsync(userId, sha256, ct);
+
+        var details = await videos.GetDetailsAsync(videoId, ct);
+        if (details.DurationSeconds > _options.MaxVideoMinutes * 60)
+            throw new ValidationException("video_too_long", $"Videos longer than {_options.MaxVideoMinutes} minutes are not supported.");
+        var transcript = await videos.GetTranscriptAsync(videoId, subject.ContentLanguage, ct);
+        if (transcript is null || transcript.Captions.Count == 0)
+            throw new ValidationException("video_no_captions", "This video has no captions, so its content cannot be read.");
+
+        var now = clock.GetUtcNow().UtcDateTime;
+        var bookId = Ids.New();
+        var captions = JsonSerializer.SerializeToUtf8Bytes(transcript);
+        var book = new Book
+        {
+            Id = bookId,
+            UserId = userId,
+            SubjectId = request.SubjectId,
+            Kind = SourceKind.YouTube,
+            Title = CleanTitle(request.Title) ?? CleanTitle(details.Title) ?? "YouTube video",
+            AcademicYear = request.AcademicYear?.Trim(),
+            Semester = request.Semester?.Trim(),
+            Collection = request.Collection?.Trim(),
+            Tags = NormalizeTags(request.Tags),
+            Status = BookStatus.Uploaded,
+            SourceUrl = $"https://www.youtube.com/watch?v={videoId}",
+            ExternalId = videoId,
+            Author = details.Author.Length > 200 ? details.Author[..200] : details.Author,
+            DurationSeconds = details.DurationSeconds,
+            StorageKey = SourceFiles.CaptionsKey(userId, bookId),
+            OriginalFileName = details.Title.Length > 200 ? details.Title[..200] : details.Title,
+            FileSizeBytes = captions.Length,
+            Sha256 = sha256,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        using (var file = new MemoryStream(captions)) await storage.SaveAsync(book.StorageKey, file, ct);
+
+        var job = NewJob(book, now);
+        db.Books.Add(book);
+        db.ProcessingJobs.Add(job);
+        await db.SaveChangesAsync(ct);
+        signal.Notify();
+        return BookMappings.ToDto(book, job, null);
+    }
+
+    public async Task<Stream> OpenImageAsync(Guid userId, Guid bookId, int page, CancellationToken ct)
+    {
+        var book = await GetOwnedAsync(userId, bookId, ct, tracking: false);
+        if (book.Kind != SourceKind.Images || page < 1 || page > book.PageCount) throw new NotFoundException("Page");
+        return await storage.OpenReadAsync(SourceFiles.ImageKey(book, page), ct);
+    }
+
+    private async Task<List<NormalizedImage>> NormalizeImagesAsync(IReadOnlyList<UploadedFile> files, int maxCount, CancellationToken ct)
+    {
+        if (files.Count == 0) throw new ValidationException("file_empty", "No photos were uploaded.");
+        if (files.Count > maxCount)
+            throw new ValidationException("too_many_images", $"A photo source can hold up to {_options.MaxImagesPerSource} photos.");
+
+        var result = new List<NormalizedImage>(files.Count);
+        foreach (var file in files)
+        {
+            if (file.Length == 0) throw new ValidationException("file_empty", $"\"{file.FileName}\" is empty.");
+            if (file.Length > _options.MaxImageMb * 1024L * 1024L)
+                throw new ValidationException("image_too_large", $"\"{file.FileName}\" exceeds the {_options.MaxImageMb} MB limit.");
+
+            await using var stream = file.Open();
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer, ct);
+            var image = images.Normalize(buffer.ToArray());
+            if (image is null)
+            {
+                var error = new ValidationException("image_unreadable", $"\"{file.FileName}\" is not a supported image.");
+                error.Extensions["fileName"] = file.FileName;
+                throw error;
+            }
+            result.Add(image);
+        }
+        return result;
+    }
+
+    private async Task SaveImagesAsync(Book book, List<NormalizedImage> normalized, int firstPage, CancellationToken ct)
+    {
+        for (var i = 0; i < normalized.Count; i++)
+        {
+            using var stream = new MemoryStream(normalized[i].Jpeg);
+            await storage.SaveAsync(SourceFiles.ImageKey(book, firstPage + i), stream, ct);
+        }
+    }
+
+    private async Task ThrowIfDuplicateAsync(Guid userId, string sha256, CancellationToken ct)
+    {
+        var duplicate = await db.Books.Where(b => b.UserId == userId && b.Sha256 == sha256).Select(b => new { b.Id, b.Title }).FirstOrDefaultAsync(ct);
+        if (duplicate is null) return;
+        var conflict = new ConflictException("duplicate_book", "This source has already been added.");
+        conflict.Extensions["bookId"] = duplicate.Id;
+        conflict.Extensions["title"] = duplicate.Title;
+        throw conflict;
     }
 
     public async Task<IReadOnlyList<BookDto>> ListAsync(Guid userId, int? subjectId, CancellationToken ct)
@@ -131,7 +306,8 @@ public sealed class BooksService(
         var warnings = await db.DocumentWarnings.AsNoTracking().Where(w => w.BookId == bookId)
             .OrderBy(w => w.PageNumber).Select(w => new WarningDto(w.Id, w.PageNumber, w.Code, w.Message, w.Severity)).ToListAsync(ct);
         var pages = await db.DocumentPages.AsNoTracking().Where(p => p.BookId == bookId).OrderBy(p => p.PageNumber)
-            .Select(p => new PageInfoDto(p.PageNumber, p.CharCount, p.ExtractionMethod, p.IsScanned, p.ImageCount, p.HasMathNotation, p.HasTableLikeLayout))
+            .Select(p => new PageInfoDto(p.PageNumber, p.CharCount, p.ExtractionMethod, p.IsScanned, p.ImageCount, p.HasMathNotation, p.HasTableLikeLayout,
+                p.StartSeconds, p.EndSeconds))
             .ToListAsync(ct);
         return new BookDetailDto(BookMappings.ToDto(book, job?.Status == JobStatus.Succeeded ? null : job, progress), chapters, warnings, pages);
     }
@@ -157,7 +333,16 @@ public sealed class BooksService(
         await EnsureOwnedAsync(userId, bookId, ct);
         var page = await db.DocumentPages.AsNoTracking().FirstOrDefaultAsync(p => p.BookId == bookId && p.PageNumber == pageNumber, ct)
                    ?? throw new NotFoundException("Page");
-        return new PageTextDto(page.PageNumber, page.Text, page.ExtractionMethod, page.IsScanned);
+        return new PageTextDto(page.PageNumber, page.Text, page.ExtractionMethod, page.IsScanned, page.StartSeconds, page.EndSeconds);
+    }
+
+    /// <summary>Text of every page in order (used for video transcripts); capped to keep responses bounded.</summary>
+    public async Task<IReadOnlyList<PageTextDto>> GetAllPageTextsAsync(Guid userId, Guid bookId, CancellationToken ct)
+    {
+        await EnsureOwnedAsync(userId, bookId, ct);
+        return await db.DocumentPages.AsNoTracking().Where(p => p.BookId == bookId).OrderBy(p => p.PageNumber).Take(1000)
+            .Select(p => new PageTextDto(p.PageNumber, p.Text, p.ExtractionMethod, p.IsScanned, p.StartSeconds, p.EndSeconds))
+            .ToListAsync(ct);
     }
 
     public async Task<BookDto> UpdateAsync(Guid userId, Guid bookId, UpdateBookRequest request, CancellationToken ct)
@@ -211,12 +396,13 @@ public sealed class BooksService(
         await db.StudyTasks.Where(t => t.UserId == userId && t.BookId == bookId && t.Status == StudyTaskStatus.Pending).ExecuteDeleteAsync(ct);
         db.Books.Remove(book);
         await db.SaveChangesAsync(ct);
-        await storage.DeleteAsync(book.StorageKey, ct);
+        foreach (var key in SourceFiles.AllKeys(book)) await storage.DeleteAsync(key, ct);
     }
 
     public async Task<(Stream Stream, string FileName)> OpenFileAsync(Guid userId, Guid bookId, CancellationToken ct)
     {
         var book = await GetOwnedAsync(userId, bookId, ct, tracking: false);
+        if (book.Kind != SourceKind.Pdf) throw new NotFoundException("File");
         return (await storage.OpenReadAsync(book.StorageKey, ct), book.OriginalFileName);
     }
 

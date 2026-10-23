@@ -7,14 +7,28 @@
         <div class="eyebrow" [style.color]="subject?.color">{{ i18n.subjectName(subject) }}</div>
         <h1 dir="auto">{{ d.book.title }}</h1>
         <p class="small">
-          {{ i18n.number(d.book.pageCount) }} {{ 'common.pagesShort' | t }} · {{ d.book.originalFileName }}
+          @switch (d.book.kind) {
+            @case ('youTube') {
+              <rw-icon name="play" [size]="14" /> {{ clock(d.book.durationSeconds ?? 0) }}
+              @if (d.book.author) { · <span dir="auto">{{ d.book.author }}</span> }
+              @if (d.book.sourceUrl) { · <a [href]="d.book.sourceUrl" target="_blank" rel="noopener noreferrer">{{ 'book.openOnYouTube' | t }}</a> }
+            }
+            @case ('images') { <rw-icon name="image" [size]="14" /> {{ 'book.photoCount' | t: { n: d.book.pageCount } }} }
+            @default { {{ i18n.number(d.book.pageCount) }} {{ 'common.pagesShort' | t }} · {{ d.book.originalFileName }} }
+          }
           @if (d.book.academicYear) { · {{ d.book.academicYear }} }
         </p>
       </div>
       <div class="row wrap">
         @if (ready()) {
-          <a class="btn primary" [routerLink]="['/read', d.book.id]"><rw-icon name="book-open" [size]="16" /> {{ 'book.read' | t }}</a>
+          <a class="btn primary" [routerLink]="['/read', d.book.id]"><rw-icon [name]="d.book.kind === 'youTube' ? 'play' : 'book-open'" [size]="16" /> {{ (d.book.kind === 'youTube' ? 'book.watch' : 'book.read') | t }}</a>
           <a class="btn" routerLink="/quizzes/new" [queryParams]="{ bookId: d.book.id }"><rw-icon name="list-checks" [size]="16" /> {{ 'book.quiz' | t }}</a>
+        }
+        @if (d.book.kind === 'images') {
+          <label class="btn" [class.disabled]="processing() || addingPhotos()">
+            <input type="file" accept="image/*,.heic,.heif" multiple class="visually-hidden" (change)="addPhotos($event)" [disabled]="processing() || addingPhotos()" />
+            @if (addingPhotos()) { <span class="spinner"></span> } @else { <rw-icon name="plus" [size]="16" /> } {{ 'book.addPhotos' | t }}
+          </label>
         }
         <button class="btn ghost" type="button" (click)="editing.set(!editing())"><rw-icon name="pencil" [size]="16" /> {{ 'common.edit' | t }}</button>
       </div>
@@ -23,7 +37,7 @@
     @if (processing() || status()?.bookStatus === 'failed') {
       <section class="card status-card">
         <div class="card-title"><h3>{{ 'book.processing' | t }}</h3></div>
-        <rw-processing-timeline [status]="status()" />
+        <rw-processing-timeline [status]="status()" [kind]="d.book.kind" />
         @if (status()?.bookStatus === 'failed') {
           <div class="alert danger" style="margin-top: 12px"><rw-icon name="alert-circle" />
             <span class="grow">{{ ('processingErrors.' + (status()?.errorCode ?? 'processing_error')) | t }}</span>
@@ -61,6 +75,7 @@
           <h3>{{ 'book.structure' | t }}</h3>
           @if (d.chapters.length > 0 && d.chapters[0].source === 'headingHeuristic') { <span class="badge info">{{ 'book.estimated' | t }}</span> }
           @if (d.chapters.length > 0 && d.chapters[0].source === 'pdfOutline') { <span class="badge brand">{{ 'book.fromOutline' | t }}</span> }
+          @if (d.chapters.length > 0 && d.chapters[0].source === 'topics') { <span class="badge info">{{ 'book.fromTopics' | t }}</span> }
         </div>
         @if (d.chapters.length === 0) {
           <p class="muted small">{{ (ready() ? 'book.noStructure' : 'book.structurePending') | t }}</p>
@@ -74,7 +89,7 @@
                 } @else {
                   <div class="grow">
                     <span class="c-title" dir="auto">{{ c.title }}</span>
-                    <span class="subtle xsmall num">{{ 'book.pages' | t: { from: c.startPage, to: c.endPage } }}</span>
+                    <span class="subtle xsmall num">{{ rangeLabel(c) }}</span>
                   </div>
                   <select class="select status" [ngModel]="c.status" (ngModelChange)="setStatus(c, $event)" [attr.aria-label]="'book.chapterStatus' | t">
                     <option value="notStarted">{{ 'chapterStatus.notStarted' | t }}</option>
@@ -97,9 +112,21 @@
         <section class="card">
           <div class="card-title"><h3>{{ 'book.extraction' | t }}</h3></div>
           <div class="facts">
-            <div><span class="subtle small">{{ 'book.textPages' | t }}</span><strong class="num">{{ i18n.number(d.pages.length - scannedPages()) }}</strong></div>
-            <div><span class="subtle small">{{ 'book.scannedPages' | t }}</span><strong class="num">{{ i18n.number(scannedPages()) }}</strong></div>
-            <div><span class="subtle small">{{ 'book.ocrPages' | t }}</span><strong class="num">{{ i18n.number(ocrPages()) }}</strong></div>
+            @switch (d.book.kind) {
+              @case ('youTube') {
+                <div><span class="subtle small">{{ 'book.segments' | t }}</span><strong class="num">{{ i18n.number(d.pages.length) }}</strong></div>
+                <div><span class="subtle small">{{ 'book.duration' | t }}</span><strong class="num">{{ clock(d.book.durationSeconds ?? 0) }}</strong></div>
+              }
+              @case ('images') {
+                <div><span class="subtle small">{{ 'book.photos' | t }}</span><strong class="num">{{ i18n.number(d.book.pageCount) }}</strong></div>
+                <div><span class="subtle small">{{ 'book.photosRead' | t }}</span><strong class="num">{{ i18n.number(ocrPages()) }}</strong></div>
+              }
+              @default {
+                <div><span class="subtle small">{{ 'book.textPages' | t }}</span><strong class="num">{{ i18n.number(d.pages.length - scannedPages()) }}</strong></div>
+                <div><span class="subtle small">{{ 'book.scannedPages' | t }}</span><strong class="num">{{ i18n.number(scannedPages()) }}</strong></div>
+                <div><span class="subtle small">{{ 'book.ocrPages' | t }}</span><strong class="num">{{ i18n.number(ocrPages()) }}</strong></div>
+              }
+            }
             <div><span class="subtle small">{{ 'book.language' | t }}</span><strong>{{ d.book.detectedLanguage ? ('languages.' + d.book.detectedLanguage | t) : '—' }}</strong></div>
           </div>
         </section>
@@ -110,7 +137,7 @@
             <div class="warning" [class.info]="w.severity === 'info'" [class.error]="w.severity === 'error'">
               <rw-icon [name]="w.severity === 'info' ? 'info' : 'alert-triangle'" [size]="16" />
               <span class="small">
-                @if (w.pageNumber) { <strong>{{ 'common.pageN' | t: { n: w.pageNumber } }}:</strong> }
+                @if (w.pageNumber) { <strong>{{ pageLabel(w.pageNumber) }}:</strong> }
                 {{ warningText(w.code, w.message) }}
               </span>
             </div>

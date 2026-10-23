@@ -7,7 +7,8 @@ import { Router } from '@angular/router';
 import { ApiError, ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { I18nService, TranslatePipe } from '../../core/i18n.service';
-import { ChatMessage, Conversation, ExplanationLang } from '../../core/models';
+import { ChatMessage, Conversation, ExplanationLang, SourceReference } from '../../core/models';
+import { SourceTimesService, formatClock } from '../../core/source-times.service';
 import { StoreService } from '../../core/store.service';
 import { ToastService, errorMessage } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
@@ -40,6 +41,7 @@ export class TutorPanelComponent implements OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
   private readonly router = inject(Router);
+  private readonly sourceTimes = inject(SourceTimesService);
   protected readonly reader = inject(ReaderStore, { optional: true });
 
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
@@ -299,5 +301,11 @@ export class TutorPanelComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.abort?.abort();
+  }
+
+  /** "p. 12" for documents, "▶ 4:10" for video sources. */
+  protected sourceLabel(c: SourceReference): string {
+    const time = this.sourceTimes.time(c.bookId, c.pageStart);
+    return time !== null ? `▶ ${formatClock(time)}` : this.i18n.t('common.pageN', { n: c.pageStart });
   }
 }

@@ -35,7 +35,7 @@
             <header class="row between"><strong class="small" dir="auto">{{ s.title }}</strong>
               <a class="btn ghost sm" [routerLink]="['/summaries', s.id]">{{ 'common.open' | t }}</a></header>
             @for (w of s.warnings; track w) { <div class="alert warning xsmall">{{ warningText(w) }}</div> }
-            <rw-markdown [content]="s.content" [citations]="s.citations" (citationClick)="store.navigate($event.page)" />
+            <rw-markdown [content]="s.content" [citations]="s.citations" [bookId]="store.book()?.id ?? null" (citationClick)="store.navigate($event.page)" />
             <p class="xsmall subtle">{{ 'tools.summaryDisclaimer' | t }}</p>
           </article>
         }

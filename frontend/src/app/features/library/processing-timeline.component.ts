@@ -1,11 +1,24 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TranslatePipe } from '../../core/i18n.service';
-import { ProcessingStage, ProcessingStatus } from '../../core/models';
+import { ProcessingStage, ProcessingStatus, SourceKind } from '../../core/models';
 import { IconComponent } from '../../shared/icon.component';
 
-const STAGES: ProcessingStage[] = [
-  'validating', 'extractingText', 'recognizingScannedPages', 'detectingStructure', 'processingTablesAndFigures', 'preparingSearch', 'completed'
-];
+const STAGES: Record<SourceKind, ProcessingStage[]> = {
+  pdf: ['validating', 'extractingText', 'recognizingScannedPages', 'detectingStructure', 'processingTablesAndFigures', 'preparingSearch', 'completed'],
+  images: ['validating', 'recognizingScannedPages', 'detectingStructure', 'preparingSearch', 'completed'],
+  youTube: ['validating', 'extractingText', 'cleaningTranscript', 'detectingStructure', 'preparingSearch', 'completed']
+};
+
+/** Stages a source kind passes through without showing them separately. */
+const FOLDED: Partial<Record<ProcessingStage, ProcessingStage>> = {
+  queued: 'validating', generatingResources: 'preparingSearch', extractingText: 'recognizingScannedPages', processingTablesAndFigures: 'detectingStructure'
+};
+
+/** Stage labels that differ for photos and videos. */
+const LABELS: Partial<Record<SourceKind, Partial<Record<ProcessingStage, string>>>> = {
+  images: { recognizingScannedPages: 'readingPhotos' },
+  youTube: { extractingText: 'readingCaptions', detectingStructure: 'findingTopics' }
+};
 
 /** Vertical timeline of the ingestion pipeline stages. */
 @Component({
@@ -15,14 +28,14 @@ const STAGES: ProcessingStage[] = [
   template: `
     <ol class="timeline" [attr.aria-label]="'processing.timeline' | t">
       <li class="done"><span class="node"><rw-icon name="check" [size]="12" /></span>{{ 'processing.stages.uploading' | t }}</li>
-      @for (stage of stages; track stage; let i = $index) {
+      @for (stage of stages(); track stage; let i = $index) {
         <li [class.done]="i < currentIndex() || isComplete()" [class.active]="i === currentIndex() && !isComplete() && !failed()" [class.failed]="failed() && i === currentIndex()">
           <span class="node">
             @if (i < currentIndex() || isComplete()) { <rw-icon name="check" [size]="12" /> }
             @else if (failed() && i === currentIndex()) { <rw-icon name="x" [size]="12" /> }
             @else if (i === currentIndex()) { <span class="spinner" style="width:10px;height:10px;border-width:2px"></span> }
           </span>
-          {{ 'processing.stages.' + stage | t }}
+          {{ 'processing.stages.' + label(stage) | t }}
           @if (i === currentIndex() && !isComplete() && !failed() && status()?.progress) { <span class="subtle xsmall num">· {{ status()!.progress }}%</span> }
         </li>
       }
@@ -44,12 +57,18 @@ const STAGES: ProcessingStage[] = [
 })
 export class ProcessingTimelineComponent {
   readonly status = input<ProcessingStatus | null>(null);
-  protected readonly stages = STAGES;
+  readonly kind = input<SourceKind>('pdf');
+  protected readonly stages = computed(() => STAGES[this.kind()]);
   protected readonly isComplete = computed(() => ['ready', 'readyWithWarnings'].includes(this.status()?.bookStatus ?? ''));
   protected readonly failed = computed(() => this.status()?.bookStatus === 'failed');
   protected readonly currentIndex = computed(() => {
+    const stages = this.stages();
     const stage = this.status()?.stage ?? 'queued';
-    const i = STAGES.indexOf(stage === 'queued' ? 'validating' : stage === 'generatingResources' ? 'preparingSearch' : stage);
-    return Math.max(0, i);
+    const shown = stages.includes(stage) ? stage : FOLDED[stage] ?? 'validating';
+    return Math.max(0, stages.indexOf(stages.includes(shown) ? shown : 'validating'));
   });
+
+  protected label(stage: ProcessingStage): string {
+    return LABELS[this.kind()]?.[stage] ?? stage;
+  }
 }

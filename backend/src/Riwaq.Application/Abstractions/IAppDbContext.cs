@@ -18,6 +18,7 @@ public interface IAppDbContext
     DbSet<Book> Books { get; }
     DbSet<DocumentProcessingJob> ProcessingJobs { get; }
     DbSet<DocumentPage> DocumentPages { get; }
+    DbSet<RecognizedPage> RecognizedPages { get; }
     DbSet<Chapter> Chapters { get; }
     DbSet<DocumentChunk> DocumentChunks { get; }
     DbSet<ChunkEmbedding> ChunkEmbeddings { get; }

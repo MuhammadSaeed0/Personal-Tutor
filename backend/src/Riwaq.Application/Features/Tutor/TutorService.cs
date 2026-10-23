@@ -207,7 +207,8 @@ public sealed class TutorService(
         var request = new ChatRequest
         {
             Feature = "tutor",
-            SystemPrompt = Prompts.Tutor(subject?.Code, subject?.NameEn ?? "General", book?.Title, language, prefs.BilingualTerms, prefs.TeachingStyle),
+            SystemPrompt = Prompts.Tutor(subject?.Code, subject?.NameEn ?? "General", book?.Title, language, prefs.BilingualTerms, prefs.TeachingStyle,
+                book?.Kind ?? SourceKind.Pdf),
             Messages = [.. history, new ChatTurn(ChatRole.User, Prompts.TutorUserTurn(userMessage.Content, userMessage.Action, language,
                 userMessage.SelectedText, userMessage.ContextPage, chapterTitle, passages, crossBook))],
             MaxTokens = 6000

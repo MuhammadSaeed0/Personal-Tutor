@@ -21,6 +21,12 @@ Legend: ✅ done and tested · 🟡 done, verified only partly (see note) · ⬜
 - ✅ Reader: lazy pdf.js pages, navigation, zoom, fit, thumbnails, TOC, bookmarks, search, highlights + notes,
       selection toolbar, Arabic selection repair, resume, reading-time tracking, night/focus/full-screen, shortcuts, mobile sheets
 
+## Phase 2b — More source kinds
+- ✅ YouTube lessons: link parsing, captions via YoutubeExplode, ~2-minute timed segments, AI clean-up and topic sections
+      (resumable cache), player + transcript reader with seek/follow, time citations; verified live on a 59-minute Arabic lesson
+- ✅ Photos: multi-photo sources (normalised with SkiaSharp, client-side downscaling), Claude-vision reading with figure
+      descriptions, chapters from recognised headings, photo viewer with selectable text, add photos later; verified live
+
 ## Phase 3 — AI tutoring
 - ✅ Provider abstraction: Anthropic (official SDK, streaming, structured output, fallback), OpenAI-compatible, disabled
 - ✅ Claude-account provider (`ClaudeCode`): headless Claude Code CLI with all tools/settings disabled; streaming, JSON schema, history
@@ -46,7 +52,7 @@ Legend: ✅ done and tested · 🟡 done, verified only partly (see note) · ⬜
 ## Phase 6 — Production readiness
 - ✅ Runs directly on the host with a local SQL Server (Docker removed by request); single-process publish documented
 - ✅ README, architecture, API, deployment, features/limitations/roadmap docs
-- ✅ Tests: backend 71 passed + 2 opt-in skipped (API key); frontend 30 passed; i18n coverage; browser smoke journey (Edge)
+- ✅ Tests: backend 111 passed + 7 opt-in skipped (real AI / real YouTube); frontend 33 passed; i18n coverage; browser smoke journey (Edge)
 - ✅ Production build (initial 502 kB / 131 kB gzipped); no vulnerable NuGet packages
 - ⬜ Email provider for password-reset messages (logged in Development only)
 - ⬜ Accessibility audit with assistive technology (keyboard and labels done; screen-reader pass pending)

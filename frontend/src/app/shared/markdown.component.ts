@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import DOMPurify from 'dompurify';
 import katex from 'katex';
@@ -6,6 +6,7 @@ import 'katex/contrib/mhchem';
 import { Marked } from 'marked';
 import { I18nService } from '../core/i18n.service';
 import { SourceReference } from '../core/models';
+import { SourceTimesService, formatClock } from '../core/source-times.service';
 
 export interface CitationClick {
   citation: SourceReference | null;
@@ -29,10 +30,20 @@ export class MarkdownComponent {
   readonly citations = input<SourceReference[]>([]);
   /** While streaming, hide the follow-up block the model appends at the end. */
   readonly streaming = input(false);
+  /** Source of [p:N] references; video sources show them as times. */
+  readonly bookId = input<string | null>(null);
   readonly citationClick = output<CitationClick>();
 
   private readonly i18n = inject(I18nService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly sourceTimes = inject(SourceTimesService);
+
+  constructor() {
+    effect(() => {
+      this.sourceTimes.ensure(this.bookId());
+      for (const c of this.citations()) this.sourceTimes.ensure(c.bookId);
+    });
+  }
 
   protected readonly html = computed<SafeHtml>(() => {
     let text = this.content() ?? '';
@@ -43,7 +54,10 @@ export class MarkdownComponent {
       if (partial >= 0 && '<followups>'.startsWith(text.slice(partial))) text = text.slice(0, partial);
     }
     // renderMarkdown sanitises with DOMPurify; only locally generated KaTeX markup is added afterwards.
-    return this.sanitizer.bypassSecurityTrustHtml(renderMarkdown(text, this.citations(), this.i18n.lang()));
+    this.sourceTimes.times(); // re-render when video times arrive
+    const bookId = this.bookId();
+    const timeOf = (book: string | null, page: number) => this.sourceTimes.time(book ?? bookId, page);
+    return this.sanitizer.bypassSecurityTrustHtml(renderMarkdown(text, this.citations(), this.i18n.lang(), timeOf));
   });
 
   protected onClick(event: MouseEvent): void {
@@ -58,7 +72,8 @@ export class MarkdownComponent {
 
 const marked = new Marked({ gfm: true, breaks: false });
 
-export function renderMarkdown(source: string, citations: SourceReference[], lang: string): string {
+export function renderMarkdown(source: string, citations: SourceReference[], lang: string,
+  timeOf: (bookId: string | null, page: number) => number | null = () => null): string {
   // 1. Protect math so Markdown doesn't mangle it.
   const math: string[] = [];
   const stash = (tex: string, display: boolean) => {
@@ -74,6 +89,10 @@ export function renderMarkdown(source: string, citations: SourceReference[], lan
 
   // 2. Citation markers → placeholders.
   const pageWord = lang === 'ar' ? 'ص' : 'p.';
+  const where = (bookId: string | null, a: number, b?: number) => {
+    const time = timeOf(bookId, a);
+    return time !== null ? `▶ ${formatClock(time)}` : `${pageWord} ${a}${b && b !== a ? '–' + b : ''}`;
+  };
   text = text.replace(/\[p:(\d+)(?:-(\d+))?\]/g, (_, a, b) => `@@PAGE${a}${b ? '_' + b : ''}@@`);
   const known = new Set(citations.map(c => c.marker));
   text = text.replace(/\[(\d{1,2})\](?!\()/g, (m, n) => (known.has(Number(n)) ? `@@CITE${n}@@` : m));
@@ -82,11 +101,13 @@ export function renderMarkdown(source: string, citations: SourceReference[], lan
 
   html = html.replace(/@@CITE(\d+)@@/g, (_, n) => {
     const c = citations.find(x => x.marker === Number(n));
-    const title = c ? `${escapeHtml(c.bookTitle)} — ${pageWord} ${c.pageStart}${c.pageEnd !== c.pageStart ? '–' + c.pageEnd : ''}` : '';
+    const title = c ? `${escapeHtml(c.bookTitle)} — ${where(c.bookId, c.pageStart, c.pageEnd)}` : '';
     return `<button type="button" class="cite" data-marker="${n}" title="${title}" aria-label="${title}">${n}</button>`;
   });
-  html = html.replace(/@@PAGE(\d+)(?:_(\d+))?@@/g, (_, a, b) =>
-    `<button type="button" class="cite page" data-page="${a}" aria-label="${pageWord} ${a}${b ? '–' + b : ''}">${pageWord} ${a}${b ? '–' + b : ''}</button>`);
+  html = html.replace(/@@PAGE(\d+)(?:_(\d+))?@@/g, (_, a, b) => {
+    const label = where(null, Number(a), b ? Number(b) : undefined);
+    return `<button type="button" class="cite page" data-page="${a}" aria-label="${label}">${label}</button>`;
+  });
 
   // 3. Visually separate content the tutor marked as not from the textbook.
   for (const marker of BEYOND_MARKERS) {

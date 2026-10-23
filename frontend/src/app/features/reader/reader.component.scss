@@ -90,3 +90,4 @@
   .selection-bar { position: fixed; inset-block-end: 70px; top: auto !important; left: 50% !important; }
 }
 @keyframes sheet-in { from { transform: translateY(40%); opacity: 0.6; } }
+.time-box { direction: ltr; padding: 0 8px; color: var(--ink-2); }

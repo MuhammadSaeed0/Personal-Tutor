@@ -13,3 +13,16 @@
 .state { padding: 12px 0; display: flex; flex-direction: column; gap: 10px; }
 .bar.big { height: 8px; }
 .processing { display: flex; flex-direction: column; gap: 16px; }
+
+.kinds { display: flex; width: 100%; margin-bottom: 14px; }
+.kinds button { flex: 1; justify-content: center; display: inline-flex; align-items: center; gap: 6px; }
+.drop.compact { padding: 14px 16px; }
+.photo-count { margin: 12px 0 8px; }
+.photos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; max-height: 260px; overflow: auto; }
+.photos li { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.photos img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
+.photos .badge { position: absolute; top: 4px; inset-inline-start: 4px; }
+.photo-actions { display: flex; justify-content: space-between; }
+.photo-actions .btn { min-height: 26px; width: 26px; padding: 0; }
+.video-preview { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+.video-preview img { width: 160px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; flex: none; }

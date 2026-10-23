@@ -116,6 +116,20 @@ public class StructureDetectorTests
     }
 
     [Fact]
+    public void A_chapter_title_and_lesson_headings_on_photographed_pages_form_a_structure()
+    {
+        var pages = new Dictionary<int, string>
+        {
+            [1] = "# الفصل الثالث: الصخور الرسوبية\n\nتتكون الصخور الرسوبية من الترسيب.",
+            [2] = "## الحفريات\n\nالحفرية بقايا كائن حي قديم."
+        };
+
+        var sections = StructureDetector.FromRecognisedText(pages, 2);
+
+        Assert.Equal([("الفصل الثالث: الصخور الرسوبية", 1, 1, 2), ("الحفريات", 2, 2, 2)], sections.Select(s => (s.Title, s.Level, s.StartPage, s.EndPage)));
+    }
+
+    [Fact]
     public void Markdown_headings_are_used_when_no_chapter_keywords_exist()
     {
         var pages = new Dictionary<int, string>

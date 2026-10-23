@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.Configure<ProcessingOptions>(configuration.GetSection(ProcessingOptions.Section));
 
         services.AddScoped<DocumentProcessor>();
+        services.AddScoped<TranscriptStructurer>();
         services.AddScoped<BooksService>();
         services.AddScoped<ProfileService>();
         services.AddScoped<AiUsageGuard>();

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,6 +16,9 @@ public sealed class ProcessingOptions
     public const string Section = "Processing";
     public int MaxFileSizeMb { get; set; } = 150;
     public int MaxPages { get; set; } = 2000;
+    public int MaxImagesPerSource { get; set; } = 100;
+    public int MaxImageMb { get; set; } = 25;
+    public int MaxVideoMinutes { get; set; } = 240;
 
     /// <summary>A page with fewer extracted letters than this is treated as scanned/image-only.</summary>
     public int ScannedLetterThreshold { get; set; } = 25;
@@ -40,6 +44,8 @@ public sealed class DocumentProcessor(
     IFileStorage storage,
     IPdfExtractor extractor,
     IOcrEngine ocr,
+    IVideoTranscriptSource videos,
+    TranscriptStructurer structurer,
     IEmbeddingModel embedder,
     IRealtimeNotifier notifier,
     IOptions<ProcessingOptions> options,
@@ -57,75 +63,14 @@ public sealed class DocumentProcessor(
         book.Status = BookStatus.Processing;
         await Stage(job, book, ProcessingStage.Validating, 5, ct);
 
-        var path = await storage.GetLocalPathAsync(book.StorageKey, ct);
-        var validation = extractor.Validate(path);
-        if (!validation.IsValid) throw new PermanentProcessingException(validation.ErrorCode ?? "pdf_unreadable");
-        if (validation.PageCount > _options.MaxPages) throw new PermanentProcessingException("pdf_too_many_pages");
-
-        await Stage(job, book, ProcessingStage.ExtractingText, 10, ct);
-        var document = await Task.Run(() => extractor.Extract(path, ct), ct);
-        book.PageCount = document.PageCount;
-
-        // Pages: embedded text first, OCR for scanned pages.
-        var scannedPages = document.Pages.Where(p => p.LetterCount < _options.ScannedLetterThreshold).ToList();
-        var ocrText = new Dictionary<int, string>();
-        if (scannedPages.Count > 0)
+        // Every kind of source becomes numbered pages of text; everything after this is shared.
+        var content = book.Kind switch
         {
-            await Stage(job, book, ProcessingStage.RecognizingScannedPages, 30, ct);
-            if (ocr.IsAvailable)
-            {
-                var languages = OcrLanguages(book.Subject?.ContentLanguage);
-
-                // The file never changes, so pages recognised by an earlier run are reused instead of being read again
-                // (each AI read costs a model request).
-                var previous = await db.DocumentPages
-                    .Where(p => p.BookId == book.Id && p.ExtractionMethod == ExtractionMethod.Ocr)
-                    .Select(p => new { p.PageNumber, p.Text })
-                    .ToDictionaryAsync(p => p.PageNumber, p => p.Text, ct);
-
-                var done = 0;
-                var limitReached = false;
-                foreach (var batch in scannedPages.Chunk(Math.Max(1, _options.OcrParallelism)))
-                {
-                    var results = await Task.WhenAll(batch.Select(async page =>
-                    {
-                        if (previous.TryGetValue(page.Number, out var known)) return (page.Number, Result: new OcrResult(true, known, null, null), Reused: true);
-                        if (limitReached) return (page.Number, Result: new OcrResult(false, string.Empty, null, "ocr_rate_limited"), Reused: false);
-                        return (page.Number, Result: await ocr.RecognizePageAsync(path, page.Number, languages, ct), Reused: false);
-                    }));
-
-                    foreach (var (number, result, reused) in results)
-                    {
-                        if (result.Success)
-                        {
-                            ocrText[number] = reused ? result.Text : TextCleaner.CleanExtracted(result.Text);
-                            if (result.MeanConfidence < _options.OcrLowConfidence)
-                                warnings.Add(Warning(book.Id, number, "ocr_low_confidence", WarningSeverity.Warning,
-                                    "Text recognised on this scanned page may contain recognition errors."));
-                        }
-                        else if (result.ErrorCode == "ocr_rate_limited")
-                        {
-                            limitReached = true;
-                            warnings.Add(Warning(book.Id, number, "ocr_rate_limited", WarningSeverity.Warning,
-                                "The AI usage limit was reached before this page could be read. Reprocess the book later to read the remaining pages."));
-                        }
-                        else if (result.ErrorCode != "ocr_no_text")
-                        {
-                            warnings.Add(Warning(book.Id, number, "ocr_failed", WarningSeverity.Warning, "Text on this scanned page could not be recognised."));
-                        }
-                    }
-
-                    done += batch.Length;
-                    await Stage(job, book, ProcessingStage.RecognizingScannedPages, 30 + 20 * done / scannedPages.Count, ct);
-                }
-            }
-            else
-            {
-                foreach (var page in scannedPages)
-                    warnings.Add(Warning(book.Id, page.Number, "scanned_page_no_ocr", WarningSeverity.Warning,
-                        "This page has no embedded text and OCR is not available on the server."));
-            }
-        }
+            SourceKind.Images => await LoadImagesAsync(job, book, warnings, ct),
+            SourceKind.YouTube => await LoadVideoAsync(job, book, warnings, ct),
+            _ => await LoadPdfAsync(job, book, warnings, ct)
+        };
+        book.PageCount = content.Pages.Count;
 
         // Reprocessing: keep existing vectors by content hash so unchanged text isn't re-embedded.
         var reusableVectors = await db.ChunkEmbeddings
@@ -142,22 +87,19 @@ public sealed class DocumentProcessor(
 
         await ClearDerivedContentAsync(book.Id, ct);
 
-        var pageEntities = document.Pages.Select(p =>
+        var pageEntities = content.Pages.Select(p => new DocumentPage
         {
-            var hasOcr = ocrText.TryGetValue(p.Number, out var recognised);
-            var text = hasOcr ? recognised! : p.Text;
-            return new DocumentPage
-            {
-                BookId = book.Id,
-                PageNumber = p.Number,
-                Text = text,
-                CharCount = text.Length,
-                IsScanned = p.LetterCount < _options.ScannedLetterThreshold,
-                ExtractionMethod = hasOcr ? ExtractionMethod.Ocr : text.Length > 0 ? ExtractionMethod.EmbeddedText : ExtractionMethod.None,
-                ImageCount = p.ImageCount,
-                HasMathNotation = TextCleaner.LooksMathematical(text),
-                HasTableLikeLayout = TextCleaner.LooksTabular(p.Lines.Select(l => l.Text))
-            };
+            BookId = book.Id,
+            PageNumber = p.Number,
+            Text = p.Text,
+            CharCount = p.Text.Length,
+            IsScanned = p.IsScanned,
+            ExtractionMethod = p.Method,
+            ImageCount = p.ImageCount,
+            HasMathNotation = TextCleaner.LooksMathematical(p.Text),
+            HasTableLikeLayout = p.IsTabular,
+            StartSeconds = p.StartSeconds,
+            EndSeconds = p.EndSeconds
         }).ToList();
         db.DocumentPages.AddRange(pageEntities);
 
@@ -165,8 +107,7 @@ public sealed class DocumentProcessor(
         book.DetectedLanguage = LanguageDetector.Detect(allText);
 
         await Stage(job, book, ProcessingStage.DetectingStructure, 55, ct);
-        var sections = StructureDetector.Detect(document);
-        if (sections.Count == 0 && ocrText.Count > 0) sections = StructureDetector.FromRecognisedText(ocrText, document.PageCount);
+        var sections = content.Sections;
         var chapters = new List<Chapter>();
         Chapter? currentTop = null;
         foreach (var (section, index) in sections.Select((s, i) => (s, i)))
@@ -200,6 +141,9 @@ public sealed class DocumentProcessor(
         else if (sections[0].Source == ChapterSource.HeadingHeuristic)
             warnings.Add(Warning(book.Id, null, "structure_estimated", WarningSeverity.Info,
                 "Chapters were estimated from heading styles. Please review and correct titles if needed."));
+        else if (sections[0].Source == ChapterSource.Topics)
+            warnings.Add(Warning(book.Id, null, "topics_generated", WarningSeverity.Info,
+                "Sections were named by AI from the video's topics. Please review the titles if needed."));
 
         await Stage(job, book, ProcessingStage.ProcessingTablesAndFigures, 62, ct);
         var figurePages = pageEntities.Count(p => p.ImageCount > 0 && !p.IsScanned);
@@ -252,6 +196,192 @@ public sealed class DocumentProcessor(
         });
         await Stage(job, book, ProcessingStage.Completed, 100, ct);
         logger.LogInformation("Book {BookId} processed: {Pages} pages, {Chunks} chunks, {Chapters} chapters", book.Id, book.PageCount, chunkEntities.Count, chapters.Count);
+    }
+
+    private sealed record SourcePage(int Number, string Text, ExtractionMethod Method, bool IsScanned, int ImageCount, bool IsTabular,
+        int? StartSeconds = null, int? EndSeconds = null);
+
+    private sealed record SourceContent(List<SourcePage> Pages, List<DetectedSection> Sections);
+
+    private async Task<SourceContent> LoadPdfAsync(DocumentProcessingJob job, Book book, List<DocumentWarning> warnings, CancellationToken ct)
+    {
+        var path = await storage.GetLocalPathAsync(book.StorageKey, ct);
+        var validation = extractor.Validate(path);
+        if (!validation.IsValid) throw new PermanentProcessingException(validation.ErrorCode ?? "pdf_unreadable");
+        if (validation.PageCount > _options.MaxPages) throw new PermanentProcessingException("pdf_too_many_pages");
+
+        await Stage(job, book, ProcessingStage.ExtractingText, 10, ct);
+        var document = await Task.Run(() => extractor.Extract(path, ct), ct);
+        book.PageCount = document.PageCount;
+
+        // Embedded text first, OCR for scanned pages.
+        var languages = OcrLanguages(book.Subject?.ContentLanguage);
+        var scanned = document.Pages.Where(p => p.LetterCount < _options.ScannedLetterThreshold).Select(p => p.Number).ToList();
+        var ocrText = await RecognizeAsync(job, book, scanned, n => ocr.RecognizePageAsync(path, n, languages, ct), warnings, ct);
+
+        var pages = document.Pages.Select(p =>
+        {
+            var hasOcr = ocrText.TryGetValue(p.Number, out var recognised);
+            var text = hasOcr ? recognised! : p.Text;
+            return new SourcePage(p.Number, text,
+                hasOcr ? ExtractionMethod.Ocr : text.Length > 0 ? ExtractionMethod.EmbeddedText : ExtractionMethod.None,
+                p.LetterCount < _options.ScannedLetterThreshold, p.ImageCount, TextCleaner.LooksTabular(p.Lines.Select(l => l.Text)));
+        }).ToList();
+
+        var sections = StructureDetector.Detect(document);
+        if (sections.Count == 0 && ocrText.Count > 0) sections = StructureDetector.FromRecognisedText(ocrText, document.PageCount);
+        return new SourceContent(pages, sections);
+    }
+
+    private async Task<SourceContent> LoadImagesAsync(DocumentProcessingJob job, Book book, List<DocumentWarning> warnings, CancellationToken ct)
+    {
+        await Stage(job, book, ProcessingStage.ExtractingText, 10, ct);
+        var numbers = Enumerable.Range(1, book.PageCount).ToList();
+        var languages = OcrLanguages(book.Subject?.ContentLanguage);
+        var ocrText = await RecognizeAsync(job, book, numbers, async n =>
+        {
+            await using var stream = await storage.OpenReadAsync(SourceFiles.ImageKey(book, n), ct);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer, ct);
+            return await ocr.RecognizeImageAsync(buffer.ToArray(), languages, ct);
+        }, warnings, ct);
+
+        var pages = numbers.Select(n =>
+        {
+            var text = ocrText.GetValueOrDefault(n, string.Empty);
+            return new SourcePage(n, text, text.Length > 0 ? ExtractionMethod.Ocr : ExtractionMethod.None, true, 1, false);
+        }).ToList();
+        return new SourceContent(pages, StructureDetector.FromRecognisedText(ocrText, numbers.Count));
+    }
+
+    private async Task<SourceContent> LoadVideoAsync(DocumentProcessingJob job, Book book, List<DocumentWarning> warnings, CancellationToken ct)
+    {
+        await Stage(job, book, ProcessingStage.ExtractingText, 10, ct);
+        var transcript = await ReadJsonAsync<VideoTranscript>(book.StorageKey, ct);
+        if (transcript is null)
+        {
+            transcript = await videos.GetTranscriptAsync(book.ExternalId!, book.Subject?.ContentLanguage ?? "ar", ct)
+                         ?? throw new PermanentProcessingException("video_no_captions");
+            await WriteJsonAsync(book.StorageKey, transcript, ct);
+        }
+        if (transcript.IsAutoGenerated)
+            warnings.Add(Warning(book.Id, null, "transcript_auto_generated", WarningSeverity.Info,
+                "The captions were generated automatically by YouTube and may contain recognition errors."));
+
+        var windows = TranscriptSegmenter.Segment(transcript.Captions);
+        var cacheKey = SourceFiles.TranscriptCacheKey(book);
+        StructuredTranscript? structured = null;
+        if (windows.Count > 0)
+        {
+            await Stage(job, book, ProcessingStage.CleaningTranscript, 30, ct);
+            if (structurer.IsAvailable)
+            {
+                // Saved after every request, so an interrupted run continues where it stopped.
+                var known = await ReadJsonAsync<StructuredTranscript>(cacheKey, ct);
+                structured = await structurer.StructureAsync(windows, known, async progress =>
+                {
+                    await WriteJsonAsync(cacheKey, progress, ct);
+                    await Stage(job, book, ProcessingStage.CleaningTranscript, 30 + 20 * progress.CleanText.Count / windows.Count, ct);
+                }, ct);
+                await WriteJsonAsync(cacheKey, structured, ct);
+            }
+            if (structured is not { Complete: true })
+                warnings.Add(Warning(book.Id, null, "transcript_not_cleaned", WarningSeverity.Warning,
+                    "Part of the transcript could not be tidied by AI and is shown as raw captions. Reprocess later to finish it."));
+        }
+
+        var pages = windows.Select(w => new SourcePage(w.Number, structured?.CleanText.GetValueOrDefault(w.Number) ?? w.Text,
+            ExtractionMethod.Transcript, false, 0, false, w.StartSeconds, w.EndSeconds)).ToList();
+        var sections = StructureDetector.FromTopics((structured?.Topics ?? []).Select(t => (t.Title, t.StartWindow)).ToList(), windows.Count);
+        return new SourceContent(pages, sections);
+    }
+
+    /// <summary>
+    /// Reads image pages with the OCR engine. Pages read by an earlier (possibly interrupted) run are reused, each
+    /// new result is saved straight away, and once the AI usage limit is hit no further pages are attempted.
+    /// </summary>
+    private async Task<Dictionary<int, string>> RecognizeAsync(DocumentProcessingJob job, Book book, List<int> pageNumbers,
+        Func<int, Task<OcrResult>> recognize, List<DocumentWarning> warnings, CancellationToken ct)
+    {
+        var ocrText = new Dictionary<int, string>();
+        if (pageNumbers.Count == 0) return ocrText;
+
+        await Stage(job, book, ProcessingStage.RecognizingScannedPages, 30, ct);
+        if (!ocr.IsAvailable)
+        {
+            foreach (var number in pageNumbers)
+                warnings.Add(Warning(book.Id, number, "scanned_page_no_ocr", WarningSeverity.Warning,
+                    "This page is an image and OCR is not available on the server."));
+            return ocrText;
+        }
+
+        var previous = await db.RecognizedPages
+            .Where(p => p.BookId == book.Id)
+            .ToDictionaryAsync(p => p.PageNumber, p => (p.Text, p.Confidence), ct);
+        var legacy = await db.DocumentPages
+            .Where(p => p.BookId == book.Id && p.ExtractionMethod == ExtractionMethod.Ocr)
+            .Select(p => new { p.PageNumber, p.Text })
+            .ToListAsync(ct);
+        foreach (var page in legacy) previous.TryAdd(page.PageNumber, (page.Text, null));
+
+        var done = 0;
+        var limitReached = false;
+        foreach (var batch in pageNumbers.Chunk(Math.Max(1, _options.OcrParallelism)))
+        {
+            var results = await Task.WhenAll(batch.Select(async number =>
+            {
+                if (previous.TryGetValue(number, out var known)) return (number, Result: new OcrResult(true, known.Text, known.Confidence, null), Reused: true);
+                if (limitReached) return (number, Result: new OcrResult(false, string.Empty, null, "ocr_rate_limited"), Reused: false);
+                return (number, Result: await recognize(number), Reused: false);
+            }));
+
+            foreach (var (number, result, reused) in results)
+            {
+                if (result.Success)
+                {
+                    ocrText[number] = reused ? result.Text : TextCleaner.CleanExtracted(result.Text);
+                    if (!reused)
+                    {
+                        db.RecognizedPages.Add(new RecognizedPage
+                        {
+                            BookId = book.Id, PageNumber = number, Text = ocrText[number],
+                            Confidence = result.MeanConfidence, CreatedAt = clock.GetUtcNow().UtcDateTime
+                        });
+                    }
+                    if (result.MeanConfidence < _options.OcrLowConfidence)
+                        warnings.Add(Warning(book.Id, number, "ocr_low_confidence", WarningSeverity.Warning,
+                            "Text recognised on this page may contain recognition errors."));
+                }
+                else if (result.ErrorCode == "ocr_rate_limited")
+                {
+                    limitReached = true;
+                    warnings.Add(Warning(book.Id, number, "ocr_rate_limited", WarningSeverity.Warning,
+                        "The AI usage limit was reached before this page could be read. Reprocess later to read the remaining pages."));
+                }
+                else if (result.ErrorCode != "ocr_no_text")
+                {
+                    warnings.Add(Warning(book.Id, number, "ocr_failed", WarningSeverity.Warning, "Text on this page could not be recognised."));
+                }
+            }
+
+            done += batch.Length;
+            await Stage(job, book, ProcessingStage.RecognizingScannedPages, 30 + 20 * done / pageNumbers.Count, ct);
+        }
+        return ocrText;
+    }
+
+    private async Task<T?> ReadJsonAsync<T>(string key, CancellationToken ct) where T : class
+    {
+        if (string.IsNullOrEmpty(key) || !await storage.ExistsAsync(key, ct)) return null;
+        await using var stream = await storage.OpenReadAsync(key, ct);
+        try { return await JsonSerializer.DeserializeAsync<T>(stream, cancellationToken: ct); }
+        catch (JsonException) { return null; }
+    }
+
+    private async Task WriteJsonAsync<T>(string key, T value, CancellationToken ct)
+    {
+        using var buffer = new MemoryStream(JsonSerializer.SerializeToUtf8Bytes(value));
+        await storage.SaveAsync(key, buffer, ct);
     }
 
     private async Task EmbedChunksAsync(DocumentProcessingJob job, Book book, List<DocumentChunk> chunks,

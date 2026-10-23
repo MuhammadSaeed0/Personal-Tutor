@@ -78,7 +78,7 @@
                 @for (c of m.citations; track c.marker) {
                   <button type="button" class="source" (click)="openCitation({ citation: c, page: c.pageStart })" [title]="c.quote ?? ''">
                     <span class="cite">{{ c.marker }}</span>
-                    <span class="xsmall" dir="auto">{{ c.chapterTitle ? c.chapterTitle + ' · ' : '' }}{{ 'common.pageN' | t: { n: c.pageStart } }}</span>
+                    <span class="xsmall" dir="auto">{{ c.chapterTitle ? c.chapterTitle + ' · ' : '' }}{{ sourceLabel(c) }}</span>
                   </button>
                 }
               </div>

@@ -3,7 +3,7 @@
     <div class="icon-tile"><rw-icon name="file-up" /></div>
     <div class="grow">
       <h2 id="upload-title">{{ 'upload.title' | t }}</h2>
-      <p>{{ 'upload.subtitle' | t }}</p>
+      <p>{{ ('upload.subtitle.' + mode()) | t }}</p>
     </div>
     <button class="btn ghost icon sm" type="button" (click)="ref.close()" [attr.aria-label]="'common.close' | t"><rw-icon name="x" /></button>
   </div>
@@ -11,32 +11,80 @@
   <div class="dialog-body">
     @switch (phase()) {
       @case ('select') {
-        <label class="drop" [class.dragging]="dragging()" [class.has-file]="file()"
-          (dragover)="$event.preventDefault(); dragging.set(true)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
-          <input type="file" accept="application/pdf,.pdf" (change)="onFileInput($event)" class="visually-hidden" />
-          @if (file(); as f) {
-            <rw-icon name="file-text" [size]="28" />
-            <strong class="file-name" dir="auto">{{ f.name }}</strong>
-            <span class="subtle small">{{ formatSize(f.size) }} · {{ 'upload.change' | t }}</span>
-          } @else {
-            <rw-icon name="upload" [size]="28" />
-            <strong>{{ 'upload.drop' | t }}</strong>
-            <span class="subtle small">{{ 'upload.limits' | t: { mb: 150 } }}</span>
+        <div class="segmented kinds" role="tablist" [attr.aria-label]="'upload.kind' | t">
+          <button type="button" role="tab" [attr.aria-selected]="mode() === 'pdf'" [attr.aria-pressed]="mode() === 'pdf'" (click)="setMode('pdf')"><rw-icon name="file-text" [size]="15" /> {{ 'upload.kinds.pdf' | t }}</button>
+          <button type="button" role="tab" [attr.aria-selected]="mode() === 'images'" [attr.aria-pressed]="mode() === 'images'" (click)="setMode('images')"><rw-icon name="image" [size]="15" /> {{ 'upload.kinds.images' | t }}</button>
+          <button type="button" role="tab" [attr.aria-selected]="mode() === 'youTube'" [attr.aria-pressed]="mode() === 'youTube'" (click)="setMode('youTube')"><rw-icon name="play" [size]="15" /> {{ 'upload.kinds.youTube' | t }}</button>
+        </div>
+
+        @switch (mode()) {
+          @case ('pdf') {
+            <label class="drop" [class.dragging]="dragging()" [class.has-file]="file()"
+              (dragover)="$event.preventDefault(); dragging.set(true)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+              <input type="file" accept="application/pdf,.pdf" (change)="onFileInput($event)" class="visually-hidden" />
+              @if (file(); as f) {
+                <rw-icon name="file-text" [size]="28" />
+                <strong class="file-name" dir="auto">{{ f.name }}</strong>
+                <span class="subtle small">{{ formatSize(f.size) }} · {{ 'upload.change' | t }}</span>
+              } @else {
+                <rw-icon name="upload" [size]="28" />
+                <strong>{{ 'upload.drop' | t }}</strong>
+                <span class="subtle small">{{ 'upload.limits' | t: { mb: 150 } }}</span>
+              }
+            </label>
           }
-        </label>
+          @case ('images') {
+            <label class="drop" [class.dragging]="dragging()" [class.compact]="photos().length > 0"
+              (dragover)="$event.preventDefault(); dragging.set(true)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+              <input type="file" accept="image/*,.heic,.heif" multiple (change)="onFileInput($event)" class="visually-hidden" />
+              <rw-icon name="image" [size]="28" />
+              <strong>{{ (photos().length ? 'upload.addMorePhotos' : 'upload.dropPhotos') | t }}</strong>
+              <span class="subtle small">{{ 'upload.photoLimits' | t: { n: 100, mb: 25 } }}</span>
+            </label>
+            @if (photos().length) {
+              <p class="small muted photo-count">{{ 'upload.photoOrder' | t: { n: photos().length } }}</p>
+              <ol class="photos">
+                @for (p of photos(); track p.url; let i = $index; let last = $last) {
+                  <li>
+                    <img [src]="p.url" [alt]="p.file.name" />
+                    <span class="badge num">{{ i + 1 }}</span>
+                    <div class="photo-actions">
+                      <button class="btn ghost icon sm" type="button" (click)="movePhoto(i, -1)" [disabled]="i === 0" [attr.aria-label]="'upload.moveEarlier' | t"><rw-icon [name]="i18n.dir() === 'rtl' ? 'arrow-right' : 'arrow-left'" [size]="14" /></button>
+                      <button class="btn ghost icon sm" type="button" (click)="removePhoto(i)" [attr.aria-label]="'common.delete' | t"><rw-icon name="x" [size]="14" /></button>
+                      <button class="btn ghost icon sm" type="button" (click)="movePhoto(i, 1)" [disabled]="last" [attr.aria-label]="'upload.moveLater' | t"><rw-icon [name]="i18n.dir() === 'rtl' ? 'arrow-left' : 'arrow-right'" [size]="14" /></button>
+                    </div>
+                  </li>
+                }
+              </ol>
+            }
+          }
+          @case ('youTube') {
+            <div class="field">
+              <label for="video-url">{{ 'upload.videoUrl' | t }}</label>
+              <input id="video-url" class="input ltr" type="url" inputmode="url" [ngModel]="videoUrl()" (ngModelChange)="videoUrl.set($event)" placeholder="https://www.youtube.com/watch?v=…" />
+              @if (videoUrl().trim() && !videoId()) { <p class="error small" role="alert">{{ 'upload.videoUrlInvalid' | t }}</p> }
+            </div>
+            @if (videoId(); as id) {
+              <div class="video-preview">
+                <img [src]="'https://i.ytimg.com/vi/' + id + '/mqdefault.jpg'" alt="" referrerpolicy="no-referrer" />
+                <p class="small muted">{{ 'upload.videoHint' | t }}</p>
+              </div>
+            }
+          }
+        }
         @if (fileError()) { <p class="error small" role="alert">{{ fileError() }}</p> }
 
         <div class="grid cols-2 fields">
           <div class="field">
             <label for="subject">{{ 'common.subject' | t }} *</label>
-            <select id="subject" class="select" [(ngModel)]="subjectId" required>
+            <select id="subject" class="select" [ngModel]="subjectId()" (ngModelChange)="subjectId.set($event)" required>
               <option [ngValue]="null" disabled>{{ 'upload.chooseSubject' | t }}</option>
               @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
             </select>
           </div>
           <div class="field">
-            <label for="title">{{ 'upload.bookTitle' | t }}</label>
-            <input id="title" class="input" [(ngModel)]="title" maxlength="300" dir="auto" />
+            <label for="title">{{ 'upload.sourceTitle' | t }}</label>
+            <input id="title" class="input" [(ngModel)]="title" maxlength="300" dir="auto" [placeholder]="mode() === 'youTube' ? ('upload.titleFromVideo' | t) : ''" />
           </div>
           <div class="field">
             <label for="year">{{ 'upload.academicYear' | t }}</label>
@@ -51,9 +99,15 @@
 
       @case ('uploading') {
         <div class="state">
-          <p class="small"><strong dir="auto">{{ file()?.name }}</strong></p>
-          <div class="bar big" role="progressbar" [attr.aria-valuenow]="uploadProgress()" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="uploadProgress()"></span></div>
-          <p class="subtle small num">{{ 'upload.uploading' | t }} {{ uploadProgress() }}%</p>
+          @if (mode() === 'youTube') {
+            <p class="small"><span class="spinner"></span> {{ 'upload.readingVideo' | t }}</p>
+          } @else if (preparing()) {
+            <p class="small"><span class="spinner"></span> {{ 'upload.preparingPhotos' | t: { n: photos().length } }}</p>
+          } @else {
+            <p class="small"><strong dir="auto">{{ mode() === 'images' ? ('upload.photoOrder' | t: { n: photos().length }) : file()?.name }}</strong></p>
+            <div class="bar big" role="progressbar" [attr.aria-valuenow]="uploadProgress()" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="uploadProgress()"></span></div>
+            <p class="subtle small num">{{ 'upload.uploading' | t }} {{ uploadProgress() }}%</p>
+          }
         </div>
       }
 
@@ -61,7 +115,7 @@
         <div class="processing">
           <div>
             <p class="small muted" style="margin-bottom: 12px">{{ 'upload.processingLead' | t }}</p>
-            <rw-processing-timeline [status]="status()" />
+            <rw-processing-timeline [status]="status()" [kind]="mode()" />
           </div>
           @if (done()) {
             <div class="alert success"><rw-icon name="check-circle" />
@@ -86,8 +140,8 @@
     @switch (phase()) {
       @case ('select') {
         <button class="btn ghost" type="button" (click)="ref.close()">{{ 'common.cancel' | t }}</button>
-        <button class="btn primary" type="button" (click)="start()" [disabled]="!file() || !subjectId">
-          <rw-icon name="upload" [size]="16" /> {{ 'upload.start' | t }}
+        <button class="btn primary" type="button" (click)="start()" [disabled]="!canStart()">
+          <rw-icon [name]="mode() === 'youTube' ? 'plus' : 'upload'" [size]="16" /> {{ (mode() === 'youTube' ? 'upload.addVideo' : 'upload.start') | t }}
         </button>
       }
       @case ('uploading') {

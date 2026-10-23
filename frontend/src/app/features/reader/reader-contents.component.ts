@@ -17,7 +17,9 @@ import { ReaderStore } from './reader-store';
     <div class="panel">
       <div class="tabs" role="tablist">
         <button role="tab" type="button" [attr.aria-selected]="tab() === 'toc'" (click)="tab.set('toc')">{{ 'reader.toc' | t }}</button>
-        <button role="tab" type="button" [attr.aria-selected]="tab() === 'pages'" (click)="tab.set('pages')">{{ 'reader.pages' | t }}</button>
+        @if (store.kind() === 'pdf') {
+          <button role="tab" type="button" [attr.aria-selected]="tab() === 'pages'" (click)="tab.set('pages')">{{ 'reader.pages' | t }}</button>
+        }
         <button role="tab" type="button" [attr.aria-selected]="tab() === 'bookmarks'" (click)="tab.set('bookmarks')">{{ 'reader.bookmarks' | t }}</button>
         <button role="tab" type="button" [attr.aria-selected]="tab() === 'search'" (click)="tab.set('search')" [attr.aria-label]="'common.search' | t"><rw-icon name="search" [size]="15" /></button>
       </div>
@@ -35,7 +37,7 @@ import { ReaderStore } from './reader-store';
                   <button type="button" class="toc-item" [class.sub]="c.level > 1" [class.current]="store.currentChapter()?.id === c.id" (click)="go(c.startPage)">
                     <span class="status" [class]="'status ' + c.status" aria-hidden="true"></span>
                     <span class="grow" dir="auto">{{ c.title }}</span>
-                    <span class="subtle xsmall num">{{ c.startPage }}</span>
+                    <span class="subtle xsmall num">{{ store.kind() === 'youTube' ? store.pageLabel(c.startPage) : c.startPage }}</span>
                   </button>
                 </li>
               }
@@ -55,7 +57,7 @@ import { ReaderStore } from './reader-store';
               <div class="bm">
                 <button type="button" class="grow bm-link" (click)="go(b.pageNumber)">
                   <rw-icon name="bookmark" [size]="15" />
-                  <span class="grow"><span dir="auto">{{ b.label || ('common.pageN' | t: { n: b.pageNumber }) }}</span><br><span class="subtle xsmall">{{ 'common.pageN' | t: { n: b.pageNumber } }}</span></span>
+                  <span class="grow"><span dir="auto">{{ b.label || store.pageLabel(b.pageNumber) }}</span><br><span class="subtle xsmall">{{ store.pageLabel(b.pageNumber) }}</span></span>
                 </button>
                 <button class="btn ghost icon sm" type="button" (click)="removeBookmark.emit(b)" [attr.aria-label]="'common.remove' | t"><rw-icon name="x" [size]="14" /></button>
               </div>
@@ -71,7 +73,7 @@ import { ReaderStore } from './reader-store';
             @if (searching()) { <p class="pad"><span class="spinner"></span></p> }
             @for (hit of hits(); track hit.chunkId) {
               <button type="button" class="hit" (click)="go(hit.pageStart)">
-                <span class="badge brand num">{{ 'common.pageN' | t: { n: hit.pageStart } }}</span>
+                <span class="badge brand num">{{ store.pageLabel(hit.pageStart) }}</span>
                 <span class="small" dir="auto">{{ hit.snippet }}</span>
               </button>
             }

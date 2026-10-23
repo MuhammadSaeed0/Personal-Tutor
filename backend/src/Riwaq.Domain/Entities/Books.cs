@@ -7,6 +7,8 @@ public class Book
     public int SubjectId { get; set; }
     public Subject? Subject { get; set; }
 
+    public SourceKind Kind { get; set; } = SourceKind.Pdf;
+
     public string Title { get; set; } = string.Empty;
     public string? AcademicYear { get; set; }
     public string? Semester { get; set; }
@@ -19,7 +21,14 @@ public class Book
     public BookStatus Status { get; set; } = BookStatus.Uploaded;
     public int PageCount { get; set; }
 
-    // File metadata. The PDF itself lives in file storage, never in SQL Server.
+    // Video sources: the original link, the YouTube video id, channel and length.
+    public string? SourceUrl { get; set; }
+    public string? ExternalId { get; set; }
+    public string? Author { get; set; }
+    public int? DurationSeconds { get; set; }
+
+    // File metadata. Files live in file storage, never in SQL Server: the PDF, the photos
+    // ("{StorageKey}/{page}.jpg") or the downloaded captions of a video.
     public string StorageKey { get; set; } = string.Empty;
     public string OriginalFileName { get; set; } = string.Empty;
     public long FileSizeBytes { get; set; }
@@ -62,6 +71,19 @@ public class DocumentProcessingJob
     public string? ErrorMessage { get; set; }
 }
 
+/// <summary>
+/// Text recognised from a scanned page, saved as soon as the page is read so an interrupted or repeated run never
+/// reads (and pays for) the same page twice. Kept across reprocessing; removed with the book.
+/// </summary>
+public class RecognizedPage
+{
+    public Guid BookId { get; set; }
+    public int PageNumber { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public double? Confidence { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
 public class DocumentPage
 {
     public long Id { get; set; }
@@ -74,6 +96,10 @@ public class DocumentPage
     public int ImageCount { get; set; }
     public bool HasMathNotation { get; set; }
     public bool HasTableLikeLayout { get; set; }
+
+    /// <summary>Video sources: the time span of the transcript segment this page holds.</summary>
+    public int? StartSeconds { get; set; }
+    public int? EndSeconds { get; set; }
 }
 
 /// <summary>A node in the book's structure tree. Level 1 = chapter, Level 2+ = sections.</summary>
