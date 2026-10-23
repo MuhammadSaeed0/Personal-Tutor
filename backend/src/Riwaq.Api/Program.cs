@@ -198,7 +198,7 @@ app.MapGet("/api/system/status", (IChatModel chat, IEmbeddingModel embeddings, I
 {
     ai = new { configured = chat.IsConfigured, provider = chat.Provider, model = chat.IsConfigured ? chat.ModelName : null },
     embeddings = new { model = embeddings.ModelName, semantic = embeddings.IsSemantic },
-    ocr = new { available = ocr.IsAvailable }
+    ocr = new { available = ocr.IsAvailable, engine = ocr.Name }
 })).AllowAnonymous();
 
 // SPA fallback when the Angular build is served from wwwroot (single-process production build).

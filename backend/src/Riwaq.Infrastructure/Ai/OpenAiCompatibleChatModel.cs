@@ -17,6 +17,7 @@ public sealed class OpenAiCompatibleChatModel(HttpClient http, ChatProviderOptio
     public bool IsConfigured => !string.IsNullOrWhiteSpace(options.BaseUrl);
     public string ModelName => options.Model;
     public string Provider => "openai-compatible";
+    public bool SupportsImages => true;
 
     public async Task<ChatResult> CompleteAsync(ChatRequest request, CancellationToken cancellationToken)
     {
@@ -66,8 +67,26 @@ public sealed class OpenAiCompatibleChatModel(HttpClient http, ChatProviderOptio
     private HttpRequestMessage BuildRequest(ChatRequest request, bool stream)
     {
         var messages = new JsonArray { new JsonObject { ["role"] = "system", ["content"] = request.SystemPrompt } };
-        foreach (var m in request.Messages)
-            messages.Add(new JsonObject { ["role"] = m.Role == ChatRole.User ? "user" : "assistant", ["content"] = m.Content });
+        for (var i = 0; i < request.Messages.Count; i++)
+        {
+            var m = request.Messages[i];
+            JsonNode content = m.Content;
+            if (i == request.Messages.Count - 1 && m.Role == ChatRole.User && request.Images is { Count: > 0 } images)
+            {
+                var parts = new JsonArray();
+                foreach (var image in images)
+                {
+                    parts.Add(new JsonObject
+                    {
+                        ["type"] = "image_url",
+                        ["image_url"] = new JsonObject { ["url"] = $"data:{image.MediaType};base64,{Convert.ToBase64String(image.Data)}" }
+                    });
+                }
+                parts.Add(new JsonObject { ["type"] = "text", ["text"] = m.Content });
+                content = parts;
+            }
+            messages.Add(new JsonObject { ["role"] = m.Role == ChatRole.User ? "user" : "assistant", ["content"] = content });
+        }
 
         var body = new JsonObject
         {

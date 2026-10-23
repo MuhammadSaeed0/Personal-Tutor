@@ -28,6 +28,9 @@ public sealed record OcrResult(bool Success, string Text, double? MeanConfidence
 public interface IOcrEngine
 {
     bool IsAvailable { get; }
+
+    /// <summary>"ai-vision", "tesseract" or "none".</summary>
+    string Name { get; }
     Task<OcrResult> RecognizePageAsync(string pdfPath, int pageNumber, string languages, CancellationToken cancellationToken);
 }
 

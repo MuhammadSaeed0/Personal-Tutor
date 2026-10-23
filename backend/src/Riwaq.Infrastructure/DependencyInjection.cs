@@ -31,7 +31,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddSingleton<IPdfExtractor, PdfPigExtractor>();
-        services.AddSingleton<IOcrEngine, TesseractOcrEngine>();
+        services.AddSingleton<TesseractOcrEngine>();
+        services.AddSingleton<AiVisionOcrEngine>();
+        services.AddSingleton<IOcrEngine, OcrEngineSelector>();
         services.AddSingleton<IProcessingSignal, ProcessingSignal>();
         services.AddSingleton(TimeProvider.System);
 

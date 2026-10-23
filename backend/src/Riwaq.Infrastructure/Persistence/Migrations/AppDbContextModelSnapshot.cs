@@ -1853,12 +1853,12 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         new
                         {
                             Id = 7,
-                            Code = "geography",
+                            Code = "geology",
                             Color = "#B4532A",
                             ContentLanguage = "ar",
-                            Icon = "earth",
-                            NameAr = "الجغرافيا",
-                            NameEn = "Geography",
+                            Icon = "mountain",
+                            NameAr = "الجيولوجيا",
+                            NameEn = "Geology",
                             SortOrder = 7
                         });
                 });

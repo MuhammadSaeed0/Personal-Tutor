@@ -30,6 +30,7 @@ public sealed class AnthropicChatModel : IChatModel
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
     public string ModelName => _options.Model;
     public string Provider => "anthropic";
+    public bool SupportsImages => true;
 
     public async Task<ChatResult> CompleteAsync(ChatRequest request, CancellationToken cancellationToken)
     {
@@ -135,8 +136,8 @@ public sealed class AnthropicChatModel : IChatModel
             MaxTokens = request.MaxTokens,
             System = request.SystemPrompt,
             Messages = request.Messages
-                .Select(m => m.Role == ChatRole.User
-                    ? (BetaMessageParam)new BetaUserMessageParam { Content = m.Content }
+                .Select((m, i) => m.Role == ChatRole.User
+                    ? (BetaMessageParam)UserMessage(m.Content, i == request.Messages.Count - 1 ? request.Images : null)
                     : new BetaAssistantMessageParam { Content = m.Content })
                 .ToList(),
             OutputConfig = outputConfig
@@ -147,6 +148,26 @@ public sealed class AnthropicChatModel : IChatModel
             parameters = parameters with { Betas = [FallbackBeta], Fallbacks = new Default() };
         }
         return parameters;
+    }
+
+    private static BetaUserMessageParam UserMessage(string text, IReadOnlyList<ChatImage>? images)
+    {
+        if (images is not { Count: > 0 }) return new BetaUserMessageParam { Content = text };
+
+        var blocks = new List<BetaContentBlockParam>();
+        foreach (var image in images)
+        {
+            blocks.Add(new BetaImageBlockParam
+            {
+                Source = new BetaBase64ImageSource
+                {
+                    Data = Convert.ToBase64String(image.Data),
+                    MediaType = image.MediaType == "image/png" ? MediaType.ImagePng : MediaType.ImageJpeg
+                }
+            });
+        }
+        blocks.Add(new BetaTextBlockParam { Text = text });
+        return new BetaUserMessageParam { Content = blocks };
     }
 
     private static bool IsRefusal(string? stopReason) => string.Equals(stopReason, "refusal", StringComparison.OrdinalIgnoreCase);

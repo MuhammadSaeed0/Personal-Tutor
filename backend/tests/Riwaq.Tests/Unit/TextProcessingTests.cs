@@ -96,6 +96,42 @@ public class TextProcessingTests
 
 public class StructureDetectorTests
 {
+    [Fact]
+    public void Chapters_are_found_in_recognised_text_and_the_contents_page_is_ignored()
+    {
+        var pages = new Dictionary<int, string>
+        {
+            [2] = "محتويات الكتاب\nالفصل الأول: المعادن — 5\nالفصل الثاني: الصخور النارية — 18\nالفصل الثالث: الصخور الرسوبية — 31",
+            [5] = "# الفصل الأول: المعادن\n\nالمعدن مادة صلبة متجانسة.",
+            [9] = "تابع الخواص الفيزيائية للمعادن.",
+            [18] = "# الفصل الثاني: الصخور النارية\n\n[شكل: قطاع في بركان]"
+        };
+
+        var sections = StructureDetector.FromRecognisedText(pages, 30);
+
+        Assert.Equal(2, sections.Count);
+        Assert.Equal(("الفصل الأول: المعادن", 5, 17), (sections[0].Title, sections[0].StartPage, sections[0].EndPage));
+        Assert.Equal(("الفصل الثاني: الصخور النارية", 18, 30), (sections[1].Title, sections[1].StartPage, sections[1].EndPage));
+        Assert.All(sections, s => Assert.Equal(ChapterSource.HeadingHeuristic, s.Source));
+    }
+
+    [Fact]
+    public void Markdown_headings_are_used_when_no_chapter_keywords_exist()
+    {
+        var pages = new Dictionary<int, string>
+        {
+            [1] = "# Minerals\nA mineral is a naturally occurring solid.",
+            [4] = "Hardness is measured on the Mohs scale.",
+            [6] = "# Igneous rocks\nThey form when magma cools.",
+            [9] = "## Intrusive rocks\nThey cool slowly underground."
+        };
+
+        var sections = StructureDetector.FromRecognisedText(pages, 12);
+
+        Assert.Equal(["Minerals", "Igneous rocks", "Intrusive rocks"], sections.Select(s => s.Title));
+        Assert.Equal(2, sections[2].Level);
+    }
+
     private static ExtractedPage Page(int n, params (string Text, double Size)[] lines) =>
         new(n, string.Join('\n', lines.Select(l => l.Text)), lines.Select((l, i) => new ExtractedLine(l.Text, l.Size, 800 - i * 20, false)).ToList(), 500, 0, 595, 842);
 

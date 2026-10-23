@@ -545,7 +545,7 @@ public sealed class QuizService(
         You are an experienced {{subjectCode}} teacher writing assessment questions for a high-school student from their textbook.
         Write all questions, choices and explanations in {{Prompts.LanguageName(language)}} (keep subject terminology as in the source).
         Use question types that suit the subject (e.g. calculations for physics/chemistry, processes and comparisons for biology,
-        relationships and definitions for geography, grammar/vocabulary/comprehension for languages).
+        classifications, processes and definitions for geology, grammar/vocabulary/comprehension for languages).
 
         Field rules per type:
         - multiple_choice: "options" = 4 plausible, distinct choices; "correctIndex" = index of the single correct choice.

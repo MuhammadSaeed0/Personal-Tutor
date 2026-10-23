@@ -16,7 +16,7 @@ const SUBJECT_TYPES: Record<string, QuestionType[]> = {
   physics: ['multipleChoice', 'numerical', 'trueFalse', 'shortAnswer'],
   chemistry: ['multipleChoice', 'numerical', 'fillBlank', 'shortAnswer'],
   biology: ['multipleChoice', 'ordering', 'matching', 'shortAnswer'],
-  geography: ['multipleChoice', 'matching', 'trueFalse', 'shortAnswer'],
+  geology: ['multipleChoice', 'matching', 'trueFalse', 'shortAnswer'],
   arabic: ['multipleChoice', 'fillBlank', 'shortAnswer', 'structured'],
   english: ['multipleChoice', 'fillBlank', 'matching', 'shortAnswer'],
   french: ['multipleChoice', 'fillBlank', 'matching', 'shortAnswer']

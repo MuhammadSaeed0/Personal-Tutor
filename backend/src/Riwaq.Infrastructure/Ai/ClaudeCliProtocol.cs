@@ -17,7 +17,7 @@ internal abstract record ClaudeCliEvent
 /// <summary>Pure helpers for driving the Claude Code CLI (argument list, prompt, output parsing).</summary>
 internal static class ClaudeCliProtocol
 {
-    public static IReadOnlyList<string> BuildArguments(string model, string? effort, string? jsonSchema, string systemPromptFile, bool streaming)
+    public static IReadOnlyList<string> BuildArguments(string model, string? effort, string? jsonSchema, string systemPromptFile, bool streaming, bool jsonInput = false)
     {
         var args = new List<string>
         {
@@ -34,6 +34,7 @@ internal static class ClaudeCliProtocol
             "--no-session-persistence"
         };
         if (streaming) args.Add("--include-partial-messages");
+        if (jsonInput) args.AddRange(["--input-format", "stream-json"]);
         if (!string.IsNullOrWhiteSpace(model)) args.AddRange(["--model", model]);
         if (effort?.ToLowerInvariant() is "low" or "medium" or "high") args.AddRange(["--effort", effort.ToLowerInvariant()]);
         if (jsonSchema is not null) args.AddRange(["--json-schema", jsonSchema]);
@@ -52,6 +53,27 @@ internal static class ClaudeCliProtocol
         }
         prompt.Append("---\nThe student's new message, which you are answering now:\n\n").Append(messages[^1].Content);
         return prompt.ToString();
+    }
+
+    /// <summary>One stream-json user message carrying images followed by the prompt text.</summary>
+    public static string BuildImageInput(string prompt, IReadOnlyList<ChatImage> images)
+    {
+        var content = new JsonArray();
+        foreach (var image in images)
+        {
+            content.Add(new JsonObject
+            {
+                ["type"] = "image",
+                ["source"] = new JsonObject { ["type"] = "base64", ["media_type"] = image.MediaType, ["data"] = Convert.ToBase64String(image.Data) }
+            });
+        }
+        content.Add(new JsonObject { ["type"] = "text", ["text"] = prompt });
+        var message = new JsonObject
+        {
+            ["type"] = "user",
+            ["message"] = new JsonObject { ["role"] = "user", ["content"] = content }
+        };
+        return message.ToJsonString() + "\n";
     }
 
     public static ClaudeCliEvent? ParseLine(string line)

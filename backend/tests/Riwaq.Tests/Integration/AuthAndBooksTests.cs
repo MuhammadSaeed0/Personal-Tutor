@@ -59,7 +59,7 @@ public class AuthTests(RiwaqApiFactory factory)
     {
         var subjects = await (await factory.CreateClient().GetAsync("/api/subjects")).ReadJsonAsync();
         var codes = subjects.EnumerateArray().Select(s => s.GetProperty("code").GetString()).ToList();
-        Assert.Equal(["arabic", "english", "french", "physics", "chemistry", "biology", "geography"], codes);
+        Assert.Equal(["arabic", "english", "french", "physics", "chemistry", "biology", "geology"], codes);
     }
 }
 

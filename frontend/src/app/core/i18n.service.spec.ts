@@ -55,7 +55,7 @@ describe('I18nService', () => {
       ...['weak_topic', 'weak_topicNoPage', 'weak_concept_in_strong_chapter', 'weak_concept_in_strong_chapterNoPage', 'cards_due', 'exam_upcoming', 'quiz_read_chapter', 'upload_first_book', 'continue_reading', 'keep_reviewing'].map(s => `recommendations.${s}`),
       ...['first_book', 'first_chapter', 'chapters_10', 'streak_3', 'streak_7', 'streak_30', 'reviews_100', 'reviews_1000', 'first_quiz', 'quiz_perfect', 'focus_10h', 'notes_10'].flatMap(s => [`achievements.${s}.title`, `achievements.${s}.text`]),
       ...['ai_not_configured', 'ai_unavailable', 'ai_rate_limited', 'ai_refused', 'ai_quota_exceeded', 'duplicate_book', 'invalid_credentials', 'network_error'].map(s => `errors.${s}`),
-      ...['arabic', 'english', 'french', 'physics', 'chemistry', 'biology', 'geography'].map(s => `subject.focus.${s}`)
+      ...['arabic', 'english', 'french', 'physics', 'chemistry', 'biology', 'geology'].map(s => `subject.focus.${s}`)
     ];
     expect(required.filter(k => !keys.has(k))).toEqual([]);
   });

@@ -8,6 +8,7 @@ public sealed class UnconfiguredChatModel : IChatModel
     public bool IsConfigured => false;
     public string ModelName => "none";
     public string Provider => "none";
+    public bool SupportsImages => false;
 
     public Task<ChatResult> CompleteAsync(ChatRequest request, CancellationToken cancellationToken) =>
         throw NotConfigured();

@@ -17,6 +17,12 @@ public sealed class OcrOptions
     public string TesseractPath { get; set; } = "tesseract";
     public int Dpi { get; set; } = 300;
     public int TimeoutSeconds { get; set; } = 120;
+
+    /// <summary>"Auto" (Claude vision when an AI provider is configured, else Tesseract), "Ai" or "Tesseract".</summary>
+    public string Engine { get; set; } = "Auto";
+
+    /// <summary>Height in pixels of the page image sent to the vision model.</summary>
+    public int AiImageHeight { get; set; } = 2000;
 }
 
 /// <summary>
@@ -38,6 +44,7 @@ public sealed class TesseractOcrEngine : IOcrEngine
     }
 
     public bool IsAvailable => _options.Enabled && _available.Value;
+    public string Name => "tesseract";
 
     public async Task<OcrResult> RecognizePageAsync(string pdfPath, int pageNumber, string languages, CancellationToken cancellationToken)
     {

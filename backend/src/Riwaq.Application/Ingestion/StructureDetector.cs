@@ -93,6 +93,37 @@ public static partial class StructureDetector
         return BuildRanges(chosen.OrderBy(c => c.Page).Take(MaxSections).ToList(), pageCount, ChapterSource.HeadingHeuristic);
     }
 
+    /// <summary>
+    /// Headings in text recognised from scanned pages (no font information): chapter/lesson keyword lines or Markdown
+    /// headings near the top of a page. Pages listing several chapters are a table of contents and are skipped.
+    /// </summary>
+    public static List<DetectedSection> FromRecognisedText(IReadOnlyDictionary<int, string> pages, int pageCount)
+    {
+        var keyworded = new List<(string Title, int Page, int Level)>();
+        var marked = new List<(string Title, int Page, int Level)>();
+        foreach (var (number, text) in pages.OrderBy(p => p.Key))
+        {
+            var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (lines.Count(l => KeywordLevel(l.TrimStart('#', ' ')) == 1) >= 3) continue;
+
+            foreach (var raw in lines.Take(6))
+            {
+                var hashes = raw.TakeWhile(c => c == '#').Count();
+                var title = raw.TrimStart('#', ' ').Trim();
+                if (title.Length is < 3 or > 120 || title.StartsWith('[') || title.EndsWith('.')) continue;
+
+                var level = KeywordLevel(title);
+                if (level > 0) { keyworded.Add((title, number, level)); break; }
+                if (hashes is 1 or 2) { marked.Add((title, number, hashes)); break; }
+            }
+        }
+
+        var chosen = keyworded.Count >= 2 ? keyworded
+            : marked.Count >= 2 && marked.Count <= Math.Max(2, pageCount / 2) ? marked
+            : [];
+        return BuildRanges(chosen.Take(MaxSections).ToList(), pageCount, ChapterSource.HeadingHeuristic);
+    }
+
     private static List<DetectedSection> BuildRanges(List<(string Title, int Page, int Level)> entries, int pageCount, ChapterSource source)
     {
         var result = new List<DetectedSection>(entries.Count);

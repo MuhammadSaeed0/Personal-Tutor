@@ -98,3 +98,58 @@ public class ClaudeCliProtocolTests
         Assert.Null(ClaudeCliProtocol.ResolveExecutable(""));
     }
 }
+
+public class VisionOcrTests
+{
+    [Fact]
+    public void Image_input_is_one_stream_json_user_message_with_image_then_text()
+    {
+        var line = ClaudeCliProtocol.BuildImageInput("اقرأ الصفحة", [new ChatImage("image/jpeg", [1, 2, 3])]);
+
+        Assert.EndsWith("\n", line);
+        using var doc = System.Text.Json.JsonDocument.Parse(line);
+        var content = doc.RootElement.GetProperty("message").GetProperty("content");
+        Assert.Equal("user", doc.RootElement.GetProperty("type").GetString());
+        Assert.Equal("image", content[0].GetProperty("type").GetString());
+        Assert.Equal("AQID", content[0].GetProperty("source").GetProperty("data").GetString());
+        Assert.Equal("image/jpeg", content[0].GetProperty("source").GetProperty("media_type").GetString());
+        Assert.Equal("اقرأ الصفحة", content[1].GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public void Image_requests_switch_the_cli_to_json_input()
+    {
+        var args = ClaudeCliProtocol.BuildArguments("sonnet", null, null, "sys.txt", streaming: false, jsonInput: true);
+        Assert.Equal("stream-json", args[args.ToList().IndexOf("--input-format") + 1]);
+    }
+
+    [Fact]
+    public void Transcription_and_figure_descriptions_become_page_text()
+    {
+        var result = Riwaq.Infrastructure.Pdf.AiVisionOcrEngine.ParseResult(
+            """{"text":"الصخور النارية تتكون من تبلور الصهارة.","figures":[{"caption":"شكل (2)","description":"قطاع في بركان"},{"caption":"","description":"صورة لصخر الجرانيت"}],"legibility":"medium"}""",
+            "ara+eng");
+
+        Assert.True(result.Success);
+        Assert.Equal("الصخور النارية تتكون من تبلور الصهارة.\n\n[شكل: شكل (2) — قطاع في بركان]\n\n[شكل: صورة لصخر الجرانيت]", result.Text);
+        Assert.Equal(75, result.MeanConfidence);
+    }
+
+    [Theory]
+    [InlineData("""{"text":"","figures":[],"legibility":"high"}""", "ocr_no_text")]
+    [InlineData("not json", "ocr_failed")]
+    [InlineData("""{"text":"x"}""", "ocr_failed")]
+    public void Empty_or_invalid_output_is_not_a_successful_read(string json, string code)
+    {
+        var result = Riwaq.Infrastructure.Pdf.AiVisionOcrEngine.ParseResult(json, "eng");
+        Assert.False(result.Success);
+        Assert.Equal(code, result.ErrorCode);
+    }
+
+    [Fact]
+    public void Low_legibility_is_reported_below_the_warning_threshold()
+    {
+        var result = Riwaq.Infrastructure.Pdf.AiVisionOcrEngine.ParseResult("""{"text":"Page","figures":[],"legibility":"low"}""", "eng");
+        Assert.True(result.MeanConfidence < 60);
+    }
+}

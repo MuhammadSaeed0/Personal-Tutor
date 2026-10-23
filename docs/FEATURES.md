@@ -8,7 +8,8 @@ management, data export, account deletion.
 
 **Library & processing** — drag-and-drop upload with progress and cancel, PDF/size validation, duplicate detection,
 subject/year/semester/collection/tags, live processing timeline (SignalR + polling), restart-safe background jobs with
-retries, embedded-text extraction with Arabic RTL repair, Tesseract OCR for scanned pages, chapter detection (outline →
+retries, embedded-text extraction with Arabic RTL repair, scanned pages read by Claude vision (verbatim transcription plus
+figure descriptions; Tesseract as offline alternative), chapter detection (outline →
 headings, never invented), table/figure flags, per-page warnings, chapter title correction, reprocess, delete.
 
 **Reader** — continuous pdf.js rendering with lazy pages, page navigation/jump, zoom, fit width/page, thumbnails,
@@ -53,9 +54,10 @@ i18n coverage check, browser smoke test.
 - **Claude-account mode is personal.** It uses the server owner's plan limits and must not be offered to other users;
   multi-user deployments need an API key.
 - **Embeddings default to a lexical fallback.** Semantic search quality requires Voyage or another embedding provider.
-- **OCR quality** depends on Tesseract and scan quality; low-confidence pages are flagged, handwriting is not supported.
-- **Diagrams, maps and figures are not interpreted** (no vision model); only surrounding text is used. Map-based
-  geography quizzes and diagram-based questions are therefore not offered.
+- **Scanned pages** cost one Claude request each and count against the plan's limits; pages with low legibility are
+  flagged and recognition can contain small errors. With Tesseract instead, Arabic quality is much lower.
+- **Figures on pages with embedded text are not interpreted**; figures on scanned pages are described by Claude. Questions based
+  on geological maps, cross-sections, rock/fossil photos or other diagrams are therefore not offered.
 - **Tables** lose row/column structure in extracted text.
 - **Arabic PDF text** is repaired heuristically (RTL order, mirrored brackets, detached diacritics are dropped).
   Unusual encodings (custom fonts without Unicode maps) can still yield garbled text; reprocessing with OCR is the
@@ -75,7 +77,7 @@ i18n coverage check, browser smoke test.
 4. SQL Server 2025 native vector search; background re-embedding when the embedding model changes.
 5. Teacher/parent sharing (explicit, permissioned) and an admin area for multi-tenant deployments.
 6. Offline-friendly PWA for the reader and flashcard review.
-7. Richer subject tools: formula library extraction per chapter, conjugation drills, map assets for geography.
+7. Richer subject tools: formula library extraction per chapter, conjugation drills, rock, mineral and fossil reference images for geology.
 8. Background quiz generation with progress, and exam blueprints saved per subject.
 9. Accessibility audit with screen-reader users; reduced-motion and high-contrast themes.
 10. Observability: OpenTelemetry traces for AI calls, processing dashboards.

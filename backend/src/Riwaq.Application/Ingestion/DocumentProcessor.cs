@@ -19,6 +19,9 @@ public sealed class ProcessingOptions
     /// <summary>A page with fewer extracted letters than this is treated as scanned/image-only.</summary>
     public int ScannedLetterThreshold { get; set; } = 25;
     public double OcrLowConfidence { get; set; } = 60;
+
+    /// <summary>Scanned pages recognised at the same time.</summary>
+    public int OcrParallelism { get; set; } = 2;
     public int EmbeddingBatchSize { get; set; } = 64;
 }
 
@@ -72,23 +75,48 @@ public sealed class DocumentProcessor(
             if (ocr.IsAvailable)
             {
                 var languages = OcrLanguages(book.Subject?.ContentLanguage);
+
+                // The file never changes, so pages recognised by an earlier run are reused instead of being read again
+                // (each AI read costs a model request).
+                var previous = await db.DocumentPages
+                    .Where(p => p.BookId == book.Id && p.ExtractionMethod == ExtractionMethod.Ocr)
+                    .Select(p => new { p.PageNumber, p.Text })
+                    .ToDictionaryAsync(p => p.PageNumber, p => p.Text, ct);
+
                 var done = 0;
-                foreach (var page in scannedPages)
+                var limitReached = false;
+                foreach (var batch in scannedPages.Chunk(Math.Max(1, _options.OcrParallelism)))
                 {
-                    var result = await ocr.RecognizePageAsync(path, page.Number, languages, ct);
-                    if (result.Success)
+                    var results = await Task.WhenAll(batch.Select(async page =>
                     {
-                        ocrText[page.Number] = TextCleaner.CleanExtracted(result.Text);
-                        if (result.MeanConfidence < _options.OcrLowConfidence)
-                            warnings.Add(Warning(book.Id, page.Number, "ocr_low_confidence", WarningSeverity.Warning,
-                                $"OCR confidence {result.MeanConfidence:0}% — text on this page may contain recognition errors."));
-                    }
-                    else
+                        if (previous.TryGetValue(page.Number, out var known)) return (page.Number, Result: new OcrResult(true, known, null, null), Reused: true);
+                        if (limitReached) return (page.Number, Result: new OcrResult(false, string.Empty, null, "ocr_rate_limited"), Reused: false);
+                        return (page.Number, Result: await ocr.RecognizePageAsync(path, page.Number, languages, ct), Reused: false);
+                    }));
+
+                    foreach (var (number, result, reused) in results)
                     {
-                        warnings.Add(Warning(book.Id, page.Number, "ocr_failed", WarningSeverity.Warning, "Text on this scanned page could not be recognised."));
+                        if (result.Success)
+                        {
+                            ocrText[number] = reused ? result.Text : TextCleaner.CleanExtracted(result.Text);
+                            if (result.MeanConfidence < _options.OcrLowConfidence)
+                                warnings.Add(Warning(book.Id, number, "ocr_low_confidence", WarningSeverity.Warning,
+                                    "Text recognised on this scanned page may contain recognition errors."));
+                        }
+                        else if (result.ErrorCode == "ocr_rate_limited")
+                        {
+                            limitReached = true;
+                            warnings.Add(Warning(book.Id, number, "ocr_rate_limited", WarningSeverity.Warning,
+                                "The AI usage limit was reached before this page could be read. Reprocess the book later to read the remaining pages."));
+                        }
+                        else if (result.ErrorCode != "ocr_no_text")
+                        {
+                            warnings.Add(Warning(book.Id, number, "ocr_failed", WarningSeverity.Warning, "Text on this scanned page could not be recognised."));
+                        }
                     }
 
-                    if (++done % 5 == 0) await Stage(job, book, ProcessingStage.RecognizingScannedPages, 30 + 20 * done / scannedPages.Count, ct);
+                    done += batch.Length;
+                    await Stage(job, book, ProcessingStage.RecognizingScannedPages, 30 + 20 * done / scannedPages.Count, ct);
                 }
             }
             else
@@ -138,6 +166,7 @@ public sealed class DocumentProcessor(
 
         await Stage(job, book, ProcessingStage.DetectingStructure, 55, ct);
         var sections = StructureDetector.Detect(document);
+        if (sections.Count == 0 && ocrText.Count > 0) sections = StructureDetector.FromRecognisedText(ocrText, document.PageCount);
         var chapters = new List<Chapter>();
         Chapter? currentTop = null;
         foreach (var (section, index) in sections.Select((s, i) => (s, i)))

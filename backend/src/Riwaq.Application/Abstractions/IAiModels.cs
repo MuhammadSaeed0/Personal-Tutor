@@ -8,6 +8,9 @@ public enum ChatRole
 
 public sealed record ChatTurn(ChatRole Role, string Content);
 
+/// <summary>An image sent with the request, e.g. a rendered scanned page. <paramref name="MediaType"/> is image/png or image/jpeg.</summary>
+public sealed record ChatImage(string MediaType, byte[] Data);
+
 public sealed record ChatRequest
 {
     /// <summary>Trusted application instructions. Untrusted content (textbook text) never goes here.</summary>
@@ -20,6 +23,9 @@ public sealed record ChatRequest
 
     /// <summary>When set, the provider is asked to return JSON matching this JSON schema.</summary>
     public string? JsonSchema { get; init; }
+
+    /// <summary>Images placed before the text of the last user message (requires <see cref="IChatModel.SupportsImages"/>).</summary>
+    public IReadOnlyList<ChatImage>? Images { get; init; }
 
     /// <summary>Optional effort hint ("low", "medium", "high"). Providers that don't support it ignore it.</summary>
     public string? Effort { get; init; }
@@ -38,6 +44,9 @@ public interface IChatModel
 
     /// <summary>"anthropic", "claude-account", "openai-compatible" or "none".</summary>
     string Provider { get; }
+
+    /// <summary>Whether the provider accepts <see cref="ChatRequest.Images"/>.</summary>
+    bool SupportsImages { get; }
     Task<ChatResult> CompleteAsync(ChatRequest request, CancellationToken cancellationToken);
     IAsyncEnumerable<ChatStreamChunk> StreamAsync(ChatRequest request, CancellationToken cancellationToken);
 }

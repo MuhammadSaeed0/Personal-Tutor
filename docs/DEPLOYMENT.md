@@ -25,7 +25,10 @@ user-secrets (development) or a vault — never from committed files.
 | `Summaries:SingleCallChars` / `BatchChars` / `MaxBatches` | 180000 / 120000 / 12 | map-reduce thresholds |
 | `Processing:MaxFileSizeMb` / `MaxPages` | 150 / 2000 | upload limits |
 | `Processing:RunWorker` | `true` | run the background worker in this instance |
-| `Ocr:Enabled` / `TesseractPath` / `Dpi` | true / `tesseract` / 300 | OCR |
+| `Ocr:Enabled` / `Engine` | true / `Auto` | OCR for scanned pages; `Auto` = Claude vision when an AI provider is configured, else Tesseract; `Ai`; `Tesseract` |
+| `Ocr:AiImageHeight` | 2000 | pixel height of the page image sent to Claude |
+| `Ocr:TesseractPath` / `Dpi` | `tesseract` / 300 | Tesseract settings |
+| `Processing:OcrParallelism` | 2 | scanned pages read at the same time |
 | `Storage:RootPath` | `App_Data/storage` | where PDFs are stored |
 | `Email:AppBaseUrl` | `http://localhost:4200` | base for reset links |
 | `Cors:AllowedOrigins` | `[]` | only needed when the SPA is served from another origin |
@@ -71,7 +74,14 @@ Privacy: relevant textbook passages and the student's question are sent to the c
 account whose data-use terms fit your deployment (e.g. no training on API data).
 
 ## OCR
-Install Tesseract with `ara`, `eng` and `fra` traineddata and make `tesseract` available on PATH (or set
+**Claude vision (default).** With an AI provider configured (your Claude account or an API key), each scanned page is
+rendered to an image and Claude transcribes it verbatim (Arabic, English, French, equations as LaTeX, tables as
+Markdown) and describes its figures, which are stored as `[شكل: …]` / `[Figure: …]` lines so the tutor can use them.
+Chapters are then detected from the recognised headings. One model request per scanned page: a 250-page scanned book
+uses a noticeable share of a Claude plan's limits. If the limit is reached, the remaining pages get an
+`ocr_rate_limited` warning; reprocessing later reads only those pages (pages already read are kept).
+
+**Tesseract (offline alternative).** Install Tesseract with `ara`, `eng` and `fra` traineddata and make `tesseract` available on PATH (or set
 `Ocr:TesseractPath`). Windows: the UB Mannheim installer; Debian/Ubuntu: `apt-get install tesseract-ocr tesseract-ocr-ara
 tesseract-ocr-fra`. `GET /api/system/status` reports `ocr.available`.
 

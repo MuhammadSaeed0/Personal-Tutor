@@ -16,6 +16,7 @@ public sealed class FakeChatModel : IChatModel
     public bool IsConfigured => true;
     public string ModelName => "fake-model";
     public string Provider => "fake";
+    public bool SupportsImages => true;
     public bool Unavailable { get; set; }
 
     public void Respond(string feature, Func<ChatRequest, string> handler) => _handlers[feature] = handler;

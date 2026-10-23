@@ -94,7 +94,8 @@ export const EN = {
     figures_not_interpreted: 'Some pages contain figures or diagrams. Their visual content is not interpreted; only surrounding text is searchable.',
     tables_flattened: 'Tables were detected; their text is kept but rows and columns may be merged.',
     embeddings_unavailable: 'Semantic search vectors could not be created; keyword search still works. Reprocess later.',
-    no_text_extracted: 'No readable text could be extracted, so the tutor and search cannot use this book yet.'
+    no_text_extracted: 'No readable text could be extracted, so the tutor and search cannot use this book yet.',
+    ocr_rate_limited: 'The AI usage limit was reached before this scanned page could be read. Reprocess the book later; pages already read are kept.'
   },
   book: {
     read: 'Read', quiz: 'Make a quiz', processing: 'Processing', details: 'Book details', semester: 'Semester', collection: 'Collection',
@@ -113,7 +114,7 @@ export const EN = {
     zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit', fitWidth: 'Width', fitPage: 'Page', bookmark: 'Bookmark this page', nightMode: 'Night reading',
     focusMode: 'Distraction-free mode', fullscreen: 'Full screen', tutor: 'Tutor', notes: 'Notes', tools: 'Tools', contents: 'Contents',
     studyPanel: 'Study panel', loading: 'Opening your book…', loadFailed: 'The book could not be opened.',
-    scannedNotice: 'This page is a scanned image without readable text. Text selection is not available here.', askAboutPage: 'Ask about this page',
+    scannedNotice: 'This page is a scanned image without readable text. Text selection is not available here.', ocrNotice: 'This scanned page was read by AI. The recognised text may contain small errors — check important details against the page.', askAboutPage: 'Ask about this page',
     selectionActions: 'Actions for selected text', highlight: 'Highlight', annotation: 'Highlight & note', annotationPlaceholder: 'Add a personal note…',
     actions: { explain: 'Explain', simplify: 'Simplify', summarize: 'Summarise', translate: 'Translate', example: 'Example', steps: 'Step by step', questions: 'Questions', flashcard: 'Card' },
     toc: 'Chapters', pages: 'Pages', bookmarks: 'Bookmarks', noToc: 'No chapters were detected.', noTocHint: 'Use page navigation or search instead.',
@@ -310,7 +311,7 @@ export const EN = {
       arabic: 'Grammar, rhetoric, literature, reading comprehension and writing.', english: 'Vocabulary, grammar, reading and writing.',
       french: 'Vocabulary, grammar, conjugation, reading and writing.', physics: 'Laws, equations, units and numerical problems.',
       chemistry: 'Reactions, equations, calculations and periodic trends.', biology: 'Processes, structures, terminology and comparisons.',
-      geography: 'Places, processes, definitions and cause-and-effect.'
+      geology: 'Rocks, minerals, Earth processes, classifications and cause-and-effect.'
     }
   },
   settings: {
@@ -323,7 +324,7 @@ export const EN = {
     targetScore: 'Target score (%)', inDays: 'in {n} days', past: 'Past', sessionsLead: 'Devices currently signed in to your account.',
     thisDevice: 'This device', lastActive: 'Active {when}', signOut: 'Sign out', unknownDevice: 'Unknown device',
     privacy1: 'Your uploaded books are stored privately and are only accessible to your account. Other students can never search or see them.',
-    privacy2: 'To answer questions, relevant passages from your book are sent to the configured AI provider together with your question. Your books and conversations are not used by Riwaq to train AI models.',
+    privacy2: 'To answer questions, relevant passages from your book are sent to the configured AI provider together with your question; images of scanned pages are sent to it to be read. Your books and conversations are not used by Riwaq to train AI models.',
     privacy3: 'Your study data (progress, cards, notes, quiz results) is used only to personalise your plan and recommendations.',
     privacy4: 'You can export everything you created, and deleting your account permanently removes your books, files and study data.',
     aiProvider: 'AI provider on this server', aiModel: 'model {model}',

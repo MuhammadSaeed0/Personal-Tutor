@@ -37,7 +37,7 @@ public static class Prompts
         "physics" => "Physics: preserve equations, symbols and SI units exactly. For numerical problems show formula, known values with units, substitution, calculation and final answer with units.",
         "chemistry" => "Chemistry: write formulas and equations with \\ce{...} (mhchem), keep them balanced, show units and significant steps in calculations.",
         "biology" => "Biology: emphasise processes, structures, sequences, comparisons and cause-and-effect; use precise terminology.",
-        "geography" => "Geography: emphasise locations, spatial relationships, processes, comparisons and cause-and-effect.",
+        "geology" => "Geology: emphasise rocks and minerals, Earth's structure, geological processes and time scales, classifications, comparisons and cause-and-effect; use precise terminology.",
         "arabic" => "Arabic language: for grammar give إعراب where relevant, explain rhetoric (بلاغة) with examples, and correct mistakes gently with the rule.",
         "english" => "English language: give clear examples, explain grammar rules, and correct mistakes with the reason.",
         "french" => "French language: give clear examples, explain grammar and conjugation, and correct mistakes with the rule.",

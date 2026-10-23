@@ -25,7 +25,7 @@ public sealed class ClaudeAccountFactAttribute : FactAttribute
     }
 }
 
-public class RealAiProviderTests
+public class RealAiProviderTests(Xunit.Abstractions.ITestOutputHelper output)
 {
     private static AnthropicChatModel ApiModel() => new(new ChatProviderOptions
     {
@@ -69,6 +69,24 @@ public class RealAiProviderTests
             MaxTokens = 200
         }, CancellationToken.None);
         Assert.Contains("neon", result.Text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Reads one scanned page through the account: set RIWAQ_TEST_SCANNED_PDF (and optionally RIWAQ_TEST_SCANNED_PAGE).</summary>
+    [ClaudeAccountFact]
+    public async Task Account_reads_a_scanned_page()
+    {
+        var pdf = Environment.GetEnvironmentVariable("RIWAQ_TEST_SCANNED_PDF");
+        if (string.IsNullOrEmpty(pdf)) return;
+        var pageNumber = int.Parse(Environment.GetEnvironmentVariable("RIWAQ_TEST_SCANNED_PAGE") ?? "1");
+        var engine = new Riwaq.Infrastructure.Pdf.AiVisionOcrEngine(AccountModel(),
+            Microsoft.Extensions.Options.Options.Create(new Riwaq.Infrastructure.Pdf.OcrOptions()),
+            NullLogger<Riwaq.Infrastructure.Pdf.AiVisionOcrEngine>.Instance);
+
+        var result = await engine.RecognizePageAsync(pdf, pageNumber, "ara+eng", CancellationToken.None);
+
+        output.WriteLine($"confidence={result.MeanConfidence} error={result.ErrorCode}");
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), $"riwaq-ocr-page-{pageNumber}.txt"), result.Text);
+        Assert.True(result.Success, result.ErrorCode);
     }
 
     private static async Task StreamsCitedAnswer(IChatModel model)

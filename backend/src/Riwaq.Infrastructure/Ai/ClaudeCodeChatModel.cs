@@ -42,6 +42,7 @@ public sealed class ClaudeCodeChatModel : IChatModel
     public bool IsConfigured => _executable is not null;
     public string ModelName => _options.Model;
     public string Provider => "claude-account";
+    public bool SupportsImages => true;
 
     public async Task<ChatResult> CompleteAsync(ChatRequest request, CancellationToken cancellationToken)
     {
@@ -100,7 +101,9 @@ public sealed class ClaudeCodeChatModel : IChatModel
             var stderr = ReadBoundedAsync(process.StandardError);
 
             // The prompt goes through stdin: no command-line length limit and no shell quoting of untrusted text.
-            await process.StandardInput.WriteAsync(ClaudeCliProtocol.BuildPrompt(request.Messages).AsMemory(), timeout.Token);
+            var prompt = ClaudeCliProtocol.BuildPrompt(request.Messages);
+            var input = request.Images is { Count: > 0 } images ? ClaudeCliProtocol.BuildImageInput(prompt, images) : prompt;
+            await process.StandardInput.WriteAsync(input.AsMemory(), timeout.Token);
             process.StandardInput.Close();
 
             var sawResult = false;
@@ -168,7 +171,8 @@ public sealed class ClaudeCodeChatModel : IChatModel
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8
         };
-        foreach (var arg in ClaudeCliProtocol.BuildArguments(_options.Model, request.Effort ?? _options.Effort, request.JsonSchema, systemPromptFile, streaming))
+        foreach (var arg in ClaudeCliProtocol.BuildArguments(_options.Model, request.Effort ?? _options.Effort, request.JsonSchema, systemPromptFile, streaming,
+                     jsonInput: request.Images is { Count: > 0 }))
             psi.ArgumentList.Add(arg);
 
         // Use the signed-in Claude account, never an API key that happens to be in the server's environment.

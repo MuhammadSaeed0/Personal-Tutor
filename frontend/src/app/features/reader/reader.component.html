@@ -67,6 +67,8 @@
         <div class="page-notice alert warning small"><rw-icon name="info" [size]="16" /> {{ 'reader.scannedNotice' | t }}
           <button class="btn sm" type="button" (click)="store.askTutor({ action: 'explain_page', question: '', selectedText: null, page: store.currentPage() })">{{ 'reader.askAboutPage' | t }}</button>
         </div>
+      } @else if (store.currentPageInfo()?.extractionMethod === 'ocr') {
+        <div class="page-notice alert info small"><rw-icon name="info" [size]="16" /> {{ 'reader.ocrNotice' | t }}</div>
       }
     </section>
 

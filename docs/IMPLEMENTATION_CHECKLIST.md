@@ -15,7 +15,9 @@ Legend: ✅ done and tested · 🟡 done, verified only partly (see note) · ⬜
 - ✅ Secure upload (streamed size check, header/parse validation, SHA-256 duplicates), progress, cancel
 - ✅ Restart-safe DB job queue (atomic claim, heartbeat, recovery, back-off), SignalR progress + polling
 - ✅ Pipeline: validate → extract (Arabic RTL repair) → OCR → structure → tables/figures → chunk → embed; warnings
-- 🟡 OCR: implemented (Tesseract CLI + PDFium rendering), unit-tested parser; not executed here (Tesseract not installed locally)
+- ✅ Scanned PDFs read by Claude vision (page image → verbatim text + figure descriptions), chapters from recognised
+      headings, reuse on reprocess, usage-limit handling; verified live on a real 251-page scanned textbook page
+- 🟡 Tesseract OCR alternative: implemented, unit-tested parser; not executed here (not installed)
 - ✅ Reader: lazy pdf.js pages, navigation, zoom, fit, thumbnails, TOC, bookmarks, search, highlights + notes,
       selection toolbar, Arabic selection repair, resume, reading-time tracking, night/focus/full-screen, shortcuts, mobile sheets
 
