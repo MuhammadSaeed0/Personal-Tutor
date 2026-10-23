@@ -1,0 +1,16 @@
+.narrow { max-width: 820px; }
+.back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; color: var(--ink-2); }
+.form { display: flex; flex-direction: column; gap: 22px; padding: 26px; }
+.mode { align-self: flex-start; }
+.mode button { display: inline-flex; gap: 6px; align-items: center; padding: 8px 14px; }
+.span2 { grid-column: 1 / -1; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.slider { width: 100%; accent-color: var(--brand); }
+.options { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
+.field.inline { flex-direction: row; align-items: center; gap: 8px; }
+.field.inline .input, .field.inline .select { width: auto; min-width: 90px; }
+.exam-box { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--radius); background: var(--gold-soft); }
+.blueprint { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.bp { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--surface); border-radius: 8px; }
+.bp .input { width: 64px; min-height: 32px; }
+.generating { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px; text-align: center; }

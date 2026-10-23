@@ -1,0 +1,135 @@
+<div class="page">
+  <header class="page-header">
+    <div><div class="eyebrow">{{ 'subject.tools' | t }}</div><h1>{{ ('tools.titles.' + tool()) | t }}</h1><p>{{ ('tools.leads.' + tool()) | t }}</p></div>
+  </header>
+
+  @switch (tool()) {
+    @case ('periodic-table') {
+      <div class="pt-layout">
+        <div class="card pt-wrap">
+          <div class="pt" dir="ltr">
+            @for (e of mainTable; track e.z) {
+              <button type="button" class="el" [class]="'el ' + e.category" [style.grid-row]="e.period" [style.grid-column]="gridColumn(e)"
+                [class.active]="selectedElement()?.z === e.z" (click)="selectedElement.set(e)" [attr.aria-label]="elementName(e)">
+                <span class="z">{{ e.z }}</span><strong>{{ e.symbol }}</strong>
+              </button>
+            }
+          </div>
+          <div class="pt fblock" dir="ltr">
+            @for (e of lanthanides; track e.z) { <button type="button" class="el lanthanide" [style.grid-row]="1" [class.active]="selectedElement()?.z === e.z" (click)="selectedElement.set(e)" [attr.aria-label]="elementName(e)"><span class="z">{{ e.z }}</span><strong>{{ e.symbol }}</strong></button> }
+            @for (e of actinides; track e.z) { <button type="button" class="el actinide" [style.grid-row]="2" [class.active]="selectedElement()?.z === e.z" (click)="selectedElement.set(e)" [attr.aria-label]="elementName(e)"><span class="z">{{ e.z }}</span><strong>{{ e.symbol }}</strong></button> }
+          </div>
+          <div class="legend xsmall">
+            @for (c of ['alkali','alkaline','transition','post','metalloid','nonmetal','halogen','noble','lanthanide','actinide']; track c) {
+              <span><i [class]="'sw ' + c"></i>{{ 'tools.categories.' + c | t }}</span>
+            }
+          </div>
+        </div>
+        <aside class="stack">
+          @if (selectedElement(); as e) {
+            <div class="card element-card" [class]="'card element-card ' + e.category">
+              <span class="big-z num">{{ e.z }}</span>
+              <span class="big-symbol">{{ e.symbol }}</span>
+              <strong>{{ e.ar }} · {{ e.en }}</strong>
+              <div class="facts small">
+                <span>{{ 'tools.atomicMass' | t }}: <strong class="num">{{ e.mass }}</strong> g/mol</span>
+                <span>{{ 'tools.period' | t }}: <strong class="num">{{ e.period }}</strong></span>
+                @if (e.group > 0) { <span>{{ 'tools.group' | t }}: <strong class="num">{{ e.group }}</strong></span> }
+                <span>{{ 'tools.categories.' + e.category | t }}</span>
+              </div>
+            </div>
+          }
+          <div class="card">
+            <h3 class="small">{{ 'tools.molarMass' | t }}</h3>
+            <input class="input ltr" [ngModel]="formula" (ngModelChange)="updateFormula($event)" placeholder="Ca(OH)2" [attr.aria-label]="'tools.molarMass' | t" />
+            @if (molar(); as m) {
+              <p class="result num"><strong>{{ i18n.number(m.mass, 3) }}</strong> g/mol</p>
+              <div class="xsmall subtle ltr">@for (p of m.parts; track p[0]) { <span>{{ p[0] }}×{{ p[1] }} </span> }</div>
+            } @else { <p class="xsmall subtle">{{ 'tools.invalidFormula' | t }}</p> }
+          </div>
+        </aside>
+      </div>
+    }
+
+    @case ('equation-balancer') {
+      <div class="card narrow-card">
+        <div class="field">
+          <label for="eq">{{ 'tools.equation' | t }}</label>
+          <input id="eq" class="input ltr big" [(ngModel)]="equation" placeholder="C3H8 + O2 -> CO2 + H2O" />
+          <span class="hint">{{ 'tools.equationHint' | t }}</span>
+        </div>
+        <div class="field">
+          <label for="try">{{ 'tools.yourCoefficients' | t }}</label>
+          <div class="row"><input id="try" class="input ltr" [(ngModel)]="attemptCoefficients" placeholder="4, 3, 2" />
+            <button class="btn" type="button" (click)="checkAttempt()">{{ 'tools.check' | t }}</button></div>
+          @if (attemptResult() !== null) {
+            <div class="alert small" [class.success]="attemptResult()" [class.danger]="!attemptResult()">{{ (attemptResult() ? 'tools.attemptRight' : 'tools.attemptWrong') | t }}</div>
+          }
+        </div>
+        <button class="btn primary" type="button" (click)="runBalance()">{{ 'tools.showBalanced' | t }}</button>
+        @if (balancedMarkdown(); as md) { <div class="balanced"><rw-markdown [content]="md" /></div> }
+        @if (balanceError()) { <div class="alert danger small">{{ balanceError() }}</div> }
+      </div>
+    }
+
+    @case ('units') {
+      <div class="grid cols-2">
+        <section class="card">
+          <h3 class="small">{{ 'tools.converter' | t }}</h3>
+          <div class="chips">@for (g of unitGroups; track g) { <button type="button" class="chip" [class.active]="unitGroup === g" (click)="setGroup(g)">{{ 'tools.quantities.' + g | t }}</button> }</div>
+          <div class="convert ltr">
+            <input class="input num" type="number" [(ngModel)]="amount" [attr.aria-label]="'tools.amount' | t" />
+            <select class="select" [(ngModel)]="fromUnit" [attr.aria-label]="'tools.from' | t">@for (u of units(); track u.name) { <option [value]="u.name">{{ u.name }}</option> }</select>
+            <span>=</span>
+            <strong class="num">{{ converted() }}</strong>
+            <select class="select" [(ngModel)]="toUnit" [attr.aria-label]="'tools.to' | t">@for (u of units(); track u.name) { <option [value]="u.name">{{ u.name }}</option> }</select>
+          </div>
+          <h3 class="small" style="margin-top: 16px">{{ 'tools.temperature' | t }}</h3>
+          <div class="convert ltr">
+            <input class="input num" type="number" [(ngModel)]="celsius" aria-label="°C" /><span>°C =</span>
+            <strong class="num">{{ kelvin() }} K</strong><span>=</span><strong class="num">{{ fahrenheit() }} °F</strong>
+          </div>
+        </section>
+        <section class="card">
+          <h3 class="small">{{ 'tools.siBase' | t }}</h3>
+          <table class="units-table">
+            @for (u of siBase; track u.symbol) { <tr><td>{{ 'tools.quantities.' + u.q | t }}</td><td class="ltr">{{ u.unit }}</td><td class="ltr"><strong>{{ u.symbol }}</strong></td></tr> }
+          </table>
+          <h3 class="small" style="margin-top: 12px">{{ 'tools.derived' | t }}</h3>
+          <table class="units-table">
+            @for (u of derived; track u.symbol) { <tr><td>{{ 'tools.quantities.' + u.q | t }}</td><td class="ltr">{{ u.unit }} ({{ u.symbol }})</td><td class="ltr">{{ u.si }}</td></tr> }
+          </table>
+        </section>
+      </div>
+    }
+
+    @case ('practice') {
+      @if (languageBooks().length === 0) {
+        <div class="card"><p class="muted">{{ 'tools.needLanguageBook' | t }}</p><a class="btn primary" routerLink="/library">{{ 'nav.library' | t }}</a></div>
+      } @else {
+        <div class="grid cols-2">
+          <section class="card stack">
+            <h3 class="small">{{ 'tools.practiceExercises' | t }}</h3>
+            <select class="select" [(ngModel)]="practiceBookId" [attr.aria-label]="'builder.book' | t">@for (b of languageBooks(); track b.id) { <option [ngValue]="b.id">{{ b.title }}</option> }</select>
+            <div class="practice-grid">
+              <a class="tool-btn" routerLink="/quizzes/new" [queryParams]="{ bookId: practiceBookId, title: '' }"><rw-icon name="book-a" /> {{ 'tools.grammarVocab' | t }}</a>
+              <a class="tool-btn" routerLink="/quizzes/new" [queryParams]="{ bookId: practiceBookId }"><rw-icon name="file-text" /> {{ 'tools.comprehension' | t }}</a>
+              <a class="tool-btn" [routerLink]="['/tutor']" [queryParams]="{ bookId: practiceBookId }"><rw-icon name="languages" /> {{ 'tools.translationPractice' | t }}</a>
+            </div>
+            <p class="xsmall subtle">{{ 'tools.practiceNote' | t }}</p>
+          </section>
+          <section class="card stack">
+            <h3 class="small">{{ 'tools.writingFeedback' | t }}</h3>
+            <textarea class="textarea" rows="8" [(ngModel)]="writing" dir="auto" [placeholder]="'tools.writingPlaceholder' | t" [attr.aria-label]="'tools.writingFeedback' | t"></textarea>
+            <button class="btn primary" type="button" (click)="getWritingFeedback()" [disabled]="feedbackBusy() || writing.trim().length < 10 || !practiceBookId">
+              @if (feedbackBusy()) { <span class="spinner"></span> } {{ 'tools.getFeedback' | t }}</button>
+            @if (feedbackError()) { <div class="alert danger small">{{ feedbackError() }}</div> }
+            @if (feedback()) { <div class="feedback"><rw-markdown [content]="feedback()" [streaming]="feedbackBusy()" /></div> }
+          </section>
+        </div>
+      }
+    }
+
+    @default { <div class="card"><p class="muted">{{ 'tools.unknown' | t }}</p></div> }
+  }
+</div>

@@ -1,0 +1,98 @@
+<div class="page narrow">
+  <a routerLink="/quizzes" class="back small"><rw-icon name="arrow-left" [size]="14" /> {{ 'nav.quizzes' | t }}</a>
+  @if (result(); as r) {
+    <section class="card hero">
+      <rw-ring [value]="r.percent" [size]="120" [color]="color()" [label]="'result.score' | t">
+        <span class="pct num">{{ i18n.number(r.percent) }}%</span>
+      </rw-ring>
+      <div class="grow">
+        <h1 dir="auto">{{ r.quizTitle }}</h1>
+        <p class="muted">{{ 'result.scoreLine' | t: { score: i18n.number(r.score, 1), max: r.maxScore } }}</p>
+        <div class="facts">
+          <span class="badge success"><rw-icon name="check" [size]="12" /> {{ 'result.correctN' | t: { n: r.correctCount } }}</span>
+          <span class="badge danger"><rw-icon name="x" [size]="12" /> {{ 'result.wrongN' | t: { n: r.incorrectCount } }}</span>
+          @if (r.pendingCount > 0) { <span class="badge warning">{{ 'result.pendingN' | t: { n: r.pendingCount } }}</span> }
+          <span class="badge"><rw-icon name="clock" [size]="12" /> {{ duration() }}</span>
+          @if (r.isPersonalBest) { <span class="badge gold"><rw-icon name="trophy" [size]="12" /> {{ 'result.personalBest' | t }}</span> }
+        </div>
+      </div>
+    </section>
+
+    <div class="grid cols-2 insights">
+      <section class="card">
+        <div class="card-title"><h3>{{ 'result.byTopic' | t }}</h3></div>
+        @for (t of r.topics; track t.topic) {
+          <div class="topic">
+            <span class="small grow" dir="auto">{{ t.topic }}</span>
+            <span class="xsmall num subtle">{{ t.correct }}/{{ t.total }}</span>
+            <div class="bar mini"><span [style.width.%]="(100 * t.correct) / t.total" [style.background]="t.correct === t.total ? 'var(--success)' : t.correct === 0 ? 'var(--danger)' : 'var(--warning)'"></span></div>
+          </div>
+        } @empty { <p class="muted small">{{ 'result.noTopics' | t }}</p> }
+      </section>
+      <section class="card">
+        <div class="card-title"><h3>{{ 'result.nextSteps' | t }}</h3></div>
+        <div class="stack">
+          @if (r.reviewPages.length > 0 && r.bookId) {
+            <div>
+              <p class="small">{{ 'result.reviewPages' | t }}</p>
+              <div class="row wrap">
+                @for (p of r.reviewPages; track p) { <a class="chip" [routerLink]="['/read', r.bookId]" [queryParams]="{ page: p }">{{ 'common.pageN' | t: { n: p } }}</a> }
+              </div>
+            </div>
+          }
+          @if (r.incorrectCount > 0) {
+            <button class="btn" type="button" (click)="cardsFromMistakes()" [disabled]="cardsCreated()"><rw-icon name="layers" [size]="16" /> {{ (cardsCreated() ? 'result.cardsCreated' : 'result.makeCards') | t }}</button>
+            @if (r.bookId) {
+              <a class="btn" routerLink="/quizzes/new" [queryParams]="{ bookId: r.bookId }"><rw-icon name="target" [size]="16" /> {{ 'result.practiceWeak' | t }}</a>
+            }
+          }
+          <button class="btn primary" type="button" (click)="retake()"><rw-icon name="rotate-ccw" [size]="16" /> {{ 'quizzes.retake' | t }}</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="row between review-head">
+      <h2>{{ 'result.review' | t }}</h2>
+      <div class="segmented" role="group">
+        <button type="button" [attr.aria-pressed]="filter() === 'all'" (click)="filter.set('all')">{{ 'common.all' | t }}</button>
+        <button type="button" [attr.aria-pressed]="filter() === 'wrong'" (click)="filter.set('wrong')">{{ 'result.mistakes' | t }}</button>
+        @if (r.pendingCount > 0) { <button type="button" [attr.aria-pressed]="filter() === 'pending'" (click)="filter.set('pending')">{{ 'result.pending' | t }}</button> }
+      </div>
+    </div>
+
+    @for (q of visible(); track q.question.id) {
+      <article class="card q" [class.ok]="q.response?.isCorrect === true" [class.bad]="q.response?.isCorrect === false">
+        <header class="row between">
+          <span class="row"><span class="num-badge">{{ q.question.ordinal }}</span><span class="badge">{{ 'questionTypes.' + q.question.type | t }}</span>
+            @if (q.question.topic) { <span class="xsmall subtle" dir="auto">{{ q.question.topic }}</span> }</span>
+          <span class="badge" [class.success]="q.response?.isCorrect === true" [class.danger]="q.response?.isCorrect === false" [class.warning]="q.response?.gradingMethod === 'pending'">
+            {{ q.response?.gradingMethod === 'pending' ? ('result.pending' | t) : (q.response?.isCorrect ? ('attempt.correct' | t) : ('attempt.incorrect' | t)) }}
+            · {{ i18n.number(q.response?.pointsAwarded ?? 0, 2) }}/{{ q.question.points }}
+          </span>
+        </header>
+        <rw-markdown [content]="q.question.prompt" />
+        <div class="answers">
+          <div><span class="xsmall subtle">{{ 'result.yourAnswer' | t }}</span><p class="small pre" dir="auto">{{ studentAnswer(q) }}</p></div>
+          <div><span class="xsmall subtle">{{ 'attempt.correctAnswer' | t }}</span><p class="small pre" dir="auto">{{ q.correctAnswer }}</p></div>
+        </div>
+        @if (q.response?.feedback) { <div class="alert small"><rw-icon name="message-circle" [size]="16" /> <span dir="auto">{{ q.response!.feedback }}</span></div> }
+        @if (q.response?.gradingMethod === 'pending') {
+          <div class="self">
+            <span class="small">{{ 'result.selfAssessPrompt' | t }}</span>
+            <button class="btn sm" type="button" (click)="selfAssess(q, true)"><rw-icon name="check" [size]="14" /> {{ 'result.iWasRight' | t }}</button>
+            <button class="btn sm" type="button" (click)="selfAssess(q, false)"><rw-icon name="x" [size]="14" /> {{ 'result.iWasWrong' | t }}</button>
+          </div>
+        }
+        <details class="explanation" [open]="q.response?.isCorrect === false">
+          <summary class="small">{{ 'result.explanation' | t }}</summary>
+          <rw-markdown [content]="q.explanation" />
+          @if (q.sourceQuote) { <blockquote class="small" dir="auto">“{{ q.sourceQuote }}”</blockquote> }
+          @if (q.sourcePage && r.bookId) { <a class="small" [routerLink]="['/read', r.bookId]" [queryParams]="{ page: q.sourcePage }"><rw-icon name="book-open" [size]="14" /> {{ 'common.pageN' | t: { n: q.sourcePage } }}</a> }
+        </details>
+      </article>
+    }
+  } @else {
+    <div class="skeleton" style="height: 220px; margin-bottom: 16px"></div>
+    <div class="skeleton" style="height: 400px"></div>
+  }
+</div>

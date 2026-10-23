@@ -1,0 +1,15 @@
+.drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
+  padding: 28px 16px; border: 1.5px dashed var(--line-strong); border-radius: var(--radius-lg);
+  background: var(--surface-2); cursor: pointer; color: var(--ink-2);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.drop:hover, .drop.dragging { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-strong); }
+.drop.has-file { border-style: solid; border-color: var(--brand); }
+.drop:focus-within { box-shadow: var(--focus-ring); }
+.file-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.fields { margin-top: 16px; }
+.error { color: var(--danger); margin: 8px 0 0; }
+.state { padding: 12px 0; display: flex; flex-direction: column; gap: 10px; }
+.bar.big { height: 8px; }
+.processing { display: flex; flex-direction: column; gap: 16px; }

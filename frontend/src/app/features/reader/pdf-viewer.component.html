@@ -1,0 +1,15 @@
+<div class="scroller" #scroller (scroll)="onScroll()" (mouseup)="onPointerUp($event)" (touchend)="onPointerUp($event)" (keyup)="onPointerUp($event)" tabindex="0" aria-label="PDF">
+  @for (size of sizes(); track $index; let i = $index) {
+    <div class="page" [attr.data-page]="i + 1" [style]="pageStyle(size)">
+      <div class="layers">
+        @for (h of highlightsFor(i + 1); track h.id) {
+          @for (r of h.rects; track $index) {
+            <span [class]="'hl hl-' + h.color + (h.annotation ? ' annotated' : '')"
+              [style.left.%]="r.x * 100" [style.top.%]="r.y * 100" [style.width.%]="r.w * 100" [style.height.%]="r.h * 100"></span>
+          }
+        }
+      </div>
+      <span class="page-number num" aria-hidden="true">{{ i + 1 }}</span>
+    </div>
+  }
+</div>

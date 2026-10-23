@@ -1,0 +1,143 @@
+<div class="tutor">
+  <header class="head">
+    @if (renaming()) {
+      <input class="input" [(ngModel)]="renameDraft" (keydown.enter)="rename()" (keydown.escape)="renaming.set(false)" dir="auto" [attr.aria-label]="'tutor.rename' | t" />
+      <button class="btn sm primary" type="button" (click)="rename()">{{ 'common.save' | t }}</button>
+    } @else {
+      <button class="conv-picker" type="button" [cdkMenuTriggerFor]="convMenu">
+        <rw-icon name="message-circle" [size]="16" />
+        <span class="grow" dir="auto">{{ active()?.title || ('tutor.newConversation' | t) }}</span>
+        <rw-icon name="chevron-down" [size]="14" />
+      </button>
+      <ng-template #convMenu>
+        <div class="menu conv-menu" cdkMenu>
+          <button cdkMenuItem type="button" (click)="newChat()"><rw-icon name="message-plus" [size]="16" /> {{ 'tutor.newChat' | t }}</button>
+          @if (conversations().length > 0) { <hr class="divider" style="margin: 4px 0" /> }
+          @for (c of conversations(); track c.id) {
+            <button cdkMenuItem type="button" (click)="select(c)" [class.current]="c.id === active()?.id">
+              <span class="grow ellipsis" dir="auto">{{ c.title || ('tutor.untitled' | t) }}</span>
+              <span class="subtle xsmall">{{ i18n.relative(c.updatedAt) }}</span>
+            </button>
+          }
+        </div>
+      </ng-template>
+      <button class="btn ghost icon sm" type="button" (click)="newChat()" [attr.aria-label]="'tutor.newChat' | t"><rw-icon name="message-plus" [size]="16" /></button>
+      @if (active()) {
+        <button class="btn ghost icon sm" type="button" [cdkMenuTriggerFor]="more" [attr.aria-label]="'common.more' | t"><rw-icon name="more" [size]="16" /></button>
+        <ng-template #more>
+          <div class="menu" cdkMenu>
+            <button cdkMenuItem type="button" (click)="renameDraft = active()!.title; renaming.set(true)"><rw-icon name="pencil" [size]="16" /> {{ 'tutor.rename' | t }}</button>
+            <button cdkMenuItem type="button" class="danger" (click)="remove()"><rw-icon name="trash" [size]="16" /> {{ 'common.delete' | t }}</button>
+          </div>
+        </ng-template>
+      }
+    }
+  </header>
+
+  <div class="messages" #scroller role="log" aria-live="polite" [attr.aria-busy]="streaming()">
+    @if (!aiConfigured()) {
+      <div class="alert warning small"><rw-icon name="info" [size]="16" /> {{ 'tutor.aiNotConfigured' | t }}</div>
+    }
+
+    @if (messages().length === 0 && !streaming() && !loading()) {
+      <div class="intro">
+        <span class="intro-icon"><rw-icon name="sparkles" [size]="22" /></span>
+        <h3>{{ 'tutor.introTitle' | t }}</h3>
+        <p>{{ (reader ? 'tutor.introReader' : 'tutor.introGeneral') | t }}</p>
+        @if (reader) {
+          <div class="suggestions">
+            <button type="button" class="chip" (click)="quick('explain_page')">{{ 'tutor.quick.explainPage' | t: { page: reader.currentPage() } }}</button>
+            <button type="button" class="chip" (click)="quick('summarize_section')">{{ 'tutor.quick.summarizeSection' | t }}</button>
+            <button type="button" class="chip" (click)="quick('check')">{{ 'tutor.quick.testMe' | t }}</button>
+            <button type="button" class="chip" (click)="quick('terminology')">{{ 'tutor.quick.terms' | t }}</button>
+          </div>
+        }
+      </div>
+    }
+
+    @for (m of messages(); track m.id) {
+      @if (m.role === 'user') {
+        <div class="msg user">
+          @if (m.selectedText) { <blockquote class="quote" dir="auto">{{ m.selectedText.length > 220 ? m.selectedText.slice(0, 220) + '…' : m.selectedText }}</blockquote> }
+          @if (m.action) { <span class="badge brand">{{ actionLabel(m.action) }}</span> }
+          @if (m.content) { <p dir="auto">{{ m.content }}</p> }
+          @if (m.contextPage) { <span class="xsmall subtle">{{ 'common.pageN' | t: { n: m.contextPage } }}</span> }
+        </div>
+      } @else {
+        <div class="msg assistant" [class.error]="m.status === 'error'">
+          @if (m.status === 'error') {
+            <div class="err small"><rw-icon name="alert-circle" [size]="16" /> {{ errorText(m.errorCode) }}</div>
+            <button class="btn sm" type="button" (click)="retry(m)"><rw-icon name="refresh" [size]="14" /> {{ 'common.retry' | t }}</button>
+          } @else {
+            @if (!m.grounded) { <div class="ungrounded xsmall"><rw-icon name="info" [size]="13" /> {{ 'tutor.notGrounded' | t }}</div> }
+            <rw-markdown [content]="m.content" [citations]="m.citations" (citationClick)="openCitation($event)" />
+            @if (m.status === 'stopped') { <span class="badge warning">{{ 'tutor.stopped' | t }}</span> }
+            @if (m.citations.length > 0) {
+              <div class="sources">
+                <span class="xsmall subtle">{{ 'tutor.sources' | t }}</span>
+                @for (c of m.citations; track c.marker) {
+                  <button type="button" class="source" (click)="openCitation({ citation: c, page: c.pageStart })" [title]="c.quote ?? ''">
+                    <span class="cite">{{ c.marker }}</span>
+                    <span class="xsmall" dir="auto">{{ c.chapterTitle ? c.chapterTitle + ' · ' : '' }}{{ 'common.pageN' | t: { n: c.pageStart } }}</span>
+                  </button>
+                }
+              </div>
+            }
+            <div class="msg-actions">
+              <button class="btn ghost icon sm" type="button" (click)="copy(m)" [attr.aria-label]="'common.copy' | t"><rw-icon name="copy" [size]="14" /></button>
+              <button class="btn ghost icon sm" type="button" (click)="feedback(m, 1)" [class.on]="m.feedback === 1" [attr.aria-label]="'tutor.helpful' | t"><rw-icon name="thumbs-up" [size]="14" /></button>
+              <button class="btn ghost icon sm" type="button" (click)="feedback(m, -1)" [class.on]="m.feedback === -1" [attr.aria-label]="'tutor.notHelpful' | t"><rw-icon name="thumbs-down" [size]="14" /></button>
+              <button class="btn ghost icon sm" type="button" (click)="saveToNotes(m)" [attr.aria-label]="'tutor.saveToNotes' | t"><rw-icon name="notebook-pen" [size]="14" /></button>
+              @if (m.id === lastAssistant()?.id) {
+                <button class="btn ghost icon sm" type="button" (click)="retry(m)" [attr.aria-label]="'tutor.regenerate' | t"><rw-icon name="refresh" [size]="14" /></button>
+              }
+            </div>
+            @if (m.id === lastAssistant()?.id && m.followUps.length > 0 && !streaming()) {
+              <div class="suggestions">
+                @for (f of m.followUps; track f) { <button type="button" class="chip" (click)="followUp(f)" dir="auto">{{ f }}</button> }
+              </div>
+            }
+          }
+        </div>
+      }
+    }
+
+    @if (streaming()) {
+      <div class="msg assistant">
+        @if (streamText()) {
+          <rw-markdown [content]="streamText()" [streaming]="true" />
+        } @else {
+          <div class="thinking"><span></span><span></span><span></span><span class="xsmall subtle">{{ 'tutor.thinking' | t }}</span></div>
+        }
+      </div>
+    }
+  </div>
+
+  <footer class="composer">
+    @if (selection(); as sel) {
+      <div class="context">
+        <rw-icon name="highlighter" [size]="14" />
+        <span class="grow xsmall ellipsis" dir="auto">{{ sel.text }}</span>
+        <button class="btn ghost icon sm" type="button" (click)="attachSelection.set(false)" [attr.aria-label]="'common.remove' | t"><rw-icon name="x" [size]="12" /></button>
+      </div>
+    } @else if (reader) {
+      <div class="context subtle"><rw-icon name="book-open" [size]="14" /><span class="xsmall">{{ 'tutor.contextPage' | t: { page: reader.currentPage() } }}</span></div>
+    }
+    <div class="input-row">
+      <textarea #input class="textarea" rows="1" [(ngModel)]="draft" (keydown)="onKeydown($event)" [placeholder]="'tutor.placeholder' | t" dir="auto" [attr.aria-label]="'tutor.placeholder' | t"></textarea>
+      @if (streaming()) {
+        <button class="btn icon" type="button" (click)="stop()" [attr.aria-label]="'tutor.stop' | t"><rw-icon name="square" [size]="16" /></button>
+      } @else {
+        <button class="btn primary icon" type="button" (click)="submit()" [disabled]="!draft.trim() && !selection()" [attr.aria-label]="'tutor.send' | t"><rw-icon name="send" [size]="16" /></button>
+      }
+    </div>
+    <div class="options">
+      <label class="xsmall subtle">{{ 'tutor.answerIn' | t }}
+        <select class="select lang" [ngModel]="language()" (ngModelChange)="language.set($event)">
+          <option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option>
+        </select>
+      </label>
+      <span class="xsmall subtle">{{ 'tutor.disclaimer' | t }}</span>
+    </div>
+  </footer>
+</div>

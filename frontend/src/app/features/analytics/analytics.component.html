@@ -1,0 +1,100 @@
+<div class="page">
+  <header class="page-header">
+    <div><div class="eyebrow">{{ 'nav.analytics' | t }}</div><h1>{{ 'analytics.title' | t }}</h1><p>{{ 'analytics.subtitle' | t }}</p></div>
+  </header>
+
+  <div class="chips">
+    <button type="button" class="chip" [class.active]="subjectId() === null" (click)="subjectId.set(null)">{{ 'common.allSubjects' | t }}</button>
+    @for (s of store.subjects(); track s.id) {
+      <button type="button" class="chip" [class.active]="subjectId() === s.id" (click)="subjectId.set(s.id)"><span class="subject-dot" [style.background]="s.color"></span>{{ i18n.subjectName(s) }}</button>
+    }
+  </div>
+
+  @if (overview(); as o) {
+    @if (!o.hasData) {
+      <div class="card"><rw-empty icon="bar-chart" [title]="'analytics.emptyTitle' | t" [text]="'analytics.emptyText' | t">
+        <a class="btn primary" routerLink="/library">{{ 'nav.library' | t }}</a></rw-empty></div>
+    } @else {
+      <div class="kpis">
+        <div class="card kpi"><span class="label">{{ 'analytics.studyTime7d' | t }}</span><strong class="num">{{ i18n.duration(o.studyMinutes7d) }}</strong>
+          <span class="xsmall subtle">{{ 'analytics.of30d' | t: { value: i18n.duration(o.studyMinutes30d) } }}</span></div>
+        <div class="card kpi"><span class="label">{{ 'analytics.streak' | t }}</span><strong class="num">{{ i18n.number(o.currentStreak) }}</strong>
+          <span class="xsmall subtle">{{ 'analytics.longest' | t: { n: o.longestStreak } }}</span></div>
+        <div class="card kpi"><span class="label">{{ 'analytics.quizAccuracy' | t }}</span><strong class="num">{{ o.quizAccuracy30d != null ? i18n.number(o.quizAccuracy30d) + '%' : '—' }}</strong>
+          <span class="xsmall subtle">{{ 'analytics.quizzesN' | t: { n: o.quizzesTaken30d } }}</span></div>
+        <div class="card kpi"><span class="label">{{ 'analytics.retention' | t }}</span><strong class="num">{{ o.retention30d != null ? i18n.number(o.retention30d) + '%' : '—' }}</strong>
+          <span class="xsmall subtle">{{ 'analytics.reviewsN' | t: { n: o.cardsReviewed30d } }}</span></div>
+        <div class="card kpi"><span class="label">{{ 'analytics.chapters' | t }}</span><strong class="num">{{ i18n.number(o.chaptersCompleted) }}<small>/{{ i18n.number(o.chaptersTotal) }}</small></strong>
+          <span class="xsmall subtle">{{ 'analytics.completed' | t }}</span></div>
+      </div>
+
+      <div class="grid cols-2">
+        <section class="card">
+          <div class="card-title"><h3>{{ 'analytics.studyChart' | t }}</h3><span class="xsmall subtle">{{ 'analytics.last14' | t }}</span></div>
+          <rw-chart [data]="studySeries()" [height]="220" [label]="'analytics.studyChart' | t" />
+        </section>
+        <section class="card">
+          <div class="card-title"><h3>{{ 'analytics.quizTrend' | t }}</h3><span class="xsmall subtle">{{ 'analytics.lastAttempts' | t }}</span></div>
+          @if (o.quizTrend.length > 1) { <rw-chart type="line" [data]="quizSeries()" [height]="220" [max]="100" [label]="'analytics.quizTrend' | t" /> }
+          @else { <p class="muted small">{{ 'analytics.notEnoughQuizzes' | t }}</p> }
+        </section>
+      </div>
+
+      <div class="grid cols-2" style="margin-top: 16px">
+        <section class="card">
+          <div class="card-title"><h3>{{ 'analytics.recommendations' | t }}</h3></div>
+          @for (r of o.recommendations; track $index) { <rw-recommendation [rec]="r" /> }
+        </section>
+        <section class="card">
+          <div class="card-title"><h3>{{ 'analytics.subjectProgress' | t }}</h3></div>
+          @for (s of o.subjects; track s.subjectId) {
+            @if (s.books > 0) {
+              @let subject = store.subject(s.subjectId);
+              <div class="subject-row">
+                <span class="name small"><span class="subject-dot" [style.background]="subject?.color"></span>{{ i18n.subjectName(subject) }}</span>
+                <div class="bar"><span [style.width.%]="percent(s.pagesRead, s.pagesTotal)" [style.background]="subject?.color"></span></div>
+                <span class="xsmall num subtle">{{ percent(s.pagesRead, s.pagesTotal) }}%</span>
+                <span class="xsmall num subtle acc">{{ s.quizAccuracy != null ? i18n.number(s.quizAccuracy) + '%' : '—' }}</span>
+              </div>
+            }
+          }
+          <p class="xsmall subtle legend-note">{{ 'analytics.progressLegend' | t }}</p>
+        </section>
+      </div>
+
+      <section class="card heat">
+        <div class="card-title">
+          <h3>{{ 'analytics.mastery' | t }}</h3>
+          <div class="segmented">
+            <button type="button" [attr.aria-pressed]="!showChapters()" (click)="showChapters.set(false)">{{ 'analytics.concepts' | t }}</button>
+            <button type="button" [attr.aria-pressed]="showChapters()" (click)="showChapters.set(true)">{{ 'analytics.chaptersTab' | t }}</button>
+          </div>
+        </div>
+        <p class="xsmall subtle">{{ 'analytics.masteryNote' | t }}</p>
+        @for (g of heatmap(); track g.subjectId) {
+          <h4 class="small group">{{ store.subjectName(g.subjectId) }}</h4>
+          <div class="cells">
+            @for (t of g.items; track t.id) {
+              <div class="cell" [style.background]="cellColor(t)" [attr.title]="t.topic">
+                <span class="t-name small" dir="auto">{{ t.topic }}</span>
+                <span class="xsmall">
+                  @if (t.measuredAccuracy != null) { {{ 'analytics.measured' | t: { c: t.questionCorrect, n: t.questionAttempts } }} }
+                  · {{ 'analytics.estimated' | t: { p: i18n.number(t.estimatedMastery * 100) } }}
+                </span>
+                @if (t.lastMistakePage && t.bookId) { <a class="xsmall" [routerLink]="['/read', t.bookId]" [queryParams]="{ page: t.lastMistakePage }">{{ 'common.pageN' | t: { n: t.lastMistakePage } }}</a> }
+              </div>
+            }
+          </div>
+        } @empty { <p class="muted small">{{ 'analytics.noMastery' | t }}</p> }
+        <div class="legend xsmall">
+          <span><i style="background: color-mix(in srgb, var(--danger) 50%, transparent)"></i> {{ 'analytics.bands.weak' | t }}</span>
+          <span><i style="background: color-mix(in srgb, var(--warning) 50%, transparent)"></i> {{ 'analytics.bands.developing' | t }}</span>
+          <span><i style="background: color-mix(in srgb, var(--success) 50%, transparent)"></i> {{ 'analytics.bands.strong' | t }}</span>
+          <span><i style="background: var(--surface-sunken)"></i> {{ 'analytics.bands.insufficient' | t }}</span>
+        </div>
+      </section>
+    }
+  } @else {
+    <div class="skeleton" style="height: 380px"></div>
+  }
+</div>

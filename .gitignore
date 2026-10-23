@@ -1,0 +1,28 @@
+# Secrets
+.env
+*.local.json
+appsettings.*.local.json
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+backend/src/Riwaq.Api/App_Data/
+
+# Node / Angular
+node_modules/
+frontend/dist/
+frontend/.angular/
+e2e/node_modules/
+e2e/shots/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+
+# Logs
+*.log

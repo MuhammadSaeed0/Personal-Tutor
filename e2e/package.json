@@ -1,0 +1,7 @@
+{
+  "name": "riwaq-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": { "journey": "node journey.mjs" },
+  "dependencies": { "playwright-core": "1.48.2" }
+}

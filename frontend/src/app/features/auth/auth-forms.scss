@@ -1,0 +1,10 @@
+:host { display: block; width: 100%; max-width: 400px; }
+.auth-card { display: flex; flex-direction: column; gap: var(--s-5); }
+.auth-card h2 { font-size: 1.6rem; }
+.auth-card .lead { color: var(--ink-2); margin: 6px 0 0; }
+form { display: flex; flex-direction: column; gap: var(--s-4); }
+.password { position: relative; }
+.password .toggle { position: absolute; inset-inline-end: 4px; top: 4px; }
+.password .input { padding-inline-end: 44px; }
+.switch { text-align: center; font-size: var(--text-sm); color: var(--ink-2); }
+.forgot { font-size: var(--text-sm); align-self: flex-end; }

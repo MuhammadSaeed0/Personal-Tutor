@@ -1,0 +1,100 @@
+<div class="panel">
+  <div class="tabs" role="tablist">
+    <button role="tab" type="button" [attr.aria-selected]="section() === 'summary'" (click)="section.set('summary')">{{ 'tools.summary' | t }}</button>
+    <button role="tab" type="button" [attr.aria-selected]="section() === 'cards'" (click)="section.set('cards')">{{ 'tools.flashcards' | t }}</button>
+    <button role="tab" type="button" [attr.aria-selected]="section() === 'quiz'" (click)="section.set('quiz')">{{ 'tools.quiz' | t }}</button>
+    <button role="tab" type="button" [attr.aria-selected]="section() === 'text'" (click)="section.set('text')">{{ 'tools.pageText' | t }}</button>
+  </div>
+
+  <div class="content">
+    @switch (section()) {
+      @case ('summary') {
+        <div class="field">
+          <span class="field-label">{{ 'tools.scope' | t }}</span>
+          <div class="segmented wrap" role="group">
+            <button type="button" [attr.aria-pressed]="scope === 'selection'" (click)="scope = 'selection'" [disabled]="!store.selection()">{{ 'tools.scopes.selection' | t }}</button>
+            <button type="button" [attr.aria-pressed]="scope === 'page'" (click)="scope = 'page'">{{ 'tools.scopes.page' | t: { page: store.currentPage() } }}</button>
+            <button type="button" [attr.aria-pressed]="scope === 'chapter'" (click)="scope = 'chapter'" [disabled]="!chapter()">{{ 'tools.scopes.chapter' | t }}</button>
+            <button type="button" [attr.aria-pressed]="scope === 'book'" (click)="scope = 'book'">{{ 'tools.scopes.book' | t }}</button>
+          </div>
+          @if (scope === 'chapter' && chapter()) { <span class="hint" dir="auto">{{ chapter()!.title }}</span> }
+        </div>
+        <div class="field">
+          <span class="field-label">{{ 'tools.style' | t }}</span>
+          <div class="style-grid">
+            @for (s of styles; track s) {
+              <button type="button" class="style" [class.active]="style === s" (click)="style = s">{{ 'summaryStyles.' + s | t }}</button>
+            }
+          </div>
+        </div>
+        <button class="btn primary block" type="button" (click)="generateSummary()" [disabled]="summarizing()">
+          @if (summarizing()) { <span class="spinner"></span> {{ 'tools.generating' | t }} } @else { <rw-icon name="sparkles" [size]="16" /> {{ 'tools.generateSummary' | t }} }
+        </button>
+        @if (summary(); as s) {
+          <article class="result">
+            <header class="row between"><strong class="small" dir="auto">{{ s.title }}</strong>
+              <a class="btn ghost sm" [routerLink]="['/summaries', s.id]">{{ 'common.open' | t }}</a></header>
+            @for (w of s.warnings; track w) { <div class="alert warning xsmall">{{ warningText(w) }}</div> }
+            <rw-markdown [content]="s.content" [citations]="s.citations" (citationClick)="store.navigate($event.page)" />
+            <p class="xsmall subtle">{{ 'tools.summaryDisclaimer' | t }}</p>
+          </article>
+        }
+      }
+
+      @case ('cards') {
+        <section class="block">
+          <h4>{{ 'tools.manualCard' | t }}</h4>
+          <textarea class="textarea" [(ngModel)]="front" [placeholder]="'tools.front' | t" dir="auto" rows="2" [attr.aria-label]="'tools.front' | t"></textarea>
+          <textarea class="textarea" [(ngModel)]="back" [placeholder]="'tools.back' | t" dir="auto" rows="2" [attr.aria-label]="'tools.back' | t"></textarea>
+          <button class="btn sm" type="button" (click)="saveManualCard()" [disabled]="!front.trim() || !back.trim()"><rw-icon name="plus" [size]="14" /> {{ 'tools.saveCard' | t }}</button>
+        </section>
+        <section class="block">
+          <h4>{{ 'tools.aiCards' | t }}</h4>
+          <div class="row wrap">
+            <select class="select" [(ngModel)]="cardScope" [attr.aria-label]="'tools.scope' | t">
+              <option value="page">{{ 'tools.scopes.page' | t: { page: store.currentPage() } }}</option>
+              <option value="chapter" [disabled]="!chapter()">{{ 'tools.scopes.chapter' | t }}</option>
+              <option value="selection" [disabled]="!store.selection()">{{ 'tools.scopes.selection' | t }}</option>
+            </select>
+            <select class="select" [(ngModel)]="focus" [attr.aria-label]="'tools.focus' | t">
+              <option value="general">{{ 'tools.focuses.general' | t }}</option>
+              <option value="definitions">{{ 'tools.focuses.definitions' | t }}</option>
+              <option value="formulas">{{ 'tools.focuses.formulas' | t }}</option>
+              <option value="vocabulary">{{ 'tools.focuses.vocabulary' | t }}</option>
+            </select>
+          </div>
+          <button class="btn primary block" type="button" (click)="generateCards()" [disabled]="generating()">
+            @if (generating()) { <span class="spinner"></span> {{ 'tools.generating' | t }} } @else { <rw-icon name="sparkles" [size]="16" /> {{ 'tools.generateCards' | t }} }
+          </button>
+          @for (w of draftWarnings(); track w) { <div class="alert warning xsmall">{{ warningText(w) }}</div> }
+          @if (drafts().length > 0) {
+            <p class="xsmall subtle">{{ 'tools.reviewDrafts' | t }}</p>
+            @for (d of drafts(); track $index; let i = $index) {
+              <label class="draft" [class.off]="!d.keep">
+                <input type="checkbox" [checked]="d.keep" (change)="toggleDraft(i)" />
+                <div class="grow"><strong class="small" dir="auto">{{ d.front }}</strong><rw-markdown [content]="d.back" /></div>
+                @if (d.page) { <span class="badge num">{{ 'common.pageN' | t: { n: d.page } }}</span> }
+              </label>
+            }
+            <button class="btn primary block" type="button" (click)="saveDrafts()">{{ 'tools.saveSelected' | t }}</button>
+          }
+        </section>
+      }
+
+      @case ('quiz') {
+        <p class="small muted">{{ 'tools.quizLead' | t }}</p>
+        <button class="btn primary block" type="button" (click)="startQuiz('chapter')" [disabled]="!chapter()"><rw-icon name="list-checks" [size]="16" /> {{ 'tools.quizChapter' | t }}</button>
+        <button class="btn block" type="button" (click)="startQuiz('page')">{{ 'tools.quizPages' | t: { from: store.currentPage() - 2 < 1 ? 1 : store.currentPage() - 2, to: store.currentPage() + 2 } }}</button>
+      }
+
+      @case ('text') {
+        @if (pageText(); as p) {
+          <div class="row between"><span class="badge">{{ 'common.pageN' | t: { n: p.pageNumber } }}</span>
+            <span class="xsmall subtle">{{ 'extraction.' + p.extractionMethod | t }}</span></div>
+          @if (p.text) { <div class="page-text" dir="auto">{{ p.text }}</div> }
+          @else { <p class="muted small">{{ 'tools.noPageText' | t }}</p> }
+        } @else { <span class="spinner"></span> }
+      }
+    }
+  </div>
+</div>

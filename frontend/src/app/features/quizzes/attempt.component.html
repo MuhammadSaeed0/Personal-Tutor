@@ -1,0 +1,146 @@
+<div class="attempt">
+  <header class="bar">
+    <a class="btn ghost icon" routerLink="/quizzes" [attr.aria-label]="'common.back' | t"><rw-icon name="x" /></a>
+    <div class="grow title">
+      <strong dir="auto">{{ quiz()?.title }}</strong>
+      <span class="xsmall subtle">{{ 'attempt.answered' | t: { n: answeredCount(), total: questions().length } }} @if (saving()) { · {{ 'attempt.saving' | t }} }</span>
+    </div>
+    <span class="timer num" [class.warn]="remaining() !== null && remaining()! < 300" role="timer" [attr.aria-label]="'attempt.timer' | t">
+      <rw-icon [name]="remaining() !== null ? 'timer' : 'clock'" [size]="16" /> {{ clockText() }}
+    </span>
+    <button class="btn ghost sheet-btn" type="button" (click)="sheetOpen.set(!sheetOpen())" [attr.aria-expanded]="sheetOpen()"><rw-icon name="columns" [size]="16" /> {{ 'attempt.sheet' | t }}</button>
+    <button class="btn primary" type="button" (click)="submit()" [disabled]="submitting()">@if (submitting()) { <span class="spinner"></span> } {{ 'attempt.submit' | t }}</button>
+  </header>
+
+  <div class="layout">
+    <main class="question-area">
+      @if (current(); as q) {
+        @let reveal = reveals()[q.id];
+        <div class="q-meta">
+          <span class="badge">{{ 'attempt.questionN' | t: { n: index() + 1, total: questions().length } }}</span>
+          <span class="badge brand">{{ typeLabel(q) }}</span>
+          <span class="badge">{{ 'difficulty.' + q.difficulty | t }}</span>
+          @if (q.points > 1) { <span class="badge gold">{{ 'attempt.points' | t: { n: q.points } }}</span> }
+          <button class="btn ghost sm mark" type="button" (click)="toggleMark(q)" [class.on]="marked()[q.id]" [attr.aria-pressed]="!!marked()[q.id]">
+            <rw-icon name="flag" [size]="14" /> {{ 'attempt.markReview' | t }}
+          </button>
+        </div>
+
+        <div class="prompt"><rw-markdown [content]="q.prompt" /></div>
+
+        <div class="answer" [class.locked]="!!reveal">
+          @switch (q.type) {
+            @case ('multipleChoice') {
+              <div class="choices" role="radiogroup">
+                @for (c of q.options.choices ?? []; track $index; let i = $index) {
+                  <label class="choice" [class.selected]="answers()[q.id] === i"
+                    [class.correct]="reveal && reveal.correctAnswer === c" [class.wrong]="reveal && answers()[q.id] === i && !reveal.isCorrect">
+                    <input type="radio" [name]="'q' + q.id" [checked]="answers()[q.id] === i" (change)="setAnswer(q, i, true)" [disabled]="!!reveal" />
+                    <span class="letter">{{ 'ABCDEF'[i] }}</span>
+                    <span class="grow"><rw-markdown [content]="c" /></span>
+                  </label>
+                }
+              </div>
+            }
+            @case ('trueFalse') {
+              <div class="tf">
+                <button type="button" class="tf-btn" [class.selected]="answers()[q.id] === true" (click)="setAnswer(q, true, true)" [disabled]="!!reveal">{{ 'attempt.true' | t }}</button>
+                <button type="button" class="tf-btn" [class.selected]="answers()[q.id] === false" (click)="setAnswer(q, false, true)" [disabled]="!!reveal">{{ 'attempt.false' | t }}</button>
+              </div>
+            }
+            @case ('numerical') {
+              <div class="numeric">
+                <input class="input lg-input ltr num" inputmode="decimal" [ngModel]="answers()[q.id] ?? ''" (ngModelChange)="setAnswer(q, $event)" [disabled]="!!reveal" [attr.aria-label]="'attempt.yourAnswer' | t" />
+                @if (q.options.unit) { <span class="unit">{{ q.options.unit }}</span> }
+              </div>
+              <p class="xsmall subtle">{{ 'attempt.numericHint' | t }}</p>
+            }
+            @case ('fillBlank') {
+              <input class="input lg-input" [ngModel]="answers()[q.id] ?? ''" (ngModelChange)="setAnswer(q, $event)" [disabled]="!!reveal" dir="auto" [attr.aria-label]="'attempt.yourAnswer' | t" />
+            }
+            @case ('matching') {
+              <div class="matching">
+                @for (left of q.options.left ?? []; track $index; let i = $index) {
+                  <div class="match-row">
+                    <span class="left" dir="auto">{{ left }}</span>
+                    <rw-icon name="arrow-right" [size]="16" />
+                    <select class="select" [ngModel]="matchingAnswer(q)[i] ?? ''" (ngModelChange)="setMatch(q, i, $event)" [disabled]="!!reveal" [attr.aria-label]="left">
+                      <option value="">{{ 'attempt.choose' | t }}</option>
+                      @for (right of q.options.right ?? []; track $index; let j = $index) { <option [value]="j">{{ right }}</option> }
+                    </select>
+                  </div>
+                }
+              </div>
+            }
+            @case ('ordering') {
+              <ol class="ordering">
+                @for (itemIndex of orderingAnswer(q); track itemIndex; let pos = $index; let last = $last) {
+                  <li>
+                    <span class="pos num">{{ pos + 1 }}</span>
+                    <span class="grow" dir="auto">{{ q.options.items?.[itemIndex] }}</span>
+                    <button class="btn ghost icon sm" type="button" (click)="move(q, pos, -1)" [disabled]="pos === 0 || !!reveal" [attr.aria-label]="'attempt.moveUp' | t"><rw-icon name="chevron-up" [size]="14" /></button>
+                    <button class="btn ghost icon sm" type="button" (click)="move(q, pos, 1)" [disabled]="last || !!reveal" [attr.aria-label]="'attempt.moveDown' | t"><rw-icon name="chevron-down" [size]="14" /></button>
+                  </li>
+                }
+              </ol>
+              @if (answers()[q.id] === undefined) {
+                <button class="btn sm" type="button" (click)="setAnswer(q, orderingAnswer(q), true)">{{ 'attempt.confirmOrder' | t }}</button>
+              }
+            }
+            @default {
+              <textarea class="textarea long" [ngModel]="answers()[q.id] ?? ''" (ngModelChange)="setAnswer(q, $event)" [disabled]="!!reveal" dir="auto" [attr.aria-label]="'attempt.yourAnswer' | t" [placeholder]="'attempt.writeAnswer' | t"></textarea>
+              <p class="xsmall subtle">{{ 'attempt.openHint' | t }}</p>
+            }
+          }
+        </div>
+
+        @if (q.hint && !reveal) {
+          @if (hintsShown()[q.id]) {
+            <div class="alert small"><rw-icon name="lightbulb" [size]="16" /> {{ q.hint }}</div>
+          } @else {
+            <button class="btn ghost sm" type="button" (click)="showHint(q)"><rw-icon name="lightbulb" [size]="14" /> {{ 'attempt.showHint' | t }}</button>
+          }
+        }
+
+        @if (reveal) {
+          <div class="feedback" [class.ok]="reveal.isCorrect" [class.bad]="reveal.isCorrect === false">
+            <strong><rw-icon [name]="reveal.isCorrect ? 'check-circle' : 'alert-circle'" [size]="18" /> {{ (reveal.isCorrect ? 'attempt.correct' : 'attempt.incorrect') | t }}</strong>
+            @if (!reveal.isCorrect) { <p class="small"><strong>{{ 'attempt.correctAnswer' | t }}:</strong> <span dir="auto">{{ reveal.correctAnswer }}</span></p> }
+            <rw-markdown [content]="reveal.explanation" />
+            @if (reveal.sourcePage && quiz()?.bookId) {
+              <a class="small" [routerLink]="['/read', quiz()!.bookId]" [queryParams]="{ page: reveal.sourcePage }"><rw-icon name="book-open" [size]="14" /> {{ 'common.pageN' | t: { n: reveal.sourcePage } }}</a>
+            }
+          </div>
+        } @else if (quiz()?.revealImmediately && q.type !== 'shortAnswer' && q.type !== 'structured') {
+          <button class="btn soft" type="button" (click)="check(q)" [disabled]="!isAnswered(q.id)">{{ 'attempt.check' | t }}</button>
+        }
+
+        <nav class="nav">
+          <button class="btn" type="button" (click)="go(index() - 1)" [disabled]="index() === 0"><rw-icon name="arrow-left" [size]="16" /> {{ 'common.previous' | t }}</button>
+          @if (index() < questions().length - 1) {
+            <button class="btn primary" type="button" (click)="go(index() + 1)">{{ 'common.next' | t }} <rw-icon name="arrow-right" [size]="16" /></button>
+          } @else {
+            <button class="btn primary" type="button" (click)="submit()">{{ 'attempt.finish' | t }}</button>
+          }
+        </nav>
+      } @else {
+        <div class="skeleton" style="height: 320px"></div>
+      }
+    </main>
+
+    <aside class="sheet" [class.open]="sheetOpen()" [attr.aria-label]="'attempt.sheet' | t">
+      <h3 class="small">{{ 'attempt.sheet' | t }}</h3>
+      <div class="sheet-grid">
+        @for (q of questions(); track q.id; let i = $index) {
+          <button type="button" class="cell num" [class.current]="i === index()" [class.answered]="isAnswered(q.id)" [class.marked]="marked()[q.id]"
+            [class.ok]="reveals()[q.id]?.isCorrect === true" [class.bad]="reveals()[q.id]?.isCorrect === false" (click)="go(i)"
+            [attr.aria-label]="'attempt.questionN' | t: { n: i + 1, total: questions().length }">{{ i + 1 }}</button>
+        }
+      </div>
+      <div class="legend xsmall subtle">
+        <span><i class="sw answered"></i> {{ 'attempt.legendAnswered' | t }}</span>
+        <span><i class="sw marked"></i> {{ 'attempt.legendMarked' | t }}</span>
+      </div>
+    </aside>
+  </div>
+</div>

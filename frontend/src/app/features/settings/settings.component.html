@@ -1,0 +1,132 @@
+<div class="page">
+  <header class="page-header"><div><div class="eyebrow">{{ 'nav.settings' | t }}</div><h1>{{ 'settings.title' | t }}</h1></div></header>
+
+  <div class="layout">
+    <nav class="side" role="tablist" [attr.aria-label]="'settings.title' | t">
+      @for (t of tabs; track t) {
+        <button type="button" role="tab" [attr.aria-selected]="tab() === t" [class.active]="tab() === t" (click)="tab.set(t)">{{ 'settings.tabs.' + t | t }}</button>
+      }
+    </nav>
+
+    <section class="card content">
+      @switch (tab()) {
+        @case ('profile') {
+          <h2>{{ 'settings.tabs.profile' | t }}</h2>
+          <div class="field"><label for="s-name">{{ 'auth.displayName' | t }}</label><input id="s-name" class="input" [(ngModel)]="displayName" maxlength="100" /></div>
+          <div class="field"><label for="s-email">{{ 'auth.email' | t }}</label><input id="s-email" class="input ltr" [value]="auth.profile()?.email" disabled /></div>
+          <button class="btn primary" type="button" (click)="saveProfile()">{{ 'common.save' | t }}</button>
+          <hr class="divider" />
+          <h3>{{ 'settings.changePassword' | t }}</h3>
+          <div class="grid cols-2">
+            <div class="field"><label for="s-cur">{{ 'settings.currentPassword' | t }}</label><input id="s-cur" class="input ltr" type="password" [(ngModel)]="currentPassword" autocomplete="current-password" /></div>
+            <div class="field"><label for="s-new">{{ 'auth.newPassword' | t }}</label><input id="s-new" class="input ltr" type="password" [(ngModel)]="newPassword" autocomplete="new-password" /><span class="hint">{{ 'auth.passwordHint' | t }}</span></div>
+          </div>
+          <button class="btn" type="button" (click)="changePassword()" [disabled]="!currentPassword || newPassword.length < 8">{{ 'settings.changePassword' | t }}</button>
+        }
+
+        @case ('preferences') {
+          <h2>{{ 'settings.tabs.preferences' | t }}</h2>
+          <div class="grid cols-2">
+            <div class="field"><label for="p-lang">{{ 'settings.interfaceLanguage' | t }}</label>
+              <select id="p-lang" class="select" [(ngModel)]="prefs.uiLanguage"><option value="ar">العربية (RTL)</option><option value="en">English (LTR)</option></select></div>
+            <div class="field"><label for="p-theme">{{ 'settings.theme' | t }}</label>
+              <select id="p-theme" class="select" [(ngModel)]="prefs.theme">
+                <option value="system">{{ 'settings.themes.system' | t }}</option><option value="light">{{ 'settings.themes.light' | t }}</option><option value="dark">{{ 'settings.themes.dark' | t }}</option>
+              </select></div>
+            <div class="field"><label for="p-explain">{{ 'onboarding.explainLanguage' | t }}</label>
+              <select id="p-explain" class="select" [(ngModel)]="prefs.explanationLanguage"><option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option></select>
+              <span class="hint">{{ 'onboarding.explainHint' | t }}</span></div>
+            <div class="field"><label for="p-style">{{ 'settings.teachingStyle' | t }}</label>
+              <select id="p-style" class="select" [(ngModel)]="prefs.teachingStyle"><option value="guided">{{ 'settings.styles.guided' | t }}</option><option value="concise">{{ 'settings.styles.concise' | t }}</option></select></div>
+            <div class="field"><label for="p-focus">{{ 'focus.focusMinutes' | t }}</label><input id="p-focus" class="input num" type="number" min="5" max="180" [(ngModel)]="prefs.focusMinutes" /></div>
+            <div class="field"><label for="p-break">{{ 'focus.breakMinutes' | t }}</label><input id="p-break" class="input num" type="number" min="1" max="60" [(ngModel)]="prefs.breakMinutes" /></div>
+            <div class="field"><label for="p-goal">{{ 'settings.weeklyGoal' | t }}</label><input id="p-goal" class="input num" type="number" min="30" max="6000" step="30" [(ngModel)]="prefs.weeklyGoalMinutes" /></div>
+          </div>
+          <label class="check"><input type="checkbox" [(ngModel)]="prefs.bilingualTerms" /> {{ 'settings.bilingualTerms' | t }}</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="prefs.motivationEnabled" /> {{ 'settings.motivation' | t }}</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="prefs.notificationsEnabled" /> {{ 'settings.notifications' | t }}</label>
+          <button class="btn primary" type="button" (click)="savePreferences()">{{ 'common.save' | t }}</button>
+        }
+
+        @case ('academic') {
+          <h2>{{ 'settings.tabs.academic' | t }}</h2>
+          <div class="grid cols-2">
+            <div class="field"><label for="a-grade">{{ 'onboarding.grade' | t }}</label><input id="a-grade" class="input" [(ngModel)]="academic.grade" maxlength="60" /></div>
+            <div class="field"><label for="a-year">{{ 'onboarding.academicYear' | t }}</label><input id="a-year" class="input" [(ngModel)]="academic.academicYear" maxlength="20" /></div>
+            <div class="field"><label for="a-cur">{{ 'onboarding.curriculumOther' | t }}</label><input id="a-cur" class="input" [(ngModel)]="academic.curriculum" maxlength="120" /></div>
+            <div class="field"><label for="a-target">{{ 'settings.targetScore' | t }}</label><input id="a-target" class="input num" type="number" min="0" max="100" [(ngModel)]="academic.targetScore" /></div>
+            <div class="field"><label for="a-daily">{{ 'plan.dailyAvailability' | t }} ({{ i18n.duration(academic.dailyStudyMinutes) }})</label>
+              <input id="a-daily" type="range" min="15" max="720" step="15" [(ngModel)]="academic.dailyStudyMinutes" class="slider" /></div>
+          </div>
+          <div class="field"><span class="field-label">{{ 'onboarding.difficultQ' | t }}</span>
+            <div class="row wrap">@for (s of store.subjects(); track s.id) {
+              <button type="button" class="chip" [class.active]="academic.difficultSubjectIds.includes(s.id)" (click)="toggleDifficult(s.id)"><span class="subject-dot" [style.background]="s.color"></span>{{ i18n.subjectName(s) }}</button>
+            }</div></div>
+          <button class="btn primary" type="button" (click)="saveAcademic()">{{ 'common.save' | t }}</button>
+        }
+
+        @case ('exams') {
+          <h2>{{ 'settings.tabs.exams' | t }}</h2>
+          @for (e of exams(); track e.id) {
+            <div class="list-item">
+              <span class="badge" [class.danger]="e.daysLeft >= 0 && e.daysLeft <= 7">{{ e.daysLeft >= 0 ? ('settings.inDays' | t: { n: e.daysLeft }) : ('settings.past' | t) }}</span>
+              <div class="grow"><strong class="small" dir="auto">{{ e.title }}</strong><br><span class="xsmall subtle">{{ i18n.date(e.date) }} · {{ e.subjectId ? store.subjectName(e.subjectId) : ('common.allSubjects' | t) }}</span></div>
+              <button class="btn ghost icon sm" type="button" (click)="removeExam(e)" [attr.aria-label]="'common.delete' | t"><rw-icon name="trash" [size]="14" /></button>
+            </div>
+          } @empty { <p class="muted small">{{ 'dashboard.noExams' | t }}</p> }
+          <div class="exam-form">
+            <input class="input" [(ngModel)]="newExam.title" [placeholder]="'onboarding.examTitle' | t" [attr.aria-label]="'onboarding.examTitle' | t" />
+            <select class="select" [(ngModel)]="newExam.subjectId" [attr.aria-label]="'common.subject' | t">
+              <option [ngValue]="null">{{ 'onboarding.allSubjects' | t }}</option>
+              @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
+            </select>
+            <input class="input ltr" type="date" [(ngModel)]="newExam.date" [attr.aria-label]="'common.date' | t" />
+            <button class="btn primary" type="button" (click)="addExam()">{{ 'onboarding.addExam' | t }}</button>
+          </div>
+        }
+
+        @case ('sessions') {
+          <h2>{{ 'settings.tabs.sessions' | t }}</h2>
+          <p class="muted small">{{ 'settings.sessionsLead' | t }}</p>
+          @for (s of sessions(); track s.id) {
+            <div class="list-item">
+              <rw-icon name="monitor" />
+              <div class="grow"><strong class="small">{{ device(s.userAgent) }}</strong> @if (s.isCurrent) { <span class="badge brand">{{ 'settings.thisDevice' | t }}</span> }
+                <br><span class="xsmall subtle">{{ 'settings.lastActive' | t: { when: i18n.relative(s.lastUsedAt) } }}</span></div>
+              @if (!s.isCurrent) { <button class="btn sm" type="button" (click)="revoke(s)">{{ 'settings.signOut' | t }}</button> }
+            </div>
+          }
+        }
+
+        @case ('privacy') {
+          <h2>{{ 'settings.tabs.privacy' | t }}</h2>
+          <div class="privacy">
+            <p>{{ 'settings.privacy1' | t }}</p>
+            <p>{{ 'settings.privacy2' | t }}</p>
+            <p>{{ 'settings.privacy3' | t }}</p>
+            <p>{{ 'settings.privacy4' | t }}</p>
+          </div>
+          @if (store.system(); as system) {
+            <p class="ai-provider small">
+              <rw-icon name="sparkles" [size]="16" />
+              <span>{{ 'settings.aiProvider' | t }}:
+                <strong>{{ ('settings.aiProviders.' + (system.ai.configured ? system.ai.provider : 'none')) | t }}</strong>
+                @if (system.ai.configured && system.ai.model) { <span class="muted">&nbsp;· {{ 'settings.aiModel' | t: { model: system.ai.model } }}</span> }
+              </span>
+            </p>
+          }
+          <button class="btn" type="button" (click)="exportData()"><rw-icon name="download" [size]="16" /> {{ 'settings.export' | t }}</button>
+          <hr class="divider" />
+          <div class="danger-zone">
+            <h3>{{ 'settings.deleteTitle' | t }}</h3>
+            <p class="small muted">{{ 'settings.deleteLead' | t }}</p>
+            <div class="row wrap">
+              <input class="input ltr" type="password" [(ngModel)]="deletePassword" [placeholder]="'settings.currentPassword' | t" [attr.aria-label]="'settings.currentPassword' | t" style="max-width: 280px" />
+              <button class="btn danger" type="button" (click)="deleteAccount()" [disabled]="!deletePassword">{{ 'settings.deleteConfirm' | t }}</button>
+            </div>
+          </div>
+        }
+      }
+    </section>
+  </div>
+</div>

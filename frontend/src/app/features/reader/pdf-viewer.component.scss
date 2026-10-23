@@ -1,0 +1,63 @@
+:host { display: block; height: 100%; min-height: 0; }
+.scroller {
+  height: 100%; overflow: auto; outline: none;
+  padding: 20px 16px 80px;
+  background: var(--surface-sunken);
+  direction: ltr; /* pages keep PDF geometry regardless of interface direction */
+}
+.page {
+  position: relative; margin: 0 auto 18px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(20, 32, 48, 0.12), 0 8px 24px -12px rgba(20, 32, 48, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.page:not(.loaded)::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, #f4f1eb, #fbf9f5, #f4f1eb); background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+:host ::ng-deep .page-canvas { position: absolute; inset: 0; display: block; }
+.layers { position: absolute; inset: 0; }
+.page-number {
+  position: absolute; inset-block-end: 6px; inset-inline-end: 8px; font-size: 10px; color: #8a93a0;
+  background: rgba(255, 255, 255, 0.85); padding: 1px 6px; border-radius: 6px; pointer-events: none;
+}
+
+/* Highlights sit above the canvas and below/with the text layer; they only catch clicks. */
+.hl { position: absolute; mix-blend-mode: multiply; border-radius: 2px; z-index: 1; pointer-events: none; }
+.hl-yellow { background: var(--hl-yellow); }
+.hl-green { background: var(--hl-green); }
+.hl-blue { background: var(--hl-blue); }
+.hl-pink { background: var(--hl-pink); }
+.hl-purple { background: var(--hl-purple); }
+.hl.annotated { box-shadow: inset 0 -2px 0 rgba(14, 107, 102, 0.6); }
+
+/* pdf.js text layer (from pdf_viewer.css, trimmed) */
+:host ::ng-deep .textLayer {
+  position: absolute; text-align: initial; inset: 0; overflow: clip; opacity: 1; line-height: 1;
+  letter-spacing: normal; word-spacing: normal; text-size-adjust: none; forced-color-adjust: none;
+  transform-origin: 0 0; caret-color: CanvasText; z-index: 2;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+:host ::ng-deep .textLayer :is(span, br) {
+  color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; user-select: text;
+}
+:host ::ng-deep .textLayer > :not(.markedContent),
+:host ::ng-deep .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1; --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1; --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+:host ::ng-deep .textLayer .markedContent { display: contents; }
+:host ::ng-deep .textLayer ::selection { background: rgba(14, 107, 102, 0.28); color: transparent; }
+:host ::ng-deep .textLayer br::selection { background: transparent; }
+:host ::ng-deep .textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; user-select: none; }
+:host ::ng-deep .textLayer.selecting .endOfContent { top: 0; }
+
+:host-context([data-theme='dark']) .page { filter: none; }
+:host-context(.reader.night) .page { filter: invert(0.88) hue-rotate(180deg); }

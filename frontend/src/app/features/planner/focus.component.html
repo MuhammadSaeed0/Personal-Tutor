@@ -1,0 +1,79 @@
+<div class="focus" [class.break]="phase() === 'break'">
+  <header class="top">
+    <a routerLink="/plan" class="btn ghost sm light"><rw-icon name="arrow-left" [size]="14" /> {{ 'nav.plan' | t }}</a>
+    <rw-brand [size]="28" [showName]="false" />
+  </header>
+
+  <main class="center">
+    @switch (phase()) {
+      @case ('setup') {
+        <div class="panel">
+          <h1>{{ 'focus.title' | t }}</h1>
+          <p class="lead">{{ 'focus.lead' | t }}</p>
+          <div class="presets">
+            <button type="button" class="preset" [class.active]="focusMinutes === 25 && breakMinutes === 5" (click)="preset(25, 5)"><strong>25 / 5</strong><span>{{ 'focus.pomodoro' | t }}</span></button>
+            <button type="button" class="preset" [class.active]="focusMinutes === 50 && breakMinutes === 10" (click)="preset(50, 10)"><strong>50 / 10</strong><span>{{ 'focus.deep' | t }}</span></button>
+            <button type="button" class="preset" [class.active]="focusMinutes === 15 && breakMinutes === 3" (click)="preset(15, 3)"><strong>15 / 3</strong><span>{{ 'focus.short' | t }}</span></button>
+          </div>
+          <div class="grid cols-2">
+            <div class="field"><label for="f-focus">{{ 'focus.focusMinutes' | t }}</label><input id="f-focus" class="input num" type="number" min="5" max="180" [(ngModel)]="focusMinutes" /></div>
+            <div class="field"><label for="f-break">{{ 'focus.breakMinutes' | t }}</label><input id="f-break" class="input num" type="number" min="1" max="60" [(ngModel)]="breakMinutes" /></div>
+            <div class="field"><label for="f-book">{{ 'focus.book' | t }}</label>
+              <select id="f-book" class="select" [(ngModel)]="bookId">
+                <option [ngValue]="null">{{ 'focus.noBook' | t }}</option>
+                @for (b of books(); track b.id) { <option [ngValue]="b.id">{{ b.title }}</option> }
+              </select></div>
+            @if (!bookId) {
+              <div class="field"><label for="f-subject">{{ 'common.subject' | t }}</label>
+                <select id="f-subject" class="select" [(ngModel)]="subjectId">
+                  <option [ngValue]="null">—</option>
+                  @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
+                </select></div>
+            }
+          </div>
+          <div class="field"><label for="f-goal">{{ 'focus.goal' | t }}</label><input id="f-goal" class="input" [(ngModel)]="goal" [placeholder]="'focus.goalPlaceholder' | t" dir="auto" maxlength="500" /></div>
+          <button class="btn primary lg" type="button" (click)="start()"><rw-icon name="play" /> {{ 'focus.start' | t }}</button>
+        </div>
+
+        @if (history().length > 0) {
+          <section class="history">
+            <h3 class="small">{{ 'focus.history' | t }}</h3>
+            @for (h of history(); track h.id) {
+              <div class="h-row"><rw-icon [name]="h.type === 'focus' ? 'timer' : 'book-open'" [size]="14" />
+                <span class="grow small" dir="auto">{{ h.goal || (h.type === 'focus' ? ('focus.session' | t) : ('focus.reading' | t)) }}</span>
+                <span class="xsmall num">{{ minutes(h.durationSeconds) }}</span>
+                <span class="xsmall subtle">{{ i18n.relative(h.startedAt) }}</span></div>
+            }
+          </section>
+        }
+      }
+      @case ('finished') {
+        <div class="panel">
+          <h1>{{ 'focus.wellDone' | t }}</h1>
+          <p class="lead">{{ 'focus.summary' | t: { minutes: minutes(focusedSeconds()), cycles: cycles() } }}</p>
+          <div class="field"><label for="f-notes">{{ 'focus.notes' | t }}</label><textarea id="f-notes" class="textarea" [(ngModel)]="notes" dir="auto" [placeholder]="'focus.notesPlaceholder' | t"></textarea></div>
+          <button class="btn primary lg" type="button" (click)="finish()">{{ 'focus.saveSession' | t }}</button>
+        </div>
+      }
+      @default {
+        <div class="timer-wrap">
+          <p class="phase-label">{{ (phase() === 'focus' ? 'focus.focusing' : 'focus.breakTime') | t }}</p>
+          @if (goal && phase() === 'focus') { <p class="goal" dir="auto">{{ goal }}</p> }
+          <rw-ring [value]="progress()" [size]="280" [color]="phase() === 'focus' ? '#2BB5A8' : '#D6AD5B'" [label]="'focus.timer' | t">
+            <span class="time num" role="timer">{{ display() }}</span>
+          </rw-ring>
+          <div class="controls">
+            @if (running()) {
+              <button class="btn lg light" type="button" (click)="pause()"><rw-icon name="pause" /> {{ 'focus.pause' | t }}</button>
+            } @else {
+              <button class="btn lg primary" type="button" (click)="resume()"><rw-icon name="play" /> {{ 'focus.resume' | t }}</button>
+            }
+            @if (phase() === 'break') { <button class="btn lg light" type="button" (click)="skipBreak()">{{ 'focus.skipBreak' | t }}</button> }
+            <button class="btn lg light" type="button" (click)="stop()"><rw-icon name="square" /> {{ 'focus.stop' | t }}</button>
+          </div>
+          <p class="meta num">{{ 'focus.progress' | t: { minutes: minutes(focusedSeconds()), cycles: cycles() } }}</p>
+        </div>
+      }
+    }
+  </main>
+</div>

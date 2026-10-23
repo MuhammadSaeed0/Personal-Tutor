@@ -1,0 +1,202 @@
+<div class="page">
+  @if (data(); as d) {
+    <!-- Greeting -->
+    <section class="hero">
+      <div class="hero-text">
+        <p class="date">{{ i18n.date(todayIso, 'weekday') }}</p>
+        <h1>{{ greetingKey() | t: { name: d.displayName } }}</h1>
+        <p class="lead">
+          @if (!d.hasBooks) { {{ 'dashboard.leadNoBooks' | t }} }
+          @else if (d.today && d.today.tasks.length > 0) { {{ 'dashboard.leadPlan' | t: { done: todayDone(), total: d.today.tasks.length, minutes: i18n.duration(d.today.plannedMinutes) } }} }
+          @else { {{ 'dashboard.leadFree' | t }} }
+        </p>
+      </div>
+      <div class="hero-stats">
+        @if (d.motivationEnabled) {
+          <div class="hero-stat">
+            <span class="flame" [class.lit]="d.currentStreak > 0"><rw-icon name="flame" [size]="20" /></span>
+            <div><strong class="num">{{ i18n.number(d.currentStreak) }}</strong><span>{{ 'dashboard.streakDays' | t }}</span></div>
+          </div>
+        }
+        <div class="hero-stat">
+          <rw-ring [value]="weeklyPercent()" [size]="46" color="#2BB5A8" [label]="'dashboard.weeklyGoal' | t">{{ weeklyPercent() }}%</rw-ring>
+          <div><strong class="num">{{ i18n.duration(d.weeklyMinutes) }}</strong><span>{{ 'dashboard.thisWeek' | t: { goal: i18n.duration(d.weeklyGoalMinutes) } }}</span></div>
+        </div>
+        @if (nextExam(); as exam) {
+          <div class="hero-stat">
+            <span class="exam-days num">{{ i18n.number(exam.daysLeft) }}</span>
+            <div><strong dir="auto">{{ exam.title }}</strong><span>{{ 'dashboard.daysLeft' | t }}</span></div>
+          </div>
+        }
+      </div>
+    </section>
+
+    @if (!store.system()?.ai?.configured) {
+      <div class="alert warning" style="margin-bottom: 16px"><rw-icon name="info" /> <span>{{ 'dashboard.aiNotConfigured' | t }}</span></div>
+    }
+
+    @for (p of d.processing; track p.bookId) {
+      @let live = realtime.processing()[p.bookId] ?? p;
+      @if (live.bookStatus === 'uploaded' || live.bookStatus === 'processing') {
+        <div class="alert" style="margin-bottom: 12px"><span class="spinner"></span>
+          <span class="grow">{{ 'dashboard.processing' | t }} — {{ 'processing.stages.' + live.stage | t }} ({{ live.progress }}%)</span>
+          <a class="small" [routerLink]="['/library', p.bookId]">{{ 'common.details' | t }}</a>
+        </div>
+      }
+    }
+
+    @if (!d.hasBooks) {
+      <section class="card welcome">
+        <div class="welcome-steps">
+          <div class="step"><span class="n">1</span><div><strong>{{ 'dashboard.welcome1' | t }}</strong><p>{{ 'dashboard.welcome1Text' | t }}</p></div></div>
+          <div class="step"><span class="n">2</span><div><strong>{{ 'dashboard.welcome2' | t }}</strong><p>{{ 'dashboard.welcome2Text' | t }}</p></div></div>
+          <div class="step"><span class="n">3</span><div><strong>{{ 'dashboard.welcome3' | t }}</strong><p>{{ 'dashboard.welcome3Text' | t }}</p></div></div>
+        </div>
+        <button class="btn primary lg" type="button" (click)="upload()"><rw-icon name="upload" /> {{ 'dashboard.uploadFirst' | t }}</button>
+      </section>
+    }
+
+    <div class="grid-main">
+      <div class="col">
+        @if (d.hasBooks) {
+          <section class="card">
+            <div class="card-title">
+              <h3><rw-icon name="calendar" [size]="18" /> {{ 'dashboard.todayPlan' | t }}</h3>
+              <a class="link" routerLink="/plan">{{ 'dashboard.fullPlan' | t }}</a>
+            </div>
+            @if (d.today && d.today.tasks.length > 0) {
+              <div class="bar" style="margin-bottom: 8px"><span [style.width.%]="(100 * todayDone()) / d.today.tasks.length"></span></div>
+              @for (task of d.today.tasks; track task.id) {
+                <rw-task-item [task]="task" (toggle)="toggleTask($event)" (skip)="skipTask($event)" />
+              }
+            } @else {
+              <p class="muted small">{{ 'dashboard.noTasks' | t }}</p>
+            }
+          </section>
+        }
+
+        @if (d.continue.length > 0) {
+          <section class="card">
+            <div class="card-title"><h3><rw-icon name="book-open" [size]="18" /> {{ 'dashboard.continue' | t }}</h3></div>
+            <div class="continue">
+              @for (c of d.continue; track c.bookId) {
+                @let s = store.subject(c.subjectId);
+                <a class="continue-item" [routerLink]="['/read', c.bookId]" [queryParams]="{ page: c.lastPage }">
+                  <span class="spine" [style.background]="s?.color"></span>
+                  <div class="grow">
+                    <strong dir="auto">{{ c.title }}</strong>
+                    <span class="subtle xsmall" dir="auto">{{ c.chapterTitle ?? i18n.subjectName(s) }} · {{ 'common.pageN' | t: { n: c.lastPage } }}</span>
+                    <div class="bar" style="margin-top: 6px"><span [style.width.%]="c.progressPercent" [style.background]="s?.color"></span></div>
+                  </div>
+                  <rw-icon name="chevron-right" [size]="16" />
+                </a>
+              }
+            </div>
+          </section>
+        }
+
+        <section class="card">
+          <div class="card-title"><h3><rw-icon name="layers" [size]="18" /> {{ 'dashboard.subjects' | t }}</h3></div>
+          <div class="subjects">
+            @for (item of subjectsWithStats(); track item.subject.id) {
+              <a class="subject-card" [routerLink]="['/subjects', item.subject.code]" [style.--c]="item.subject.color">
+                <span class="s-icon"><rw-icon [name]="item.subject.icon" [size]="18" /></span>
+                <strong>{{ i18n.subjectName(item.subject) }}</strong>
+                @if (item.stats && item.stats.books > 0) {
+                  <span class="xsmall subtle">{{ 'dashboard.subjectMeta' | t: { books: item.stats.books, chapters: item.stats.chaptersCompleted, total: item.stats.chaptersTotal } }}</span>
+                  <div class="bar"><span [style.width.%]="progress(item.stats)" [style.background]="item.subject.color"></span></div>
+                  @if (item.stats.cardsDue > 0) { <span class="badge warning">{{ 'dashboard.cardsDueN' | t: { n: item.stats.cardsDue } }}</span> }
+                } @else {
+                  <span class="xsmall subtle">{{ 'dashboard.noBooksYet' | t }}</span>
+                }
+              </a>
+            }
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card">
+          <div class="card-title"><h3><rw-icon name="sparkles" [size]="18" /> {{ 'dashboard.recommendations' | t }}</h3></div>
+          @for (r of d.recommendations; track $index) { <rw-recommendation [rec]="r" /> }
+          @if (d.recommendations.length === 0) { <p class="muted small">{{ 'dashboard.noRecommendations' | t }}</p> }
+          <p class="subtle xsmall basis">{{ 'dashboard.recommendationsBasis' | t }}</p>
+        </section>
+
+        <section class="card due-card">
+          <div class="row between">
+            <div>
+              <div class="stat"><span class="value num">{{ i18n.number(d.cardsDue) }}</span><span class="label">{{ 'dashboard.cardsDue' | t }}</span></div>
+            </div>
+            <a class="btn primary sm" routerLink="/flashcards/review" [attr.aria-disabled]="d.cardsDue === 0">{{ 'dashboard.reviewNow' | t }}</a>
+          </div>
+        </section>
+
+        @if (d.weakTopics.length > 0) {
+          <section class="card">
+            <div class="card-title"><h3><rw-icon name="target" [size]="18" /> {{ 'dashboard.weakTopics' | t }}</h3><a class="link" routerLink="/analytics">{{ 'common.details' | t }}</a></div>
+            @for (t of d.weakTopics; track t.id) {
+              <div class="list-item">
+                <span class="subject-dot" [style.background]="store.subject(t.subjectId)?.color"></span>
+                <div class="grow">
+                  <span class="small" dir="auto">{{ t.topic }}</span>
+                  <span class="subtle xsmall"> · {{ 'dashboard.correctOf' | t: { c: t.questionCorrect, n: t.questionAttempts } }}</span>
+                </div>
+                @if (t.bookId && t.lastMistakePage) {
+                  <a class="btn ghost sm" [routerLink]="['/read', t.bookId]" [queryParams]="{ page: t.lastMistakePage }">{{ 'common.pageN' | t: { n: t.lastMistakePage } }}</a>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @if (d.recommendedQuizzes.length > 0) {
+          <section class="card">
+            <div class="card-title"><h3><rw-icon name="list-checks" [size]="18" /> {{ 'dashboard.suggestedQuizzes' | t }}</h3></div>
+            @for (q of d.recommendedQuizzes; track q.chapterId) {
+              <div class="list-item">
+                <span class="subject-dot" [style.background]="store.subject(q.subjectId)?.color"></span>
+                <span class="grow small" dir="auto">{{ q.chapterTitle }}</span>
+                <a class="btn soft sm" routerLink="/quizzes/new" [queryParams]="{ bookId: q.bookId, chapterId: q.chapterId }">{{ 'dashboard.testMe' | t }}</a>
+              </div>
+            }
+          </section>
+        }
+
+        <section class="card">
+          <div class="card-title"><h3><rw-icon name="calendar-clock" [size]="18" /> {{ 'dashboard.exams' | t }}</h3><a class="link" routerLink="/settings" [queryParams]="{ tab: 'exams' }">{{ 'common.manage' | t }}</a></div>
+          @for (e of d.upcomingExams.slice(0, 4); track e.id) {
+            <div class="list-item">
+              <span class="exam-chip num" [class.soon]="e.daysLeft <= 7">{{ i18n.number(e.daysLeft) }}<small>{{ 'dashboard.daysShort' | t }}</small></span>
+              <div class="grow"><span class="small" dir="auto">{{ e.title }}</span><br><span class="subtle xsmall">{{ i18n.date(e.date) }} · {{ e.subjectId ? store.subjectName(e.subjectId) : ('common.allSubjects' | t) }}</span></div>
+            </div>
+          } @empty {
+            <p class="muted small">{{ 'dashboard.noExams' | t }}</p>
+          }
+        </section>
+
+        @if (d.motivationEnabled && d.achievements.length > 0) {
+          <section class="card">
+            <div class="card-title"><h3><rw-icon name="award" [size]="18" /> {{ 'dashboard.achievements' | t }}</h3></div>
+            <div class="achievements">
+              @for (a of d.achievements.slice(0, 6); track a.code) {
+                <div class="achievement" [title]="('achievements.' + a.code + '.text') | t">
+                  <span class="medal"><rw-icon name="trophy" [size]="16" /></span>
+                  <span class="xsmall">{{ ('achievements.' + a.code + '.title') | t }}</span>
+                </div>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+  } @else if (error()) {
+    <div class="card"><rw-empty icon="alert-triangle" [title]="'errors.loadFailed' | t"><button class="btn" type="button" (click)="load()">{{ 'common.retry' | t }}</button></rw-empty></div>
+  } @else {
+    <div class="skeleton" style="height: 140px; margin-bottom: 20px; border-radius: 20px"></div>
+    <div class="grid-main">
+      <div class="col"><div class="skeleton" style="height: 300px"></div></div>
+      <div class="col"><div class="skeleton" style="height: 300px"></div></div>
+    </div>
+  }
+</div>

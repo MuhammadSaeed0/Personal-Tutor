@@ -1,0 +1,91 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <div class="eyebrow">{{ 'nav.library' | t }}</div>
+      <h1>{{ 'library.title' | t }}</h1>
+      <p>{{ 'library.subtitle' | t }}</p>
+    </div>
+    <button class="btn primary" type="button" (click)="upload()"><rw-icon name="upload" [size]="16" /> {{ 'nav.uploadBook' | t }}</button>
+  </header>
+
+  @if (books().length > 0) {
+    <div class="toolbar">
+      <div class="chips" role="group" [attr.aria-label]="'common.subject' | t">
+        <button type="button" class="chip" [class.active]="subjectFilter() === null" (click)="subjectFilter.set(null)">{{ 'common.all' | t }}</button>
+        @for (s of store.subjects(); track s.id) {
+          <button type="button" class="chip" [class.active]="subjectFilter() === s.id" (click)="subjectFilter.set(s.id)">
+            <span class="subject-dot" [style.background]="s.color"></span>{{ i18n.subjectName(s) }}
+          </button>
+        }
+      </div>
+      <div class="row">
+        @if (years().length > 0) {
+          <select class="select sm-select" [ngModel]="yearFilter()" (ngModelChange)="yearFilter.set($event)" [attr.aria-label]="'upload.academicYear' | t">
+            <option [ngValue]="null">{{ 'library.allYears' | t }}</option>
+            @for (y of years(); track y) { <option [ngValue]="y">{{ y }}</option> }
+          </select>
+        }
+        <input class="input sm-input" type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" [placeholder]="'library.filter' | t" [attr.aria-label]="'library.filter' | t" />
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="books">
+      @for (i of [1,2,3,4]; track i) { <div class="skeleton" style="height: 220px; border-radius: 16px"></div> }
+    </div>
+  } @else if (books().length === 0) {
+    <div class="card">
+      <rw-empty icon="book-open" [title]="'library.emptyTitle' | t" [text]="'library.emptyText' | t">
+        <button class="btn primary" type="button" (click)="upload()"><rw-icon name="upload" [size]="16" /> {{ 'nav.uploadBook' | t }}</button>
+      </rw-empty>
+    </div>
+  } @else {
+    <div class="books">
+      @for (book of filtered(); track book.id) {
+        @let subject = store.subject(book.subjectId);
+        <article class="book card interactive" (click)="open(book)" (keydown.enter)="open(book)" tabindex="0" [attr.aria-label]="book.title">
+          <div class="cover" [style.--c]="subject?.color">
+            <rw-icon [name]="subject?.icon ?? 'book-open'" [size]="26" />
+            <span class="pages num">{{ i18n.number(book.pageCount) }} {{ 'common.pagesShort' | t }}</span>
+          </div>
+          <div class="body">
+            <span class="subject-name" [style.color]="subject?.color">{{ i18n.subjectName(subject) }}</span>
+            <h3 dir="auto">{{ book.title }}</h3>
+            @if (isProcessing(book)) {
+              <div class="processing">
+                <span class="spinner"></span>
+                <span class="small">{{ 'processing.stages.' + (status(book)?.stage ?? 'queued') | t }}</span>
+                <span class="subtle xsmall num">{{ status(book)?.progress ?? 0 }}%</span>
+              </div>
+            } @else if ((status(book)?.bookStatus ?? book.status) === 'failed') {
+              <span class="badge danger"><rw-icon name="alert-circle" [size]="12" /> {{ 'library.failed' | t }}</span>
+            } @else {
+              <div class="progress-row">
+                <div class="bar grow"><span [style.width.%]="book.readingProgress" [style.background]="subject?.color"></span></div>
+                <span class="xsmall subtle num">{{ i18n.number(book.readingProgress) }}%</span>
+              </div>
+              <div class="meta xsmall subtle">
+                @if (book.lastPage) { <span>{{ 'library.lastPage' | t: { page: book.lastPage } }}</span> }
+                @if (book.status === 'readyWithWarnings') { <span class="badge warning">{{ 'library.warnings' | t }}</span> }
+                @for (tag of book.tags.slice(0, 2); track tag) { <span class="badge">{{ tag }}</span> }
+              </div>
+            }
+          </div>
+          <button class="btn ghost icon sm more" type="button" [cdkMenuTriggerFor]="menu" (click)="$event.stopPropagation()" [attr.aria-label]="'common.more' | t">
+            <rw-icon name="more" />
+          </button>
+          <ng-template #menu>
+            <div class="menu" cdkMenu>
+              <button cdkMenuItem type="button" (click)="open(book)"><rw-icon name="book-open" [size]="16" /> {{ 'library.open' | t }}</button>
+              <button cdkMenuItem type="button" [routerLink]="['/library', book.id]"><rw-icon name="settings" [size]="16" /> {{ 'library.manage' | t }}</button>
+              <button cdkMenuItem type="button" class="danger" (click)="remove(book)"><rw-icon name="trash" [size]="16" /> {{ 'common.delete' | t }}</button>
+            </div>
+          </ng-template>
+        </article>
+      } @empty {
+        <p class="muted">{{ 'library.noMatches' | t }}</p>
+      }
+    </div>
+  }
+</div>

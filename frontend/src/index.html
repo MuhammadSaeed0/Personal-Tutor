@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <title>رِواق — Riwaq Learning</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Riwaq turns your textbooks into a personal tutor, revision system and exam-preparation space.">
+  <meta name="theme-color" content="#0F1B2A">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;600;700&display=swap">
+  <script>
+    // Apply saved theme/language before first paint to avoid a flash (per-viewer convenience only).
+    (function () {
+      try {
+        var lang = localStorage.getItem('riwaq.lang') || 'ar';
+        var theme = localStorage.getItem('riwaq.theme') || 'system';
+        var dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) { /* storage unavailable */ }
+    })();
+  </script>
+</head>
+<body>
+  <app-root>
+    <div class="boot-splash" aria-hidden="true"><span class="boot-mark"></span></div>
+  </app-root>
+</body>
+</html>

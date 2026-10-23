@@ -1,0 +1,104 @@
+<div class="page">
+  <header class="page-header">
+    <div><div class="eyebrow">{{ 'nav.notes' | t }}</div><h1>{{ 'notes.pageTitle' | t }}</h1><p>{{ 'notes.subtitle' | t }}</p></div>
+    <div class="row">
+      <button class="btn" type="button" (click)="export()"><rw-icon name="download" [size]="16" /> {{ 'common.export' | t }}</button>
+      <button class="btn primary" type="button" (click)="create()"><rw-icon name="plus" [size]="16" /> {{ 'notes.new' | t }}</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="card list-panel">
+      <input class="input" type="search" [ngModel]="search()" (ngModelChange)="search.set($event)" [placeholder]="'notes.search' | t" [attr.aria-label]="'notes.search' | t" />
+      <div class="filters">
+        <select class="select" [ngModel]="subjectId()" (ngModelChange)="subjectId.set($event)" [attr.aria-label]="'common.subject' | t">
+          <option [ngValue]="null">{{ 'common.allSubjects' | t }}</option>
+          @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
+        </select>
+        <select class="select" [ngModel]="bookId()" (ngModelChange)="bookId.set($event)" [attr.aria-label]="'builder.book' | t">
+          <option [ngValue]="null">{{ 'notes.allBooks' | t }}</option>
+          @for (b of books(); track b.id) { <option [ngValue]="b.id">{{ b.title }}</option> }
+        </select>
+      </div>
+      @if (tags().length > 0) {
+        <div class="tags">
+          @for (t of tags(); track t) { <button type="button" class="chip" [class.active]="tag() === t" (click)="tag.set(tag() === t ? null : t)">#{{ t }}</button> }
+        </div>
+      }
+      <div class="items">
+        @for (n of notes(); track n.id) {
+          <button type="button" class="item" [class.active]="selected()?.id === n.id" (click)="select(n)">
+            <span class="row between"><strong class="small ellipsis" dir="auto">@if (n.isPinned) { <rw-icon name="pin" [size]="12" /> } {{ n.title }}</strong>
+              <span class="xsmall subtle">{{ i18n.date(n.updatedAt, 'short') }}</span></span>
+            <span class="xsmall subtle ellipsis" dir="auto">{{ n.content.slice(0, 90) }}</span>
+            <span class="row xsmall">
+              @if (n.subjectId) { <span class="subject-dot" [style.background]="store.subject(n.subjectId)?.color"></span> }
+              @if (n.sourceType === 'aiExplanation') { <span class="badge brand">{{ 'notes.fromTutor' | t }}</span> }
+              @if (n.pageNumber) { <span class="subtle">{{ 'common.pageN' | t: { n: n.pageNumber } }}</span> }
+            </span>
+          </button>
+        } @empty { <p class="muted small" style="padding: 8px">{{ 'notes.empty' | t }}</p> }
+      </div>
+    </aside>
+
+    <section class="card editor-panel">
+      @if (editing()) {
+        <div class="editor">
+          <input class="input title" [(ngModel)]="draft.title" [placeholder]="'notes.titlePlaceholder' | t" dir="auto" [attr.aria-label]="'notes.title' | t" />
+          <div class="row wrap meta">
+            <select class="select" [(ngModel)]="draft.subjectId" [attr.aria-label]="'common.subject' | t">
+              <option [ngValue]="null">{{ 'notes.noSubject' | t }}</option>
+              @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
+            </select>
+            <select class="select" [(ngModel)]="draft.bookId" [attr.aria-label]="'builder.book' | t">
+              <option [ngValue]="null">{{ 'notes.noBook' | t }}</option>
+              @for (b of books(); track b.id) { <option [ngValue]="b.id">{{ b.title }}</option> }
+            </select>
+            <input class="input page" type="number" min="1" [(ngModel)]="draft.pageNumber" [placeholder]="'notes.page' | t" [attr.aria-label]="'notes.page' | t" />
+            <input class="input" [(ngModel)]="draft.tags" [placeholder]="'notes.tags' | t" [attr.aria-label]="'notes.tags' | t" />
+            <label class="check"><input type="checkbox" [(ngModel)]="draft.isPinned" /> {{ 'notes.pin' | t }}</label>
+          </div>
+          <div class="segmented" role="group">
+            <button type="button" [attr.aria-pressed]="!preview()" (click)="preview.set(false)">{{ 'common.edit' | t }}</button>
+            <button type="button" [attr.aria-pressed]="preview()" (click)="preview.set(true)">{{ 'notes.preview' | t }}</button>
+          </div>
+          @if (preview()) { <div class="preview"><rw-markdown [content]="draft.content" /></div> }
+          @else { <textarea class="textarea content" [(ngModel)]="draft.content" dir="auto" [placeholder]="'notes.contentPlaceholder' | t" [attr.aria-label]="'notes.content' | t"></textarea> }
+          <div class="row" style="justify-content: flex-end">
+            <button class="btn ghost" type="button" (click)="editing.set(false)">{{ 'common.cancel' | t }}</button>
+            <button class="btn primary" type="button" (click)="save()">{{ 'common.save' | t }}</button>
+          </div>
+        </div>
+      } @else if (selected(); as n) {
+        <article class="view">
+          <header class="row between wrap">
+            <div>
+              <h2 dir="auto">{{ n.title }}</h2>
+              <span class="xsmall subtle">
+                @if (n.subjectId) { {{ store.subjectName(n.subjectId) }} · }
+                @if (n.bookId) { <span dir="auto">{{ bookTitle(n.bookId) }}</span> · }
+                {{ i18n.date(n.updatedAt) }}
+              </span>
+            </div>
+            <div class="row">
+              <button class="btn ghost icon sm" type="button" (click)="togglePin(n)" [class.on]="n.isPinned" [attr.aria-label]="'notes.pin' | t"><rw-icon name="pin" [size]="16" /></button>
+              <button class="btn ghost icon sm" type="button" (click)="edit(n)" [attr.aria-label]="'common.edit' | t"><rw-icon name="pencil" [size]="16" /></button>
+              <button class="btn ghost icon sm" type="button" (click)="remove(n)" [attr.aria-label]="'common.delete' | t"><rw-icon name="trash" [size]="16" /></button>
+            </div>
+          </header>
+          @if (n.tags.length) { <div class="row wrap">@for (t of n.tags; track t) { <span class="badge">#{{ t }}</span> }</div> }
+          <div class="note-body"><rw-markdown [content]="n.content" [citations]="n.sources" (citationClick)="openSource(n, $event)" /></div>
+          <footer class="row wrap actions">
+            @if (n.bookId && n.pageNumber) { <a class="btn sm" [routerLink]="['/read', n.bookId]" [queryParams]="{ page: n.pageNumber }"><rw-icon name="book-open" [size]="14" /> {{ 'common.pageN' | t: { n: n.pageNumber } }}</a> }
+            <button class="btn sm" type="button" (click)="toFlashcard(n)" [disabled]="busy()">@if (busy()) { <span class="spinner"></span> } <rw-icon name="layers" [size]="14" /> {{ 'notes.toFlashcards' | t }}</button>
+            @if (n.bookId) { <button class="btn sm" type="button" (click)="toQuiz(n)"><rw-icon name="list-checks" [size]="14" /> {{ 'notes.toQuiz' | t }}</button> }
+          </footer>
+        </article>
+      } @else {
+        <rw-empty icon="notebook-pen" [title]="'notes.selectTitle' | t" [text]="'notes.selectText' | t">
+          <button class="btn primary" type="button" (click)="create()">{{ 'notes.new' | t }}</button>
+        </rw-empty>
+      }
+    </section>
+  </div>
+</div>

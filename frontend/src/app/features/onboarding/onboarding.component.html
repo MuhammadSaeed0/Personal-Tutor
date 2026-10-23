@@ -1,0 +1,101 @@
+<div class="onboarding">
+  <header class="top">
+    <rw-brand [size]="32" [dark]="false" />
+    <button class="btn ghost sm" type="button" (click)="skip()" [disabled]="busy()">{{ 'onboarding.skip' | t }}</button>
+  </header>
+
+  <div class="card wizard">
+    <div class="progress" role="progressbar" [attr.aria-valuenow]="step() + 1" aria-valuemin="1" [attr.aria-valuemax]="steps.length">
+      @for (s of steps; track s; let i = $index) { <span [class.done]="i <= step()"></span> }
+    </div>
+    <p class="eyebrow">{{ 'onboarding.stepOf' | t: { n: step() + 1, total: steps.length } }}</p>
+
+    @switch (steps[step()]) {
+      @case ('grade') {
+        <h2>{{ 'onboarding.gradeQ' | t }}</h2>
+        <p class="muted">{{ 'onboarding.optional' | t }}</p>
+        <div class="grid cols-2">
+          <div class="field">
+            <label for="grade">{{ 'onboarding.grade' | t }}</label>
+            <input id="grade" class="input" [(ngModel)]="grade" [placeholder]="'onboarding.gradePlaceholder' | t" maxlength="60" />
+          </div>
+          <div class="field">
+            <label for="year">{{ 'onboarding.academicYear' | t }}</label>
+            <input id="year" class="input" [(ngModel)]="academicYear" placeholder="2026/2027" maxlength="20" />
+          </div>
+        </div>
+      }
+      @case ('curriculum') {
+        <h2>{{ 'onboarding.curriculumQ' | t }}</h2>
+        <p class="muted">{{ 'onboarding.curriculumHint' | t }}</p>
+        <div class="choices">
+          @for (c of curricula; track c) {
+            <button type="button" class="choice" [class.active]="curriculum === ('onboarding.curricula.' + c | t)"
+              (click)="pickCurriculum(c)">{{ 'onboarding.curricula.' + c | t }}</button>
+          }
+        </div>
+        <div class="field" style="margin-top: 12px">
+          <label for="curriculum">{{ 'onboarding.curriculumOther' | t }}</label>
+          <input id="curriculum" class="input" [(ngModel)]="curriculum" maxlength="120" />
+        </div>
+      }
+      @case ('exams') {
+        <h2>{{ 'onboarding.examsQ' | t }}</h2>
+        <p class="muted">{{ 'onboarding.examsHint' | t }}</p>
+        <div class="stack">
+          @for (exam of exams; track $index; let i = $index) {
+            <div class="exam-row">
+              <input class="input" [(ngModel)]="exam.title" [placeholder]="'onboarding.examTitle' | t" [attr.aria-label]="'onboarding.examTitle' | t" />
+              <select class="select" [(ngModel)]="exam.subjectId" [attr.aria-label]="'common.subject' | t">
+                <option [ngValue]="null">{{ 'onboarding.allSubjects' | t }}</option>
+                @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
+              </select>
+              <input class="input ltr" type="date" [(ngModel)]="exam.date" [attr.aria-label]="'common.date' | t" />
+              <button class="btn ghost icon" type="button" (click)="removeExam(i)" [attr.aria-label]="'common.remove' | t"><rw-icon name="trash" [size]="16" /></button>
+            </div>
+          }
+          <button class="btn soft sm" type="button" (click)="addExam()" style="align-self: flex-start"><rw-icon name="plus" [size]="14" /> {{ 'onboarding.addExam' | t }}</button>
+        </div>
+      }
+      @case ('time') {
+        <h2>{{ 'onboarding.timeQ' | t }}</h2>
+        <p class="muted">{{ 'onboarding.timeHint' | t }}</p>
+        <div class="slider-value">{{ i18n.duration(dailyMinutes) }}</div>
+        <input class="slider" type="range" min="15" max="480" step="15" [(ngModel)]="dailyMinutes" [attr.aria-label]="'onboarding.timeQ' | t" />
+      }
+      @case ('difficult') {
+        <h2>{{ 'onboarding.difficultQ' | t }}</h2>
+        <p class="muted">{{ 'onboarding.difficultHint' | t }}</p>
+        <div class="choices">
+          @for (s of store.subjects(); track s.id) {
+            <button type="button" class="choice subject" [class.active]="difficult().includes(s.id)" (click)="toggleSubject(s.id)" [attr.aria-pressed]="difficult().includes(s.id)">
+              <span class="subject-dot" [style.background]="s.color"></span> {{ i18n.subjectName(s) }}
+            </button>
+          }
+        </div>
+      }
+      @case ('goal') {
+        <h2>{{ 'onboarding.goalQ' | t }}</h2>
+        <div class="slider-value">{{ i18n.number(targetScore) }}%</div>
+        <input class="slider" type="range" min="50" max="100" step="1" [(ngModel)]="targetScore" [attr.aria-label]="'onboarding.goalQ' | t" />
+        <div class="field" style="margin-top: 20px">
+          <label for="explain">{{ 'onboarding.explainLanguage' | t }}</label>
+          <select id="explain" class="select" [(ngModel)]="explanationLanguage">
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select>
+          <span class="hint">{{ 'onboarding.explainHint' | t }}</span>
+        </div>
+      }
+    }
+
+    <div class="actions">
+      <button class="btn ghost" type="button" (click)="back()" [disabled]="step() === 0">{{ 'common.back' | t }}</button>
+      <button class="btn primary" type="button" (click)="next()" [disabled]="busy()">
+        @if (busy()) { <span class="spinner"></span> }
+        {{ (step() === steps.length - 1 ? 'onboarding.finish' : 'common.next') | t }}
+      </button>
+    </div>
+  </div>
+</div>

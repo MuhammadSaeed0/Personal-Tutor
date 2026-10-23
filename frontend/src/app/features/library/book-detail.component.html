@@ -1,0 +1,133 @@
+<div class="page">
+  @if (detail(); as d) {
+    @let subject = store.subject(d.book.subjectId);
+    <a routerLink="/library" class="back small"><rw-icon name="arrow-left" [size]="14" /> {{ 'nav.library' | t }}</a>
+    <header class="page-header">
+      <div class="grow">
+        <div class="eyebrow" [style.color]="subject?.color">{{ i18n.subjectName(subject) }}</div>
+        <h1 dir="auto">{{ d.book.title }}</h1>
+        <p class="small">
+          {{ i18n.number(d.book.pageCount) }} {{ 'common.pagesShort' | t }} · {{ d.book.originalFileName }}
+          @if (d.book.academicYear) { · {{ d.book.academicYear }} }
+        </p>
+      </div>
+      <div class="row wrap">
+        @if (ready()) {
+          <a class="btn primary" [routerLink]="['/read', d.book.id]"><rw-icon name="book-open" [size]="16" /> {{ 'book.read' | t }}</a>
+          <a class="btn" routerLink="/quizzes/new" [queryParams]="{ bookId: d.book.id }"><rw-icon name="list-checks" [size]="16" /> {{ 'book.quiz' | t }}</a>
+        }
+        <button class="btn ghost" type="button" (click)="editing.set(!editing())"><rw-icon name="pencil" [size]="16" /> {{ 'common.edit' | t }}</button>
+      </div>
+    </header>
+
+    @if (processing() || status()?.bookStatus === 'failed') {
+      <section class="card status-card">
+        <div class="card-title"><h3>{{ 'book.processing' | t }}</h3></div>
+        <rw-processing-timeline [status]="status()" />
+        @if (status()?.bookStatus === 'failed') {
+          <div class="alert danger" style="margin-top: 12px"><rw-icon name="alert-circle" />
+            <span class="grow">{{ ('processingErrors.' + (status()?.errorCode ?? 'processing_error')) | t }}</span>
+            <button class="btn sm" type="button" (click)="reprocess()">{{ 'common.retry' | t }}</button>
+          </div>
+        }
+      </section>
+    }
+
+    @if (editing()) {
+      <section class="card">
+        <div class="card-title"><h3>{{ 'book.details' | t }}</h3></div>
+        <div class="grid cols-2">
+          <div class="field"><label for="b-title">{{ 'upload.bookTitle' | t }}</label><input id="b-title" class="input" [(ngModel)]="form.title" dir="auto" /></div>
+          <div class="field"><label for="b-subject">{{ 'common.subject' | t }}</label>
+            <select id="b-subject" class="select" [(ngModel)]="form.subjectId">
+              @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
+            </select>
+          </div>
+          <div class="field"><label for="b-year">{{ 'upload.academicYear' | t }}</label><input id="b-year" class="input" [(ngModel)]="form.academicYear" /></div>
+          <div class="field"><label for="b-sem">{{ 'book.semester' | t }}</label><input id="b-sem" class="input" [(ngModel)]="form.semester" /></div>
+          <div class="field"><label for="b-col">{{ 'book.collection' | t }}</label><input id="b-col" class="input" [(ngModel)]="form.collection" /></div>
+          <div class="field"><label for="b-tags">{{ 'upload.tags' | t }}</label><input id="b-tags" class="input" [(ngModel)]="form.tags" /></div>
+        </div>
+        <div class="row" style="justify-content: flex-end; margin-top: 16px">
+          <button class="btn ghost" type="button" (click)="editing.set(false)">{{ 'common.cancel' | t }}</button>
+          <button class="btn primary" type="button" (click)="save()">{{ 'common.save' | t }}</button>
+        </div>
+      </section>
+    }
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-title">
+          <h3>{{ 'book.structure' | t }}</h3>
+          @if (d.chapters.length > 0 && d.chapters[0].source === 'headingHeuristic') { <span class="badge info">{{ 'book.estimated' | t }}</span> }
+          @if (d.chapters.length > 0 && d.chapters[0].source === 'pdfOutline') { <span class="badge brand">{{ 'book.fromOutline' | t }}</span> }
+        </div>
+        @if (d.chapters.length === 0) {
+          <p class="muted small">{{ (ready() ? 'book.noStructure' : 'book.structurePending') | t }}</p>
+        } @else {
+          <ol class="chapters">
+            @for (c of d.chapters; track c.id) {
+              <li [class.sub]="c.level > 1">
+                @if (editingChapter() === c.id) {
+                  <input class="input" [(ngModel)]="chapterTitle" (keydown.enter)="saveChapter(c)" (keydown.escape)="editingChapter.set(null)" dir="auto" [attr.aria-label]="'book.chapterTitle' | t" />
+                  <button class="btn sm primary" type="button" (click)="saveChapter(c)">{{ 'common.save' | t }}</button>
+                } @else {
+                  <div class="grow">
+                    <span class="c-title" dir="auto">{{ c.title }}</span>
+                    <span class="subtle xsmall num">{{ 'book.pages' | t: { from: c.startPage, to: c.endPage } }}</span>
+                  </div>
+                  <select class="select status" [ngModel]="c.status" (ngModelChange)="setStatus(c, $event)" [attr.aria-label]="'book.chapterStatus' | t">
+                    <option value="notStarted">{{ 'chapterStatus.notStarted' | t }}</option>
+                    <option value="inProgress">{{ 'chapterStatus.inProgress' | t }}</option>
+                    <option value="completed">{{ 'chapterStatus.completed' | t }}</option>
+                    <option value="alreadyKnown">{{ 'chapterStatus.alreadyKnown' | t }}</option>
+                  </select>
+                  <button class="btn ghost icon sm" type="button" (click)="startChapterEdit(c)" [attr.aria-label]="'book.renameChapter' | t"><rw-icon name="pencil" [size]="14" /></button>
+                  @if (ready()) {
+                    <a class="btn ghost icon sm" [routerLink]="['/read', d.book.id]" [queryParams]="{ page: c.startPage }" [attr.aria-label]="'book.read' | t"><rw-icon name="book-open" [size]="14" /></a>
+                  }
+                }
+              </li>
+            }
+          </ol>
+        }
+      </section>
+
+      <aside class="stack">
+        <section class="card">
+          <div class="card-title"><h3>{{ 'book.extraction' | t }}</h3></div>
+          <div class="facts">
+            <div><span class="subtle small">{{ 'book.textPages' | t }}</span><strong class="num">{{ i18n.number(d.pages.length - scannedPages()) }}</strong></div>
+            <div><span class="subtle small">{{ 'book.scannedPages' | t }}</span><strong class="num">{{ i18n.number(scannedPages()) }}</strong></div>
+            <div><span class="subtle small">{{ 'book.ocrPages' | t }}</span><strong class="num">{{ i18n.number(ocrPages()) }}</strong></div>
+            <div><span class="subtle small">{{ 'book.language' | t }}</span><strong>{{ d.book.detectedLanguage ? ('languages.' + d.book.detectedLanguage | t) : '—' }}</strong></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title"><h3>{{ 'book.warnings' | t }}</h3><span class="badge">{{ i18n.number(d.warnings.length) }}</span></div>
+          @for (w of d.warnings.slice(0, 30); track w.id) {
+            <div class="warning" [class.info]="w.severity === 'info'" [class.error]="w.severity === 'error'">
+              <rw-icon [name]="w.severity === 'info' ? 'info' : 'alert-triangle'" [size]="16" />
+              <span class="small">
+                @if (w.pageNumber) { <strong>{{ 'common.pageN' | t: { n: w.pageNumber } }}:</strong> }
+                {{ warningText(w.code, w.message) }}
+              </span>
+            </div>
+          } @empty {
+            <p class="muted small">{{ 'book.noWarnings' | t }}</p>
+          }
+          @if (d.warnings.length > 30) { <p class="subtle xsmall">{{ 'book.moreWarnings' | t: { n: d.warnings.length - 30 } }}</p> }
+        </section>
+
+        <section class="card danger-zone">
+          <button class="btn block" type="button" (click)="reprocess()" [disabled]="processing()"><rw-icon name="refresh" [size]="16" /> {{ 'book.reprocess' | t }}</button>
+          <button class="btn block danger" type="button" (click)="remove()"><rw-icon name="trash" [size]="16" /> {{ 'book.delete' | t }}</button>
+        </section>
+      </aside>
+    </div>
+  } @else {
+    <div class="skeleton" style="height: 40px; width: 50%; margin-bottom: 24px"></div>
+    <div class="skeleton" style="height: 320px"></div>
+  }
+</div>

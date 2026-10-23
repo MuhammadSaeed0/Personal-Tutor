@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Riwaq.Api/Riwaq.Api.csproj" />
+    <Project Path="src/Riwaq.Application/Riwaq.Application.csproj" />
+    <Project Path="src/Riwaq.Domain/Riwaq.Domain.csproj" />
+    <Project Path="src/Riwaq.Infrastructure/Riwaq.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Riwaq.Tests/Riwaq.Tests.csproj" />
+  </Folder>
+</Solution>

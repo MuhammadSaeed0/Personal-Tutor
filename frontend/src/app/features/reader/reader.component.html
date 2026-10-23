@@ -1,0 +1,138 @@
+<div class="reader" [class.focus]="focusMode()" [class.night]="night()" [class.left-open]="leftOpen() && !focusMode()" [class.right-open]="store.rightOpen() && !focusMode()">
+  <!-- Toolbar -->
+  <header class="toolbar" role="toolbar" [attr.aria-label]="'reader.toolbar' | t">
+    <div class="tb-group start">
+      <a class="btn ghost icon" [routerLink]="store.book() ? ['/subjects', subject()?.code ?? ''] : ['/library']" [attr.aria-label]="'common.back' | t"><rw-icon name="arrow-left" /></a>
+      <button class="btn ghost icon desktop" type="button" (click)="leftOpen.set(!leftOpen())" [attr.aria-pressed]="leftOpen()" [attr.aria-label]="'reader.toggleContents' | t"><rw-icon name="panel-left" /></button>
+      <div class="title-block">
+        <span class="book-title" dir="auto">{{ store.book()?.title }}</span>
+        <span class="chapter subtle xsmall" dir="auto">{{ store.currentChapter()?.title ?? i18n.subjectName(subject()) }}</span>
+      </div>
+    </div>
+
+    <div class="tb-group center">
+      <button class="btn ghost icon sm" type="button" (click)="step(-1)" [disabled]="store.currentPage() <= 1" [attr.aria-label]="'reader.previousPage' | t"><rw-icon name="chevron-up" /></button>
+      <label class="page-box">
+        <span class="visually-hidden">{{ 'reader.goToPage' | t }}</span>
+        <input class="input num" inputmode="numeric" [ngModel]="pageInput()" (ngModelChange)="pageInput.set($event)" (keydown.enter)="goToInput()" (blur)="goToInput()" />
+        <span class="subtle small num">/ {{ store.pageCount() }}</span>
+      </label>
+      <button class="btn ghost icon sm" type="button" (click)="step(1)" [disabled]="store.currentPage() >= store.pageCount()" [attr.aria-label]="'reader.nextPage' | t"><rw-icon name="chevron-down" /></button>
+      <span class="sep desktop"></span>
+      <button class="btn ghost icon sm desktop" type="button" (click)="zoom(-0.1)" [attr.aria-label]="'reader.zoomOut' | t"><rw-icon name="zoom-out" /></button>
+      <span class="zoom num small desktop">{{ i18n.number(scale() * 100) }}%</span>
+      <button class="btn ghost icon sm desktop" type="button" (click)="zoom(0.1)" [attr.aria-label]="'reader.zoomIn' | t"><rw-icon name="zoom-in" /></button>
+      <div class="segmented desktop" role="group" [attr.aria-label]="'reader.fit' | t">
+        <button type="button" [attr.aria-pressed]="fitMode() === 'width'" (click)="fit('width')">{{ 'reader.fitWidth' | t }}</button>
+        <button type="button" [attr.aria-pressed]="fitMode() === 'page'" (click)="fit('page')">{{ 'reader.fitPage' | t }}</button>
+      </div>
+    </div>
+
+    <div class="tb-group end">
+      <button class="btn ghost icon" type="button" (click)="toggleBookmark()" [class.active]="isBookmarked()" [attr.aria-pressed]="isBookmarked()" [attr.aria-label]="'reader.bookmark' | t">
+        <rw-icon [name]="isBookmarked() ? 'bookmark' : 'bookmark-plus'" />
+      </button>
+      <button class="btn ghost icon desktop" type="button" (click)="night.set(!night())" [attr.aria-pressed]="night()" [attr.aria-label]="'reader.nightMode' | t"><rw-icon name="moon" /></button>
+      <button class="btn ghost icon desktop" type="button" (click)="focusMode.set(!focusMode())" [attr.aria-pressed]="focusMode()" [attr.aria-label]="'reader.focusMode' | t"><rw-icon name="focus" /></button>
+      <button class="btn ghost icon desktop" type="button" (click)="toggleFullscreen()" [attr.aria-label]="'reader.fullscreen' | t"><rw-icon name="maximize" /></button>
+      <span class="sep desktop"></span>
+      <div class="segmented right-tabs desktop" role="tablist">
+        <button type="button" role="tab" [attr.aria-selected]="store.rightOpen() && store.rightTab() === 'tutor'" [attr.aria-pressed]="store.rightOpen() && store.rightTab() === 'tutor'" (click)="toggleRight('tutor')"><rw-icon name="message-circle" [size]="15" /> {{ 'reader.tutor' | t }}</button>
+        <button type="button" role="tab" [attr.aria-selected]="store.rightOpen() && store.rightTab() === 'notes'" [attr.aria-pressed]="store.rightOpen() && store.rightTab() === 'notes'" (click)="toggleRight('notes')"><rw-icon name="sticky-note" [size]="15" /> {{ 'reader.notes' | t }}</button>
+        <button type="button" role="tab" [attr.aria-selected]="store.rightOpen() && store.rightTab() === 'tools'" [attr.aria-pressed]="store.rightOpen() && store.rightTab() === 'tools'" (click)="toggleRight('tools')"><rw-icon name="wand" [size]="15" /> {{ 'reader.tools' | t }}</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="left" [attr.aria-label]="'reader.contents' | t">
+      <rw-reader-contents [bookmarks]="bookmarks()" [doc]="doc()" (removeBookmark)="removeBookmark($event)" />
+    </aside>
+
+    <section class="center" #viewerArea>
+      @if (doc(); as d) {
+        <rw-pdf-viewer [doc]="d" [scale]="scale()" [highlights]="store.highlights()" [goTo]="store.goTo()"
+          (pageChange)="onPageChange($event)" (selectionChange)="onSelection($event)" (highlightClick)="openHighlight($event)" (baseSize)="onBaseSize($event)" />
+      } @else if (loadError()) {
+        <div class="loading"><rw-icon name="alert-triangle" [size]="28" /><p>{{ loadError() }}</p>
+          <a class="btn" routerLink="/library">{{ 'nav.library' | t }}</a></div>
+      } @else {
+        <div class="loading" role="status">
+          <span class="spinner" style="width: 28px; height: 28px"></span>
+          <p class="small muted">{{ 'reader.loading' | t }} @if (loadProgress() > 0) { <span class="num">{{ loadProgress() }}%</span> }</p>
+        </div>
+      }
+
+      @if (store.currentPageInfo()?.isScanned && store.currentPageInfo()?.extractionMethod !== 'ocr') {
+        <div class="page-notice alert warning small"><rw-icon name="info" [size]="16" /> {{ 'reader.scannedNotice' | t }}
+          <button class="btn sm" type="button" (click)="store.askTutor({ action: 'explain_page', question: '', selectedText: null, page: store.currentPage() })">{{ 'reader.askAboutPage' | t }}</button>
+        </div>
+      }
+    </section>
+
+    <aside class="right" [attr.aria-label]="'reader.studyPanel' | t">
+      @switch (store.rightTab()) {
+        @case ('tutor') { <rw-tutor-panel [bookId]="bookId()" /> }
+        @case ('notes') { <rw-book-notes-panel /> }
+        @case ('tools') { <rw-study-tools-panel /> }
+      }
+    </aside>
+  </div>
+
+  <!-- Floating selection toolbar -->
+  @if (store.selection() && selectionPosition(); as pos) {
+    <div class="selection-bar" role="toolbar" [attr.aria-label]="'reader.selectionActions' | t" [style.left.px]="pos.left" [style.top.px]="pos.top">
+      <button type="button" (click)="selectionAction('explain')"><rw-icon name="sparkles" [size]="15" /> {{ 'reader.actions.explain' | t }}</button>
+      <button type="button" (click)="selectionAction('simplify')">{{ 'reader.actions.simplify' | t }}</button>
+      <button type="button" (click)="selectionAction('summarize')">{{ 'reader.actions.summarize' | t }}</button>
+      <button type="button" (click)="selectionAction('translate')">{{ 'reader.actions.translate' | t }}</button>
+      <button type="button" (click)="selectionAction('example')">{{ 'reader.actions.example' | t }}</button>
+      <button type="button" (click)="selectionAction('steps')">{{ 'reader.actions.steps' | t }}</button>
+      <button type="button" (click)="selectionAction('questions')">{{ 'reader.actions.questions' | t }}</button>
+      <button type="button" (click)="selectionAction('flashcard')"><rw-icon name="layers" [size]="15" /> {{ 'reader.actions.flashcard' | t }}</button>
+      <button type="button" (click)="selectionAction('note')"><rw-icon name="sticky-note" [size]="15" /></button>
+      <span class="colors">
+        @for (c of ['yellow', 'green', 'blue', 'pink']; track c) {
+          <button type="button" class="swatch" [class]="'swatch sw-' + c" (click)="highlight(c)" [attr.aria-label]="('reader.highlight' | t) + ' ' + c"></button>
+        }
+      </span>
+    </div>
+  }
+
+  <!-- Highlight / annotation popover -->
+  @if (activeHighlight(); as h) {
+    <div class="annotation card" role="dialog" [attr.aria-label]="'reader.annotation' | t">
+      <div class="row between"><strong class="small">{{ 'reader.annotation' | t }}</strong>
+        <button class="btn ghost icon sm" type="button" (click)="activeHighlight.set(null)" [attr.aria-label]="'common.close' | t"><rw-icon name="x" [size]="14" /></button></div>
+      <blockquote dir="auto">{{ h.text }}</blockquote>
+      <textarea class="textarea" [(ngModel)]="annotationDraft" [placeholder]="'reader.annotationPlaceholder' | t" dir="auto"></textarea>
+      <div class="row between">
+        <button class="btn ghost sm" type="button" (click)="deleteHighlight()"><rw-icon name="trash" [size]="14" /> {{ 'common.delete' | t }}</button>
+        <div class="row">
+          <button class="btn sm" type="button" (click)="explainHighlight()"><rw-icon name="sparkles" [size]="14" /> {{ 'reader.actions.explain' | t }}</button>
+          <button class="btn primary sm" type="button" (click)="saveAnnotation()">{{ 'common.save' | t }}</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Mobile: bottom tabs + sheets -->
+  <nav class="mobile-tabs">
+    <button type="button" [class.active]="mobileSheet() === 'contents'" (click)="mobileSheet.set(mobileSheet() === 'contents' ? null : 'contents')"><rw-icon name="list-tree" /><span>{{ 'reader.contents' | t }}</span></button>
+    <button type="button" [class.active]="mobileSheet() === 'tutor'" (click)="toggleRight('tutor')"><rw-icon name="message-circle" /><span>{{ 'reader.tutor' | t }}</span></button>
+    <button type="button" [class.active]="mobileSheet() === 'notes'" (click)="toggleRight('notes')"><rw-icon name="sticky-note" /><span>{{ 'reader.notes' | t }}</span></button>
+    <button type="button" [class.active]="mobileSheet() === 'tools'" (click)="toggleRight('tools')"><rw-icon name="wand" /><span>{{ 'reader.tools' | t }}</span></button>
+  </nav>
+  @if (mobileSheet(); as sheet) {
+    <div class="sheet-scrim" (click)="mobileSheet.set(null)" aria-hidden="true"></div>
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sheet-handle"><span></span><button class="btn ghost icon sm" type="button" (click)="mobileSheet.set(null)" [attr.aria-label]="'common.close' | t"><rw-icon name="x" /></button></div>
+      @switch (sheet) {
+        @case ('contents') { <rw-reader-contents [bookmarks]="bookmarks()" [doc]="doc()" (removeBookmark)="removeBookmark($event)" (navigated)="mobileSheet.set(null)" /> }
+        @case ('tutor') { <rw-tutor-panel [bookId]="bookId()" /> }
+        @case ('notes') { <rw-book-notes-panel /> }
+        @case ('tools') { <rw-study-tools-panel /> }
+      }
+    </div>
+  }
+</div>

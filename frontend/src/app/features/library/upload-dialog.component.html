@@ -1,0 +1,115 @@
+<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="upload-title">
+  <div class="dialog-header">
+    <div class="icon-tile"><rw-icon name="file-up" /></div>
+    <div class="grow">
+      <h2 id="upload-title">{{ 'upload.title' | t }}</h2>
+      <p>{{ 'upload.subtitle' | t }}</p>
+    </div>
+    <button class="btn ghost icon sm" type="button" (click)="ref.close()" [attr.aria-label]="'common.close' | t"><rw-icon name="x" /></button>
+  </div>
+
+  <div class="dialog-body">
+    @switch (phase()) {
+      @case ('select') {
+        <label class="drop" [class.dragging]="dragging()" [class.has-file]="file()"
+          (dragover)="$event.preventDefault(); dragging.set(true)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+          <input type="file" accept="application/pdf,.pdf" (change)="onFileInput($event)" class="visually-hidden" />
+          @if (file(); as f) {
+            <rw-icon name="file-text" [size]="28" />
+            <strong class="file-name" dir="auto">{{ f.name }}</strong>
+            <span class="subtle small">{{ formatSize(f.size) }} · {{ 'upload.change' | t }}</span>
+          } @else {
+            <rw-icon name="upload" [size]="28" />
+            <strong>{{ 'upload.drop' | t }}</strong>
+            <span class="subtle small">{{ 'upload.limits' | t: { mb: 150 } }}</span>
+          }
+        </label>
+        @if (fileError()) { <p class="error small" role="alert">{{ fileError() }}</p> }
+
+        <div class="grid cols-2 fields">
+          <div class="field">
+            <label for="subject">{{ 'common.subject' | t }} *</label>
+            <select id="subject" class="select" [(ngModel)]="subjectId" required>
+              <option [ngValue]="null" disabled>{{ 'upload.chooseSubject' | t }}</option>
+              @for (s of store.subjects(); track s.id) { <option [ngValue]="s.id">{{ i18n.subjectName(s) }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="title">{{ 'upload.bookTitle' | t }}</label>
+            <input id="title" class="input" [(ngModel)]="title" maxlength="300" dir="auto" />
+          </div>
+          <div class="field">
+            <label for="year">{{ 'upload.academicYear' | t }}</label>
+            <input id="year" class="input" [(ngModel)]="academicYear" maxlength="20" placeholder="2026/2027" />
+          </div>
+          <div class="field">
+            <label for="tags">{{ 'upload.tags' | t }}</label>
+            <input id="tags" class="input" [(ngModel)]="tags" [placeholder]="'upload.tagsPlaceholder' | t" />
+          </div>
+        </div>
+      }
+
+      @case ('uploading') {
+        <div class="state">
+          <p class="small"><strong dir="auto">{{ file()?.name }}</strong></p>
+          <div class="bar big" role="progressbar" [attr.aria-valuenow]="uploadProgress()" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="uploadProgress()"></span></div>
+          <p class="subtle small num">{{ 'upload.uploading' | t }} {{ uploadProgress() }}%</p>
+        </div>
+      }
+
+      @case ('processing') {
+        <div class="processing">
+          <div>
+            <p class="small muted" style="margin-bottom: 12px">{{ 'upload.processingLead' | t }}</p>
+            <rw-processing-timeline [status]="status()" />
+          </div>
+          @if (done()) {
+            <div class="alert success"><rw-icon name="check-circle" />
+              <span>{{ (status()?.bookStatus === 'readyWithWarnings' ? 'upload.readyWithWarnings' : 'upload.ready') | t }}</span>
+            </div>
+          }
+          @if (failed()) {
+            <div class="alert danger" role="alert"><rw-icon name="alert-circle" />
+              <span>{{ ('processingErrors.' + (status()?.errorCode ?? 'processing_error')) | t }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      @case ('error') {
+        <div class="alert danger" role="alert"><rw-icon name="alert-circle" /> <span>{{ error() }}</span></div>
+      }
+    }
+  </div>
+
+  <div class="dialog-footer">
+    @switch (phase()) {
+      @case ('select') {
+        <button class="btn ghost" type="button" (click)="ref.close()">{{ 'common.cancel' | t }}</button>
+        <button class="btn primary" type="button" (click)="start()" [disabled]="!file() || !subjectId">
+          <rw-icon name="upload" [size]="16" /> {{ 'upload.start' | t }}
+        </button>
+      }
+      @case ('uploading') {
+        <button class="btn ghost" type="button" (click)="cancel()">{{ 'upload.cancelUpload' | t }}</button>
+      }
+      @case ('processing') {
+        @if (failed()) {
+          <button class="btn" type="button" (click)="retryProcessing()"><rw-icon name="refresh" [size]="16" /> {{ 'common.retry' | t }}</button>
+        }
+        @if (done()) {
+          <button class="btn ghost" type="button" (click)="viewDetails(book()!.id)">{{ 'upload.viewDetails' | t }}</button>
+          <button class="btn primary" type="button" (click)="openBook()"><rw-icon name="book-open" [size]="16" /> {{ 'upload.startStudying' | t }}</button>
+        } @else {
+          <button class="btn ghost" type="button" (click)="ref.close()">{{ 'upload.continueInBackground' | t }}</button>
+        }
+      }
+      @case ('error') {
+        @if (duplicateId()) {
+          <button class="btn" type="button" (click)="viewDetails(duplicateId()!)">{{ 'upload.openExisting' | t }}</button>
+        }
+        <button class="btn primary" type="button" (click)="reset()">{{ 'common.tryAgain' | t }}</button>
+      }
+    }
+  </div>
+</div>

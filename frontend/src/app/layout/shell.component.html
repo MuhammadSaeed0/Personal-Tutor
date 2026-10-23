@@ -1,0 +1,114 @@
+<a class="skip-link" href="#main">{{ 'nav.skipToContent' | t }}</a>
+
+<div class="shell" [class.drawer-open]="drawerOpen()">
+  <aside class="sidebar" [attr.aria-label]="'nav.mainNavigation' | t">
+    <a routerLink="/" class="brand-link" [attr.aria-label]="'app.name' | t"><rw-brand /></a>
+
+    <button class="btn primary block upload-cta" type="button" (click)="openUpload()">
+      <rw-icon name="upload" /> {{ 'nav.uploadBook' | t }}
+    </button>
+
+    <nav class="nav">
+      @for (item of primary; track item.path) {
+        <a class="nav-link" [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!item.exact }">
+          <rw-icon [name]="item.icon" /> <span>{{ item.label | t }}</span>
+        </a>
+      }
+
+      <button class="nav-section" type="button" (click)="subjectsOpen.set(!subjectsOpen())" [attr.aria-expanded]="subjectsOpen()">
+        <span>{{ 'nav.subjects' | t }}</span>
+        <rw-icon [name]="subjectsOpen() ? 'chevron-up' : 'chevron-down'" [size]="14" />
+      </button>
+      @if (subjectsOpen()) {
+        @for (subject of store.subjects(); track subject.id) {
+          <a class="nav-link subject" [routerLink]="['/subjects', subject.code]" routerLinkActive="active">
+            <span class="subject-dot" [style.background]="subject.color"></span>
+            <span>{{ i18n.subjectName(subject) }}</span>
+          </a>
+        }
+      }
+
+      <div class="nav-section static">{{ 'nav.practice' | t }}</div>
+      @for (item of practice; track item.path) {
+        <a class="nav-link" [routerLink]="item.path" routerLinkActive="active">
+          <rw-icon [name]="item.icon" /> <span>{{ item.label | t }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-foot">
+      <a class="nav-link" routerLink="/focus"><rw-icon name="timer" /> <span>{{ 'nav.focus' | t }}</span></a>
+      <a class="nav-link" routerLink="/settings" routerLinkActive="active"><rw-icon name="settings" /> <span>{{ 'nav.settings' | t }}</span></a>
+    </div>
+  </aside>
+
+  <div class="scrim" (click)="drawerOpen.set(false)" aria-hidden="true"></div>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="btn ghost icon menu-btn" type="button" (click)="drawerOpen.set(true)" [attr.aria-label]="'nav.openMenu' | t">
+        <rw-icon name="menu" />
+      </button>
+      <a routerLink="/" class="mobile-brand"><rw-brand [size]="28" [showName]="false" /></a>
+
+      <a class="search-box" routerLink="/search">
+        <rw-icon name="search" [size]="16" />
+        <span>{{ 'nav.searchPlaceholder' | t }}</span>
+      </a>
+
+      <div class="top-actions">
+        <button class="btn ghost sm lang-btn" type="button" (click)="toggleLanguage()" [attr.aria-label]="'nav.switchLanguage' | t">
+          <rw-icon name="languages" [size]="16" /> <span>{{ i18n.lang() === 'ar' ? 'English' : 'العربية' }}</span>
+        </button>
+        <button class="btn ghost icon" type="button" (click)="toggleTheme()" [attr.aria-label]="'nav.toggleTheme' | t">
+          <rw-icon [name]="theme.resolved() === 'dark' ? 'sun' : 'moon'" />
+        </button>
+
+        <button class="btn ghost icon bell" type="button" [cdkMenuTriggerFor]="notificationsMenu" (cdkMenuOpened)="markRead()" [attr.aria-label]="'nav.notifications' | t">
+          <rw-icon name="bell" />
+          @if (unread() > 0) { <span class="dot" aria-hidden="true"></span> }
+        </button>
+        <ng-template #notificationsMenu>
+          <div class="menu notif-menu" cdkMenu>
+            @for (n of notifications(); track n.id) {
+              <button cdkMenuItem type="button" (click)="openNotification(n)">
+                <rw-icon [name]="n.type === 'book_ready' ? 'book-open-check' : 'bell'" [size]="16" />
+                <span class="grow">{{ ('notifications.' + n.type) | t: { title: n.data } }}<br><span class="subtle xsmall">{{ i18n.relative(n.createdAt) }}</span></span>
+              </button>
+            } @empty {
+              <div class="subtle small" style="padding: 12px">{{ 'notifications.empty' | t }}</div>
+            }
+          </div>
+        </ng-template>
+
+        <button class="avatar" type="button" [cdkMenuTriggerFor]="userMenu" [attr.aria-label]="'nav.account' | t">{{ initials() }}</button>
+        <ng-template #userMenu>
+          <div class="menu" cdkMenu>
+            <div class="menu-head">
+              <strong>{{ auth.profile()?.displayName }}</strong>
+              <span class="subtle xsmall">{{ auth.profile()?.email }}</span>
+            </div>
+            <button cdkMenuItem type="button" routerLink="/settings"><rw-icon name="settings" [size]="16" /> {{ 'nav.settings' | t }}</button>
+            <button cdkMenuItem type="button" routerLink="/analytics"><rw-icon name="bar-chart" [size]="16" /> {{ 'nav.analytics' | t }}</button>
+            <button cdkMenuItem type="button" class="danger" (click)="logout()"><rw-icon name="log-out" [size]="16" /> {{ 'nav.logout' | t }}</button>
+          </div>
+        </ng-template>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+
+  <nav class="bottom-nav" [attr.aria-label]="'nav.mainNavigation' | t">
+    @for (item of mobile; track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!item.exact }">
+        <rw-icon [name]="item.icon" [size]="20" /> <span>{{ item.label | t }}</span>
+      </a>
+    }
+    <button type="button" (click)="openUpload()" class="bottom-upload" [attr.aria-label]="'nav.uploadBook' | t">
+      <rw-icon name="plus" [size]="22" />
+    </button>
+  </nav>
+</div>

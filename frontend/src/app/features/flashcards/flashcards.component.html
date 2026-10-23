@@ -1,0 +1,104 @@
+<div class="page">
+  <header class="page-header">
+    <div><div class="eyebrow">{{ 'nav.flashcards' | t }}</div><h1>{{ 'flashcards.title' | t }}</h1><p>{{ 'flashcards.subtitle' | t }}</p></div>
+    <div class="row">
+      <button class="btn" type="button" (click)="startCreate()"><rw-icon name="plus" [size]="16" /> {{ 'flashcards.newCard' | t }}</button>
+      <a class="btn primary" routerLink="/flashcards/review" [queryParams]="{ subjectId: subjectId() ?? undefined }"><rw-icon name="play" [size]="16" /> {{ 'flashcards.startReview' | t }}</a>
+    </div>
+  </header>
+
+  @if (stats(); as s) {
+    <div class="overview">
+      <div class="card stats">
+        <div class="stat big"><span class="value num">{{ i18n.number(s.dueNow) }}</span><span class="label">{{ 'flashcards.due' | t }}</span></div>
+        <div class="stat"><span class="value num">{{ i18n.number(s.new) }}</span><span class="label">{{ 'flashcards.new' | t }}</span></div>
+        <div class="stat"><span class="value num">{{ i18n.number(s.learning) }}</span><span class="label">{{ 'flashcards.learning' | t }}</span></div>
+        <div class="stat"><span class="value num">{{ i18n.number(s.mastered) }}</span><span class="label">{{ 'flashcards.mastered' | t }}</span></div>
+        <div class="stat"><span class="value num">{{ s.retention30d != null ? i18n.number(s.retention30d * 100) + '%' : '—' }}</span><span class="label">{{ 'flashcards.retention' | t }}</span></div>
+        <div class="stat"><span class="value num">{{ i18n.number(s.reviewStreak) }}</span><span class="label">{{ 'flashcards.streak' | t }}</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><h3 class="small">{{ 'flashcards.forecast' | t }}</h3></div>
+        <rw-chart [data]="forecast()" [height]="130" [label]="'flashcards.forecast' | t" />
+      </div>
+    </div>
+    <p class="xsmall subtle algo">{{ 'flashcards.algorithmNote' | t }}</p>
+  }
+
+  @if (creating()) {
+    <section class="card editor">
+      <div class="card-title"><h3>{{ (editingId() ? 'flashcards.editCard' : 'flashcards.newCard') | t }}</h3></div>
+      <div class="grid cols-2">
+        @if (!editingId()) {
+          <div class="field"><label for="c-subject">{{ 'common.subject' | t }}</label>
+            <select id="c-subject" class="select" [(ngModel)]="draft.subjectId">
+              @for (sub of store.subjects(); track sub.id) { <option [ngValue]="sub.id">{{ i18n.subjectName(sub) }}</option> }
+            </select></div>
+        }
+        <div class="field"><label for="c-tags">{{ 'upload.tags' | t }}</label><input id="c-tags" class="input" [(ngModel)]="draft.tags" /></div>
+        <div class="field"><label for="c-front">{{ 'tools.front' | t }}</label><textarea id="c-front" class="textarea" [(ngModel)]="draft.front" dir="auto"></textarea></div>
+        <div class="field"><label for="c-back">{{ 'tools.back' | t }}</label><textarea id="c-back" class="textarea" [(ngModel)]="draft.back" dir="auto"></textarea>
+          <span class="hint">{{ 'flashcards.mathHint' | t }}</span></div>
+      </div>
+      <div class="row" style="justify-content: flex-end; margin-top: 12px">
+        <button class="btn ghost" type="button" (click)="creating.set(false)">{{ 'common.cancel' | t }}</button>
+        <button class="btn primary" type="button" (click)="saveDraft()" [disabled]="!draft.front.trim() || !draft.back.trim()">{{ 'common.save' | t }}</button>
+      </div>
+    </section>
+  }
+
+  <div class="filters">
+    <div class="chips">
+      <button type="button" class="chip" [class.active]="subjectId() === null" (click)="subjectId.set(null); page.set(1)">{{ 'common.allSubjects' | t }}</button>
+      @for (sub of store.subjects(); track sub.id) {
+        <button type="button" class="chip" [class.active]="subjectId() === sub.id" (click)="subjectId.set(sub.id); page.set(1)"><span class="subject-dot" [style.background]="sub.color"></span>{{ i18n.subjectName(sub) }}</button>
+      }
+    </div>
+    <div class="row">
+      <select class="select sm" [ngModel]="state()" (ngModelChange)="state.set($event); page.set(1)" [attr.aria-label]="'flashcards.filterState' | t">
+        <option value="">{{ 'flashcards.allStates' | t }}</option>
+        <option value="due">{{ 'flashcards.due' | t }}</option>
+        <option value="new">{{ 'flashcards.new' | t }}</option>
+        <option value="learning">{{ 'flashcards.learning' | t }}</option>
+        <option value="mastered">{{ 'flashcards.mastered' | t }}</option>
+        <option value="suspended">{{ 'flashcards.suspended' | t }}</option>
+      </select>
+      <input class="input sm" type="search" [ngModel]="search()" (ngModelChange)="search.set($event); page.set(1)" [placeholder]="'common.search' | t" [attr.aria-label]="'common.search' | t" />
+    </div>
+  </div>
+
+  @if (cards(); as list) {
+    @if (list.totalCount === 0) {
+      <div class="card"><rw-empty icon="layers" [title]="'flashcards.emptyTitle' | t" [text]="'flashcards.emptyText' | t">
+        <button class="btn primary" type="button" (click)="startCreate()">{{ 'flashcards.newCard' | t }}</button></rw-empty></div>
+    } @else {
+      <div class="cards">
+        @for (c of list.items; track c.id) {
+          <article class="card flash" [class.suspended]="c.isSuspended">
+            <div class="row between">
+              <span class="subject-dot" [style.background]="store.subject(c.subjectId)?.color"></span>
+              <span class="badge" [class.success]="c.isMastered" [class.warning]="c.state === 'learning' || c.state === 'relearning'">{{ c.isMastered ? ('flashcards.mastered' | t) : ('flashcards.states.' + c.state | t) }}</span>
+            </div>
+            <strong class="front" dir="auto">{{ c.front }}</strong>
+            <div class="back"><rw-markdown [content]="c.back" /></div>
+            <div class="row between foot">
+              <span class="xsmall subtle">{{ dueLabel(c) }}@if (c.sourcePage) { · {{ 'common.pageN' | t: { n: c.sourcePage } }} }</span>
+              <span class="row">
+                <button class="btn ghost icon sm" type="button" (click)="startEdit(c)" [attr.aria-label]="'common.edit' | t"><rw-icon name="pencil" [size]="14" /></button>
+                <button class="btn ghost icon sm" type="button" (click)="toggleSuspend(c)" [attr.aria-label]="(c.isSuspended ? 'flashcards.resume' : 'flashcards.suspend') | t"><rw-icon [name]="c.isSuspended ? 'play' : 'pause'" [size]="14" /></button>
+                <button class="btn ghost icon sm" type="button" (click)="remove(c)" [attr.aria-label]="'common.delete' | t"><rw-icon name="trash" [size]="14" /></button>
+              </span>
+            </div>
+          </article>
+        }
+      </div>
+      @if (list.totalPages > 1) {
+        <nav class="pager" [attr.aria-label]="'common.pagination' | t">
+          <button class="btn sm" type="button" [disabled]="page() <= 1" (click)="page.set(page() - 1)"><rw-icon name="chevron-left" [size]="14" /></button>
+          <span class="small num">{{ page() }} / {{ list.totalPages }}</span>
+          <button class="btn sm" type="button" [disabled]="page() >= list.totalPages" (click)="page.set(page() + 1)"><rw-icon name="chevron-right" [size]="14" /></button>
+        </nav>
+      }
+    }
+  }
+</div>

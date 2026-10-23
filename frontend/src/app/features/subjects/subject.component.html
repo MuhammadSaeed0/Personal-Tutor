@@ -1,0 +1,145 @@
+<div class="page">
+  @if (subject(); as s) {
+    <section class="banner" [style.--c]="s.color">
+      <span class="s-icon"><rw-icon [name]="s.icon" [size]="26" /></span>
+      <div class="grow">
+        <div class="eyebrow">{{ 'subject.workspace' | t }}</div>
+        <h1>{{ i18n.subjectName(s) }}</h1>
+        <p>{{ ('subject.focus.' + s.code) | t }}</p>
+      </div>
+      <div class="banner-stats">
+        <div class="b-stat">
+          <rw-ring [value]="stats()?.pagesTotal ? (100 * stats()!.pagesRead / stats()!.pagesTotal) : 0" [size]="52" [color]="s.color">
+            {{ stats()?.pagesTotal ? i18n.number(100 * stats()!.pagesRead / stats()!.pagesTotal) : 0 }}%
+          </rw-ring>
+          <span>{{ 'subject.read' | t }}</span>
+        </div>
+        <div class="b-stat">
+          <strong class="num">{{ stats()?.quizAccuracy != null ? i18n.number(stats()!.quizAccuracy!) + '%' : '—' }}</strong>
+          <span>{{ 'subject.accuracy' | t }}</span>
+        </div>
+        <div class="b-stat">
+          <strong class="num">{{ stats()?.estimatedMastery != null ? masteryPercent() + '%' : '—' }}</strong>
+          <span>{{ 'subject.estimatedMastery' | t }}</span>
+        </div>
+      </div>
+    </section>
+
+    @if (!loading() && books().length === 0) {
+      <div class="card">
+        <rw-empty [icon]="s.icon" [title]="'subject.emptyTitle' | t: { subject: i18n.subjectName(s) }" [text]="'subject.emptyText' | t">
+          <button class="btn primary" type="button" (click)="upload()"><rw-icon name="upload" [size]="16" /> {{ 'nav.uploadBook' | t }}</button>
+        </rw-empty>
+      </div>
+    } @else {
+      <div class="layout">
+        <div class="col">
+          @if (nextLesson(); as next) {
+            <section class="card next" [style.--c]="s.color">
+              <div>
+                <div class="eyebrow">{{ 'subject.nextLesson' | t }}</div>
+                <h3 dir="auto">{{ next.chapter.title }}</h3>
+                <p class="small muted" dir="auto">{{ next.book.title }} · {{ 'book.pages' | t: { from: next.chapter.startPage, to: next.chapter.endPage } }}</p>
+              </div>
+              <div class="row wrap">
+                <a class="btn primary" [routerLink]="['/read', next.book.id]" [queryParams]="{ page: next.chapter.startPage }"><rw-icon name="book-open" [size]="16" /> {{ 'subject.startReading' | t }}</a>
+                <a class="btn" routerLink="/quizzes/new" [queryParams]="{ bookId: next.book.id, chapterId: next.chapter.id }">{{ 'subject.testFirst' | t }}</a>
+              </div>
+            </section>
+          }
+
+          <section class="card">
+            <div class="card-title">
+              <h3>{{ 'subject.books' | t }}</h3>
+              <div class="row">
+                @if (years().length > 1) {
+                  @for (y of years(); track y) { <button type="button" class="chip" [class.active]="yearFilter() === y" (click)="yearFilter.set(yearFilter() === y ? null : y)">{{ y }}</button> }
+                }
+                <button class="btn ghost sm" type="button" (click)="upload()"><rw-icon name="plus" [size]="14" /> {{ 'subject.addBook' | t }}</button>
+              </div>
+            </div>
+            @for (b of visibleBooks(); track b.id) {
+              @let cp = chapterProgress(b.id);
+              <div class="book-row">
+                <span class="spine" [style.background]="s.color"></span>
+                <div class="grow">
+                  <a [routerLink]="b.status === 'ready' || b.status === 'readyWithWarnings' ? ['/read', b.id] : ['/library', b.id]" class="book-title" dir="auto">{{ b.title }}</a>
+                  <span class="xsmall subtle">
+                    {{ i18n.number(b.pageCount) }} {{ 'common.pagesShort' | t }}
+                    @if (cp.total > 0) { · {{ 'subject.chaptersDone' | t: { done: cp.done, total: cp.total } }} }
+                    @if (b.academicYear) { · {{ b.academicYear }} }
+                  </span>
+                  <div class="bar"><span [style.width.%]="b.readingProgress" [style.background]="s.color"></span></div>
+                </div>
+                <a class="btn ghost icon sm" [routerLink]="['/library', b.id]" [attr.aria-label]="'library.manage' | t"><rw-icon name="settings" [size]="16" /></a>
+              </div>
+              @if ((chapters()[b.id] ?? []).length > 0) {
+                <details class="chapters">
+                  <summary class="small">{{ 'subject.showChapters' | t }}</summary>
+                  @for (c of chapters()[b.id]; track c.id) {
+                    @if (c.level === 1) {
+                      <a class="chapter" [routerLink]="['/read', b.id]" [queryParams]="{ page: c.startPage }">
+                        <span class="dot" [class]="'dot ' + c.status"></span><span class="grow small" dir="auto">{{ c.title }}</span>
+                        <span class="xsmall subtle">{{ 'chapterStatus.' + c.status | t }}</span>
+                      </a>
+                    }
+                  }
+                </details>
+              }
+            }
+          </section>
+
+          <section class="card">
+            <div class="card-title"><h3>{{ 'subject.recentQuizzes' | t }}</h3><a class="link" routerLink="/quizzes">{{ 'common.all' | t }}</a></div>
+            @for (a of attempts(); track a.id) {
+              <a class="list-item attempt" [routerLink]="a.status === 'submitted' ? ['/quiz/result', a.id] : ['/quiz/attempt', a.id]">
+                <span class="score num" [class.good]="a.percent >= 75" [class.low]="a.percent < 50">{{ a.status === 'submitted' ? i18n.number(a.percent) + '%' : '…' }}</span>
+                <span class="grow small" dir="auto">{{ a.quizTitle }}</span>
+                <span class="xsmall subtle">{{ i18n.date(a.submittedAt ?? a.startedAt, 'short') }}</span>
+              </a>
+            } @empty {
+              <p class="muted small">{{ 'subject.noQuizzes' | t }}</p>
+            }
+          </section>
+        </div>
+
+        <div class="col">
+          <section class="card">
+            <div class="card-title"><h3>{{ 'subject.flashcards' | t }}</h3></div>
+            <div class="stats3">
+              <div class="stat"><span class="value num">{{ i18n.number(cards()?.dueNow ?? 0) }}</span><span class="label">{{ 'flashcards.due' | t }}</span></div>
+              <div class="stat"><span class="value num">{{ i18n.number(cards()?.new ?? 0) }}</span><span class="label">{{ 'flashcards.new' | t }}</span></div>
+              <div class="stat"><span class="value num">{{ i18n.number(cards()?.mastered ?? 0) }}</span><span class="label">{{ 'flashcards.mastered' | t }}</span></div>
+            </div>
+            <a class="btn primary block" routerLink="/flashcards/review" [queryParams]="{ subjectId: s.id }" [attr.aria-disabled]="!cards()?.dueNow && !cards()?.new">{{ 'subject.reviewCards' | t }}</a>
+          </section>
+
+          <section class="card">
+            <div class="card-title"><h3>{{ 'subject.weakTopics' | t }}</h3></div>
+            @for (t of weak(); track t.id) {
+              <div class="list-item">
+                <span class="badge" [class.danger]="t.band === 'weak'" [class.warning]="t.band !== 'weak'">{{ i18n.number(t.estimatedMastery * 100) }}%</span>
+                <span class="grow small" dir="auto">{{ t.topic }}</span>
+                @if (t.bookId && t.lastMistakePage) { <a class="btn ghost sm" [routerLink]="['/read', t.bookId]" [queryParams]="{ page: t.lastMistakePage }">{{ 'common.pageN' | t: { n: t.lastMistakePage } }}</a> }
+              </div>
+            } @empty {
+              <p class="muted small">{{ 'subject.noWeakTopics' | t }}</p>
+            }
+          </section>
+
+          <section class="card">
+            <div class="card-title"><h3>{{ 'subject.tools' | t }}</h3></div>
+            <div class="tools">
+              <a class="tool" [routerLink]="['/tutor']" [queryParams]="{ bookId: books()[0]?.id }"><rw-icon name="message-circle" /> {{ 'subject.askTutor' | t }}</a>
+              <a class="tool" routerLink="/quizzes/new" [queryParams]="{ bookId: books()[0]?.id, mode: 'exam' }"><rw-icon name="graduation-cap" /> {{ 'subject.mockExam' | t }}</a>
+              <a class="tool" routerLink="/summaries"><rw-icon name="file-text" /> {{ 'nav.summaries' | t }}</a>
+              @for (tool of tools(); track tool.route) {
+                <a class="tool" [routerLink]="['/tools', tool.route]" [queryParams]="{ subject: s.code }"><rw-icon [name]="tool.icon" /> {{ tool.label | t }}</a>
+              }
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+  }
+</div>

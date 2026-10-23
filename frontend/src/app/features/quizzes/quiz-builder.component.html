@@ -1,0 +1,108 @@
+<div class="page narrow">
+  <a routerLink="/quizzes" class="back small"><rw-icon name="arrow-left" [size]="14" /> {{ 'nav.quizzes' | t }}</a>
+  <header class="page-header">
+    <div><h1>{{ (mode() === 'exam' ? 'builder.examTitle' : 'builder.title') | t }}</h1><p>{{ 'builder.subtitle' | t }}</p></div>
+  </header>
+
+  @if (loaded() && books().length === 0) {
+    <div class="card"><rw-empty icon="book-open" [title]="'builder.noBooks' | t" [text]="'builder.noBooksText' | t"><a class="btn primary" routerLink="/library">{{ 'nav.library' | t }}</a></rw-empty></div>
+  } @else if (generating()) {
+    <div class="card generating" role="status">
+      <span class="spinner" style="width: 32px; height: 32px"></span>
+      <h3>{{ 'builder.generating' | t }}</h3>
+      <p class="muted small">{{ 'builder.generatingText' | t }}</p>
+    </div>
+  } @else {
+    <div class="card form">
+      <div class="segmented mode" role="group">
+        <button type="button" [attr.aria-pressed]="mode() === 'practice'" (click)="setMode('practice')"><rw-icon name="list-checks" [size]="15" /> {{ 'quizzes.modes.practice' | t }}</button>
+        <button type="button" [attr.aria-pressed]="mode() === 'exam'" (click)="setMode('exam')"><rw-icon name="graduation-cap" [size]="15" /> {{ 'quizzes.modes.exam' | t }}</button>
+      </div>
+
+      <section class="grid cols-2">
+        <div class="field"><label for="q-book">{{ 'builder.book' | t }}</label>
+          <select id="q-book" class="select" [ngModel]="bookId()" (ngModelChange)="pickBook($event)">
+            @for (b of books(); track b.id) { <option [ngValue]="b.id">{{ b.title }} — {{ store.subjectName(b.subjectId) }}</option> }
+          </select></div>
+        <div class="field"><label for="q-scope">{{ 'tools.scope' | t }}</label>
+          <select id="q-scope" class="select" [(ngModel)]="scope">
+            <option value="book">{{ 'builder.wholeBook' | t }}</option>
+            <option value="chapter" [disabled]="chapters().length === 0">{{ 'builder.chapter' | t }}</option>
+            <option value="pages">{{ 'builder.pages' | t }}</option>
+          </select></div>
+        @if (scope === 'chapter') {
+          <div class="field span2"><label for="q-chapter">{{ 'builder.chapter' | t }}</label>
+            <select id="q-chapter" class="select" [(ngModel)]="chapterId">
+              @for (c of chapters(); track c.id) { <option [ngValue]="c.id">{{ c.level > 1 ? '— ' : '' }}{{ c.title }} ({{ c.startPage }}–{{ c.endPage }})</option> }
+            </select></div>
+        }
+        @if (scope === 'pages') {
+          <div class="field"><label for="q-from">{{ 'builder.fromPage' | t }}</label><input id="q-from" class="input num" type="number" min="1" [max]="book()?.pageCount ?? 9999" [(ngModel)]="pageStart" /></div>
+          <div class="field"><label for="q-to">{{ 'builder.toPage' | t }}</label><input id="q-to" class="input num" type="number" min="1" [max]="book()?.pageCount ?? 9999" [(ngModel)]="pageEnd" /></div>
+        }
+      </section>
+
+      <section class="grid cols-2">
+        <div class="field"><span class="field-label">{{ 'builder.difficulty' | t }}</span>
+          <div class="segmented" role="group">
+            @for (d of ['easy', 'medium', 'hard']; track d) {
+              <button type="button" [attr.aria-pressed]="difficulty === d" (click)="difficulty = $any(d)">{{ 'difficulty.' + d | t }}</button>
+            }
+          </div></div>
+        @if (!(mode() === 'exam' && useBlueprint)) {
+          <div class="field"><label for="q-count">{{ 'builder.count' | t }}: <strong class="num">{{ count }}</strong></label>
+            <input id="q-count" type="range" min="3" max="40" [(ngModel)]="count" class="slider" /></div>
+        }
+      </section>
+
+      @if (!(mode() === 'exam' && useBlueprint)) {
+        <section class="field"><span class="field-label">{{ 'builder.types' | t }}</span>
+          <div class="chips">
+            @for (t of allTypes; track t) {
+              <button type="button" class="chip" [class.active]="types().includes(t)" (click)="toggleType(t)" [attr.aria-pressed]="types().includes(t)">{{ 'questionTypes.' + t | t }}</button>
+            }
+          </div></section>
+      }
+
+      @if (mode() === 'exam') {
+        <section class="exam-box">
+          <label class="check"><input type="checkbox" [(ngModel)]="useBlueprint" /> {{ 'builder.useBlueprint' | t }}</label>
+          @if (useBlueprint) {
+            <p class="xsmall subtle">{{ 'builder.blueprintHint' | t }}</p>
+            <div class="blueprint">
+              @for (t of allTypes; track t) {
+                <label class="bp"><span class="small">{{ 'questionTypes.' + t | t }}</span>
+                  <input class="input num" type="number" min="0" max="20" [(ngModel)]="blueprint[t]" [attr.aria-label]="'questionTypes.' + t | t" /></label>
+              }
+            </div>
+            <p class="small">{{ 'builder.total' | t }}: <strong class="num">{{ blueprintTotal() }}</strong></p>
+          }
+          <div class="field"><label for="q-time">{{ 'builder.timeLimit' | t }}</label>
+            <input id="q-time" class="input num" type="number" min="5" max="600" [(ngModel)]="timeLimit" /></div>
+        </section>
+      } @else {
+        <section class="options">
+          <label class="check"><input type="checkbox" [(ngModel)]="reveal" /> {{ 'builder.revealImmediately' | t }}</label>
+          <label class="check"><input type="checkbox" [(ngModel)]="hints" /> {{ 'builder.hints' | t }}</label>
+          <div class="field inline"><label for="q-time2">{{ 'builder.timeLimitOptional' | t }}</label>
+            <input id="q-time2" class="input num" type="number" min="0" max="600" [(ngModel)]="timeLimit" /></div>
+        </section>
+      }
+
+      <section class="options">
+        <label class="check"><input type="checkbox" [(ngModel)]="focusWeak" /> {{ 'builder.focusWeak' | t }}</label>
+        <div class="field inline"><label for="q-lang">{{ 'builder.language' | t }}</label>
+          <select id="q-lang" class="select" [(ngModel)]="language">
+            <option value="">{{ 'builder.languageAuto' | t }}</option><option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option>
+          </select></div>
+      </section>
+
+      <div class="field"><label for="q-title">{{ 'builder.customTitle' | t }}</label><input id="q-title" class="input" [(ngModel)]="title" dir="auto" /></div>
+
+      <p class="xsmall subtle">{{ 'builder.disclaimer' | t }}</p>
+      <button class="btn primary lg" type="button" (click)="generate()" [disabled]="!bookId() || (scope === 'chapter' && !chapterId)">
+        <rw-icon name="sparkles" [size]="18" /> {{ 'builder.generate' | t }}
+      </button>
+    </div>
+  }
+</div>
