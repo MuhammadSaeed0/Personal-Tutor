@@ -24,6 +24,12 @@ public sealed class ProcessingOptions
     public int ScannedLetterThreshold { get; set; } = 25;
     public double OcrLowConfidence { get; set; } = 60;
 
+    /// <summary>
+    /// Re-read pages whose text is an invisible layer over a scan (another tool's OCR, often garbled). Turn off when the
+    /// uploaded PDFs carry a trustworthy text layer: it is then used as-is, which is much faster.
+    /// </summary>
+    public bool OcrInvisibleTextLayers { get; set; } = true;
+
     /// <summary>Scanned pages recognised at the same time.</summary>
     public int OcrParallelism { get; set; } = 2;
     public int EmbeddingBatchSize { get; set; } = 64;
@@ -216,15 +222,21 @@ public sealed class DocumentProcessor(
 
         // Embedded text first, OCR for scanned pages. A scan carrying another tool's invisible OCR layer is still a scan:
         // that layer is re-read from the image and kept only as a fallback.
-        bool IsScanned(ExtractedPage p) => p.LetterCount < _options.ScannedLetterThreshold || p.HasInvisibleTextLayer;
+        bool IsScanned(ExtractedPage p) =>
+            p.LetterCount < _options.ScannedLetterThreshold || (_options.OcrInvisibleTextLayers && p.HasInvisibleTextLayer);
         var languages = OcrLanguages(book.Subject?.ContentLanguage);
         var scanned = document.Pages.Where(IsScanned).Select(p => p.Number).ToList();
         var ocrText = await RecognizeAsync(job, book, scanned, n => ocr.RecognizePageAsync(path, n, languages, ct), warnings, ct);
 
+        // An invisible layer used as-is is another tool's OCR: repair what the book itself shows to be misread.
+        var vocabulary = document.Pages.Any(p => p.HasInvisibleTextLayer)
+            ? OcrTextRepair.BuildVocabulary(document.Pages.Select(p => p.Text))
+            : null;
+
         var pages = document.Pages.Select(p =>
         {
             var hasOcr = ocrText.TryGetValue(p.Number, out var recognised);
-            var text = hasOcr ? recognised! : p.Text;
+            var text = hasOcr ? recognised! : p.HasInvisibleTextLayer && vocabulary is not null ? OcrTextRepair.Repair(p.Text, vocabulary) : p.Text;
             return new SourcePage(p.Number, text,
                 hasOcr ? ExtractionMethod.Ocr : text.Length > 0 ? ExtractionMethod.EmbeddedText : ExtractionMethod.None,
                 IsScanned(p), p.ImageCount, TextCleaner.LooksTabular(p.Lines.Select(l => l.Text)));

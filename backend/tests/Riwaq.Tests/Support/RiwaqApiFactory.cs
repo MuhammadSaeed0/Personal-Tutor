@@ -27,6 +27,9 @@ public sealed class RiwaqApiFactory : WebApplicationFactory<Program>, IAsyncLife
     /// <summary>Enables AI-vision OCR (served by <see cref="Chat"/>) for scanned pages.</summary>
     public bool OcrEnabled { get; init; }
 
+    /// <summary>Re-reads scans that carry another tool's invisible text layer instead of using that layer.</summary>
+    public bool OcrInvisibleTextLayers { get; init; } = true;
+
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
@@ -49,6 +52,7 @@ public sealed class RiwaqApiFactory : WebApplicationFactory<Program>, IAsyncLife
         builder.UseSetting("Storage:RootPath", _storage);
         builder.UseSetting("Ocr:Enabled", OcrEnabled ? "true" : "false");
         builder.UseSetting("Ocr:Engine", "Ai");
+        builder.UseSetting("Processing:OcrInvisibleTextLayers", OcrInvisibleTextLayers ? "true" : "false");
         builder.UseSetting("Ai:Embeddings:Provider", "Local");
         builder.UseSetting("RateLimits:AuthPerMinute", "1000");
         builder.UseSetting("RateLimits:AiPerMinute", "1000");

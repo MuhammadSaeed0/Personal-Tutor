@@ -29,6 +29,7 @@ user-secrets (development) or a vault — never from committed files.
 | `Ocr:AiImageHeight` | 2000 | pixel height of the page image sent to Claude |
 | `Ocr:TesseractPath` / `Dpi` | `tesseract` / 300 | Tesseract settings |
 | `Processing:OcrParallelism` | 2 | scanned pages read at the same time |
+| `Processing:OcrInvisibleTextLayers` | `false` | `true` re-reads scans whose text is an invisible layer from another OCR tool (slower, fixes garbled layers); `false` uses that layer as-is |
 | `Processing:MaxImagesPerSource` / `MaxImageMb` | 100 / 25 | photo sources |
 | `Processing:MaxVideoMinutes` | 240 | longest YouTube video accepted |
 | `Storage:RootPath` | `App_Data/storage` | where PDFs are stored |

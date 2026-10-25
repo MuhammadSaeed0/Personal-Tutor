@@ -72,6 +72,21 @@ public sealed class ScannedBookTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Invisible_text_layers_can_be_trusted_as_is()
+    {
+        await using var factory = new RiwaqApiFactory { OcrEnabled = true, OcrInvisibleTextLayers = false };
+        var client = await factory.CreateStudentAsync();
+
+        var bookId = (await (await client.UploadPdfAsync(TestPdf.ScanWithInvisibleOcrLayer(), title: "Pre-OCR'd scan")).ReadJsonAsync()).GetProperty("id").GetGuid();
+        await client.WaitForProcessingAsync(bookId);
+
+        var page = await (await client.GetAsync($"/api/books/{bookId}/pages/1/text")).ReadJsonAsync();
+        Assert.Equal("embeddedText", page.GetProperty("extractionMethod").GetString());
+        Assert.Contains("hidden text layer", page.GetProperty("text").GetString());
+        Assert.DoesNotContain(factory.Chat.Requests, r => r.Feature == "ocr");
+    }
+
+    [Fact]
     public async Task Reaching_the_usage_limit_is_reported_per_page()
     {
         _factory.Chat.Respond("ocr", _ => throw new AiUnavailableException("ai_rate_limited", "limit"));
