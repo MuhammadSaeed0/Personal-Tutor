@@ -56,6 +56,22 @@ public sealed class ScannedBookTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Scans_with_another_tools_invisible_text_layer_are_read_again()
+    {
+        _factory.Chat.Respond("ocr", _ => Transcription("الصخور النارية تتكون من تبلور الصهارة.", "قطاع في بركان"));
+        var client = await _factory.CreateStudentAsync();
+
+        var bookId = (await (await client.UploadPdfAsync(TestPdf.ScanWithInvisibleOcrLayer(), title: "Pre-OCR'd scan")).ReadJsonAsync()).GetProperty("id").GetGuid();
+        await client.WaitForProcessingAsync(bookId);
+
+        var page = await (await client.GetAsync($"/api/books/{bookId}/pages/1/text")).ReadJsonAsync();
+        Assert.Equal("ocr", page.GetProperty("extractionMethod").GetString());
+        Assert.True(page.GetProperty("isScanned").GetBoolean());
+        Assert.Contains("الصخور النارية", page.GetProperty("text").GetString());
+        Assert.DoesNotContain("dla_c]", page.GetProperty("text").GetString());
+    }
+
+    [Fact]
     public async Task Reaching_the_usage_limit_is_reported_per_page()
     {
         _factory.Chat.Respond("ocr", _ => throw new AiUnavailableException("ai_rate_limited", "limit"));

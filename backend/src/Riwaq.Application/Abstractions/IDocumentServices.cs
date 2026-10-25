@@ -11,7 +11,9 @@ public sealed record ExtractedPage(
     int LetterCount,
     int ImageCount,
     double Width,
-    double Height);
+    double Height,
+    // Most of the text is invisible: an OCR layer laid over a scanned image by another tool, often poor quality.
+    bool HasInvisibleTextLayer = false);
 
 public sealed record OutlineEntry(string Title, int PageNumber, int Level);
 

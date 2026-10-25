@@ -3,6 +3,7 @@ using Riwaq.Application.Abstractions;
 using Riwaq.Application.Text;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.DocumentLayoutAnalysis;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.ReadingOrderDetector;
@@ -100,7 +101,9 @@ public sealed class PdfPigExtractor : IPdfExtractor
             text.Append('\n');
         }
 
-        return new ExtractedPage(page.Number, TextCleaner.CleanExtracted(text.ToString()), lines, letters.Count, imageCount, page.Width, page.Height);
+        var invisible = letters.Count(l => l.RenderingMode == TextRenderingMode.Neither);
+        return new ExtractedPage(page.Number, TextCleaner.CleanExtracted(text.ToString()), lines, letters.Count, imageCount, page.Width, page.Height,
+            HasInvisibleTextLayer: invisible * 2 > letters.Count);
     }
 
     /// <summary>Joins words of a line in reading order, fixing visually-ordered Arabic glyph runs.</summary>

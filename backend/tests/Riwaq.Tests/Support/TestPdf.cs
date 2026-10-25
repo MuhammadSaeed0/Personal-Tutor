@@ -54,4 +54,16 @@ public static class TestPdf
         page.DrawRectangle(new PdfPoint(100, 100), 300, 300);
         return builder.Build();
     }
+
+    /// <summary>A scanned page that another tool already OCR'd: plenty of text, all of it invisible and garbled.</summary>
+    public static byte[] ScanWithInvisibleOcrLayer()
+    {
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        var page = builder.AddPage(595, 842);
+        page.DrawRectangle(new PdfPoint(100, 100), 300, 300);
+        page.SetTextRenderingMode(TextRenderingMode.Neither);
+        page.AddText("dla_c] ) wim a (c) | + es se 4 ISA garbled hidden text layer from another OCR tool", 11, new PdfPoint(50, 780), font);
+        return builder.Build();
+    }
 }

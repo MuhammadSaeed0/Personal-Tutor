@@ -214,9 +214,11 @@ public sealed class DocumentProcessor(
         var document = await Task.Run(() => extractor.Extract(path, ct), ct);
         book.PageCount = document.PageCount;
 
-        // Embedded text first, OCR for scanned pages.
+        // Embedded text first, OCR for scanned pages. A scan carrying another tool's invisible OCR layer is still a scan:
+        // that layer is re-read from the image and kept only as a fallback.
+        bool IsScanned(ExtractedPage p) => p.LetterCount < _options.ScannedLetterThreshold || p.HasInvisibleTextLayer;
         var languages = OcrLanguages(book.Subject?.ContentLanguage);
-        var scanned = document.Pages.Where(p => p.LetterCount < _options.ScannedLetterThreshold).Select(p => p.Number).ToList();
+        var scanned = document.Pages.Where(IsScanned).Select(p => p.Number).ToList();
         var ocrText = await RecognizeAsync(job, book, scanned, n => ocr.RecognizePageAsync(path, n, languages, ct), warnings, ct);
 
         var pages = document.Pages.Select(p =>
@@ -225,7 +227,7 @@ public sealed class DocumentProcessor(
             var text = hasOcr ? recognised! : p.Text;
             return new SourcePage(p.Number, text,
                 hasOcr ? ExtractionMethod.Ocr : text.Length > 0 ? ExtractionMethod.EmbeddedText : ExtractionMethod.None,
-                p.LetterCount < _options.ScannedLetterThreshold, p.ImageCount, TextCleaner.LooksTabular(p.Lines.Select(l => l.Text)));
+                IsScanned(p), p.ImageCount, TextCleaner.LooksTabular(p.Lines.Select(l => l.Text)));
         }).ToList();
 
         var sections = StructureDetector.Detect(document);
