@@ -103,8 +103,15 @@ public sealed class ClaudeCodeChatModel : IChatModel
             // The prompt goes through stdin: no command-line length limit and no shell quoting of untrusted text.
             var prompt = ClaudeCliProtocol.BuildPrompt(request.Messages);
             var input = request.Images is { Count: > 0 } images ? ClaudeCliProtocol.BuildImageInput(prompt, images) : prompt;
-            await process.StandardInput.WriteAsync(input.AsMemory(), timeout.Token);
-            process.StandardInput.Close();
+            try
+            {
+                await process.StandardInput.WriteAsync(input.AsMemory(), timeout.Token);
+                process.StandardInput.Close();
+            }
+            catch (IOException)
+            {
+                // The CLI exited before reading its input (e.g. it rejected an argument); its stderr, logged below, says why.
+            }
 
             var sawResult = false;
             while (true)

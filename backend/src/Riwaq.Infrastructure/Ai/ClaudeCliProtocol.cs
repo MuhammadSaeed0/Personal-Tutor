@@ -37,7 +37,8 @@ internal static class ClaudeCliProtocol
         if (jsonInput) args.AddRange(["--input-format", "stream-json"]);
         if (!string.IsNullOrWhiteSpace(model)) args.AddRange(["--model", model]);
         if (effort?.ToLowerInvariant() is "low" or "medium" or "high") args.AddRange(["--effort", effort.ToLowerInvariant()]);
-        if (jsonSchema is not null) args.AddRange(["--json-schema", jsonSchema]);
+        // Compact to one line: on Windows the npm `claude.cmd` shim runs through cmd.exe, which cuts arguments at a newline.
+        if (jsonSchema is not null) args.AddRange(["--json-schema", JsonNode.Parse(jsonSchema)!.ToJsonString()]);
         return args;
     }
 

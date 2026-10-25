@@ -34,6 +34,16 @@ public class ClaudeCliProtocolTests
     }
 
     [Fact]
+    public void Multi_line_schema_is_passed_on_one_line()
+    {
+        var args = ClaudeCliProtocol.BuildArguments("sonnet", null, Riwaq.Infrastructure.Pdf.AiVisionOcrEngine.Schema, "sys.txt", streaming: false);
+
+        var schema = args[args.ToList().IndexOf("--json-schema") + 1];
+        Assert.DoesNotContain('\n', schema);
+        Assert.Equal(System.Text.Json.Nodes.JsonNode.Parse(Riwaq.Infrastructure.Pdf.AiVisionOcrEngine.Schema)!.ToJsonString(), schema);
+    }
+
+    [Fact]
     public void Single_turn_prompt_is_sent_verbatim_and_history_is_labelled()
     {
         Assert.Equal("سؤال", ClaudeCliProtocol.BuildPrompt([new ChatTurn(ChatRole.User, "سؤال")]));
