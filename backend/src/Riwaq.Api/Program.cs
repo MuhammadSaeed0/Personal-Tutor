@@ -146,8 +146,8 @@ builder.Services.AddSwaggerGen(o =>
 });
 
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
-    o.MultipartBodyLengthLimit = config.GetValue("Processing:MaxFileSizeMb", 150) * 1024L * 1024L + 1024 * 1024);
-builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = config.GetValue("Processing:MaxFileSizeMb", 150) * 1024L * 1024L + 1024 * 1024);
+    o.MultipartBodyLengthLimit = config.GetValue("Processing:MaxFileSizeMb", 250) * 1024L * 1024L + 1024 * 1024);
+builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = config.GetValue("Processing:MaxFileSizeMb", 250) * 1024L * 1024L + 1024 * 1024);
 
 var app = builder.Build();
 

@@ -23,7 +23,7 @@ user-secrets (development) or a vault — never from committed files.
 | `Ai:Limits:DailyRequestsPerUser` / `DailyOutputTokensPerUser` | 300 / 600000 | per-student AI quota |
 | `Retrieval:TopK` | 8 | passages per tutor answer |
 | `Summaries:SingleCallChars` / `BatchChars` / `MaxBatches` | 180000 / 120000 / 12 | map-reduce thresholds |
-| `Processing:MaxFileSizeMb` / `MaxPages` | 150 / 2000 | upload limits |
+| `Processing:MaxFileSizeMb` / `MaxPages` | 250 / 2000 | upload limits |
 | `Processing:RunWorker` | `true` | run the background worker in this instance |
 | `Ocr:Enabled` / `Engine` | true / `Auto` | OCR for scanned pages; `Auto` = Claude vision when an AI provider is configured, else Tesseract; `Ai`; `Tesseract` |
 | `Ocr:AiImageHeight` | 2000 | pixel height of the page image sent to Claude |

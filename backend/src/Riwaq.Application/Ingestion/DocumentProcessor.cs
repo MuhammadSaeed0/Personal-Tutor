@@ -14,7 +14,7 @@ namespace Riwaq.Application.Ingestion;
 public sealed class ProcessingOptions
 {
     public const string Section = "Processing";
-    public int MaxFileSizeMb { get; set; } = 150;
+    public int MaxFileSizeMb { get; set; } = 250;
     public int MaxPages { get; set; } = 2000;
     public int MaxImagesPerSource { get; set; } = 100;
     public int MaxImageMb { get; set; } = 25;

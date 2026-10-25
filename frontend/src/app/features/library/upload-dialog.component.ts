@@ -13,7 +13,7 @@ import { errorMessage } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { ProcessingTimelineComponent } from './processing-timeline.component';
 
-const MAX_MB = 150;
+const MAX_MB = 250;
 const MAX_PHOTOS = 100;
 const MAX_PHOTO_MB = 25;
 /** Photos are scaled to this long side in the browser before upload (the server does the same). */

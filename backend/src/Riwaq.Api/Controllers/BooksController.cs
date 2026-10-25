@@ -17,7 +17,6 @@ public sealed class BooksController(BooksService books) : ControllerBase
     /// <summary>Uploads a PDF (multipart/form-data). Processing continues in the background.</summary>
     [HttpPost("upload")]
     [EnableRateLimiting(RateLimitPolicies.Upload)]
-    [RequestSizeLimit(160L * 1024 * 1024)]
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<BookDto>> Upload(
         IFormFile file,
@@ -42,7 +41,6 @@ public sealed class BooksController(BooksService books) : ControllerBase
     /// <summary>Creates a source from photos (multipart field "files", in page order). Processing continues in the background.</summary>
     [HttpPost("images")]
     [EnableRateLimiting(RateLimitPolicies.Upload)]
-    [RequestSizeLimit(160L * 1024 * 1024)]
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<BookDto>> UploadImages(
         [FromForm] List<IFormFile> files,
@@ -63,7 +61,6 @@ public sealed class BooksController(BooksService books) : ControllerBase
     /// <summary>Adds photos to the end of a photo source; only the new pages are read.</summary>
     [HttpPost("{id:guid}/images")]
     [EnableRateLimiting(RateLimitPolicies.Upload)]
-    [RequestSizeLimit(160L * 1024 * 1024)]
     [Consumes("multipart/form-data")]
     public Task<BookDto> AddImages(Guid id, [FromForm] List<IFormFile> files, CancellationToken ct) =>
         books.AddImagesAsync(User.GetUserId(), id, ToUploaded(files), ct);
