@@ -5,13 +5,14 @@ import { I18nService, TranslatePipe } from '../../core/i18n.service';
 import { Attempt, AttemptResult, QuestionReview } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
+import { BidiPipe, TextDirPipe } from '../../shared/bidi';
 import { MarkdownComponent } from '../../shared/markdown.component';
 import { DiagramComponent } from '../../shared/diagram.component';
 import { RingComponent, clock } from '../../shared/ui';
 
 @Component({
   selector: 'rw-result',
-  imports: [RouterLink, TranslatePipe, IconComponent, MarkdownComponent, RingComponent, DiagramComponent],
+  imports: [RouterLink, TranslatePipe, IconComponent, MarkdownComponent, RingComponent, DiagramComponent, BidiPipe, TextDirPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './result.component.html',
   styleUrl: './result.component.scss'

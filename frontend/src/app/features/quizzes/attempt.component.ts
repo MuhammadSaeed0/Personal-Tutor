@@ -6,6 +6,7 @@ import { I18nService, TranslatePipe } from '../../core/i18n.service';
 import { Attempt, AttemptResult, Question, QuizResponse, Reveal } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
+import { BidiPipe, TextDirPipe } from '../../shared/bidi';
 import { MarkdownComponent } from '../../shared/markdown.component';
 import { DiagramComponent } from '../../shared/diagram.component';
 import { ExamAssistantComponent } from './exam-assistant.component';
@@ -13,7 +14,7 @@ import { ConfirmService, clock } from '../../shared/ui';
 
 @Component({
   selector: 'rw-attempt',
-  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, MarkdownComponent, DiagramComponent, ExamAssistantComponent],
+  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, MarkdownComponent, DiagramComponent, ExamAssistantComponent, BidiPipe, TextDirPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './attempt.component.html',
   styleUrl: './attempt.component.scss'

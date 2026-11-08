@@ -74,10 +74,10 @@
         <rw-markdown [content]="q.question.prompt" />
         @if (q.question.diagramSvg) { <rw-diagram [svg]="q.question.diagramSvg" [alt]="q.question.diagramAlt" /> }
         <div class="answers">
-          <div><span class="xsmall subtle">{{ 'result.yourAnswer' | t }}</span><p class="small pre" dir="auto">{{ studentAnswer(q) }}</p></div>
-          <div><span class="xsmall subtle">{{ 'attempt.correctAnswer' | t }}</span><p class="small pre" dir="auto">{{ q.correctAnswer }}</p></div>
+          <div><span class="xsmall subtle">{{ 'result.yourAnswer' | t }}</span><p class="small pre" [attr.dir]="studentAnswer(q) | textDir">{{ studentAnswer(q) | bidi }}</p></div>
+          <div><span class="xsmall subtle">{{ 'attempt.correctAnswer' | t }}</span><p class="small pre" [attr.dir]="q.correctAnswer | textDir">{{ q.correctAnswer | bidi }}</p></div>
         </div>
-        @if (q.response?.feedback) { <div class="alert small"><rw-icon name="message-circle" [size]="16" /> <span dir="auto">{{ q.response!.feedback }}</span></div> }
+        @if (q.response?.feedback) { <div class="alert small"><rw-icon name="message-circle" [size]="16" /> <span [attr.dir]="q.response!.feedback | textDir">{{ q.response!.feedback | bidi }}</span></div> }
         @if (q.response?.gradingMethod === 'pending') {
           <div class="self">
             <span class="small">{{ 'result.selfAssessPrompt' | t }}</span>
@@ -88,7 +88,7 @@
         <details class="explanation" [open]="q.response?.isCorrect === false">
           <summary class="small">{{ 'result.explanation' | t }}</summary>
           <rw-markdown [content]="q.explanation" />
-          @if (q.sourceQuote) { <blockquote class="small" dir="auto">“{{ q.sourceQuote }}”</blockquote> }
+          @if (q.sourceQuote) { <blockquote class="small" [attr.dir]="q.sourceQuote | textDir">“{{ q.sourceQuote | bidi }}”</blockquote> }
           @if (q.sourcePage && r.bookId) { <a class="small" [routerLink]="['/read', r.bookId]" [queryParams]="{ page: q.sourcePage }"><rw-icon name="book-open" [size]="14" /> {{ 'common.pageN' | t: { n: q.sourcePage } }}</a> }
         </details>
       </article>

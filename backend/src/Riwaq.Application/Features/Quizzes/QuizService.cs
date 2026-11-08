@@ -677,8 +677,20 @@ public sealed class QuizService(
         "page" = the source page the question is based on; "sourceQuote" = a short exact quote (5–25 words) copied from that page that supports
         the answer. "explanation" explains why the answer is correct (and why tempting wrong answers are wrong). "hint" nudges without giving
         the answer. "topic" = the specific concept tested (2–5 words). Math in LaTeX ($...$).
-
+        {{(language == "ar" ? MixedScriptRules : "")}}
         {{Prompts.SecurityRules}}
+        """;
+
+    /// <summary>Arabic is shown right-to-left, where plain-text English, formulas and units can be laid out out of order.</summary>
+    private const string MixedScriptRules = """
+
+        Mixing Arabic with English (the questions are shown right-to-left):
+        - Write every equation, formula, unit expression and any expression that mixes numbers with symbols in LaTeX ($...$),
+          and chemical formulas with \ce{...}, never as plain text, so they keep their left-to-right order.
+        - Begin every question, choice, item, hint and sentence with an Arabic word, never with an English word, a symbol or
+          a number: write "يُرمز للحمض النووي بالرمز DNA" rather than "DNA هو الحمض النووي". A choice that is only an
+          English term or only a formula is fine.
+        - Keep each English term or phrase together, and keep Arabic punctuation (، ؛ ؟) outside it.
         """;
 
     private const string QuestionSchema = """

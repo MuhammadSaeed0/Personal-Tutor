@@ -62,6 +62,20 @@ public sealed class DiagramQuizTests(RiwaqApiFactory factory) : IClassFixture<Ri
     }
 
     [Fact]
+    public async Task Arabic_quizzes_are_generated_with_rules_for_mixing_English_into_right_to_left_text()
+    {
+        factory.Chat.Respond("quiz", _ => TextQuestions);
+        var client = await factory.CreateStudentAsync();
+        var bookId = await client.UploadAndProcessAsync();
+
+        (await client.PostAsync("/api/quizzes", JsonBody(new { bookId, count = 2, language = "ar" }))).EnsureSuccessStatusCode();
+        Assert.Contains("right-to-left", factory.Chat.Requests.Last(r => r.Feature == "quiz").SystemPrompt);
+
+        (await client.PostAsync("/api/quizzes", JsonBody(new { bookId, count = 2, language = "en" }))).EnsureSuccessStatusCode();
+        Assert.DoesNotContain("right-to-left", factory.Chat.Requests.Last(r => r.Feature == "quiz").SystemPrompt);
+    }
+
+    [Fact]
     public async Task A_failed_diagram_request_still_leaves_a_quiz_of_text_questions()
     {
         factory.Chat.Respond("quiz", request => request.JsonSchema!.Contains("\"diagram\"") ? "not json" : TextQuestions);

@@ -7,6 +7,7 @@ import { Marked } from 'marked';
 import { I18nService } from '../core/i18n.service';
 import { SourceReference } from '../core/models';
 import { SourceTimesService, formatClock } from '../core/source-times.service';
+import { isolateRuns, textDirection } from './bidi';
 
 export interface CitationClick {
   citation: SourceReference | null;
@@ -18,11 +19,12 @@ const BEYOND_MARKERS = ['معلومة إضافية من خارج الكتاب', 
 /**
  * Renders model/student Markdown safely: math via KaTeX (with mhchem for \ce{}), citation markers
  * ([1] for tutor passages, [p:12] for page references) as buttons that open the source page,
- * and everything sanitised with DOMPurify. Text direction follows the content (dir="auto").
+ * and everything sanitised with DOMPurify. Each block takes the direction of most of its letters, and runs of the other
+ * script inside it (an English term in an Arabic sentence) are isolated so they keep their order.
  */
 @Component({
   selector: 'rw-markdown',
-  template: `<div class="prose" dir="auto" [innerHTML]="html()" (click)="onClick($event)"></div>`,
+  template: `<div class="prose" [attr.dir]="dir()" [innerHTML]="html()" (click)="onClick($event)"></div>`,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MarkdownComponent {
@@ -44,6 +46,8 @@ export class MarkdownComponent {
       for (const c of this.citations()) this.sourceTimes.ensure(c.bookId);
     });
   }
+
+  protected readonly dir = computed(() => textDirection(withoutMath(this.content() ?? '')) ?? 'auto');
 
   protected readonly html = computed<SafeHtml>(() => {
     let text = this.content() ?? '';
@@ -121,7 +125,41 @@ export function renderMarkdown(source: string, citations: SourceReference[], lan
   }) as string;
 
   // KaTeX output (generated here from TeX with trust disabled) needs inline styles, so it is added after sanitising.
-  return clean.replace(/@@MATH(\d+)@@/g, (_, i) => math[Number(i)] ?? '');
+  return orientBlocks(clean).replace(/@@MATH(\d+)@@/g, (_, i) => math[Number(i)] ?? '');
+}
+
+const PLACEHOLDER = /(@@MATH\d+@@)/;
+
+/** Gives each block the direction of most of its letters and isolates runs of the other script in its text. */
+function orientBlocks(html: string): string {
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+  const textOf = (node: Node) => (node.textContent ?? '').split(PLACEHOLDER).filter((_, i) => i % 2 === 0).join('');
+  for (const block of Array.from(doc.body.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th'))) {
+    const direction = textDirection(textOf(block));
+    if (direction) block.setAttribute('dir', direction);
+  }
+
+  const overall = textDirection(textOf(doc.body));
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+    const parent = node.parentElement;
+    if (!parent || parent.closest('code, pre, button')) continue;
+    const direction = (parent.closest('[dir]')?.getAttribute('dir') as 'rtl' | 'ltr' | null) ?? overall;
+    if (!direction) continue;
+    // Math placeholders are swapped for KaTeX afterwards, which is laid out left-to-right on its own.
+    node.data = node.data.split(PLACEHOLDER).map((part, i) => (i % 2 ? part : isolateRuns(part, direction))).join('');
+  }
+  return doc.body.innerHTML;
+}
+
+/** The text without its math, whose Latin symbols would otherwise count towards the direction. */
+function withoutMath(text: string): string {
+  return text
+    .replace(/\$\$[\s\S]+?\$\$/g, ' ')
+    .replace(/\\\[[\s\S]+?\\\]/g, ' ')
+    .replace(/\$[^\n$]+?\$/g, ' ')
+    .replace(/\\\([\s\S]+?\\\)/g, ' ')
+    .replace(/\\ce\{(?:[^{}]|\{[^{}]*\})*\}/g, ' ');
 }
 
 function renderMath(tex: string, display: boolean): string {

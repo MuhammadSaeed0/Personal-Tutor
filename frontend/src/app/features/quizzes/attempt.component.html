@@ -66,11 +66,11 @@
               <div class="matching">
                 @for (left of q.options.left ?? []; track $index; let i = $index) {
                   <div class="match-row">
-                    <span class="left" dir="auto">{{ left }}</span>
+                    <span class="left" [attr.dir]="left | textDir">{{ left | bidi }}</span>
                     <rw-icon name="arrow-right" [size]="16" />
                     <select class="select" [ngModel]="matchingAnswer(q)[i] ?? ''" (ngModelChange)="setMatch(q, i, $event)" [disabled]="!!reveal" [attr.aria-label]="left">
                       <option value="">{{ 'attempt.choose' | t }}</option>
-                      @for (right of q.options.right ?? []; track $index; let j = $index) { <option [value]="j">{{ right }}</option> }
+                      @for (right of q.options.right ?? []; track $index; let j = $index) { <option [value]="j" [attr.dir]="right | textDir">{{ right | bidi }}</option> }
                     </select>
                   </div>
                 }
@@ -81,7 +81,7 @@
                 @for (itemIndex of orderingAnswer(q); track itemIndex; let pos = $index; let last = $last) {
                   <li>
                     <span class="pos num">{{ pos + 1 }}</span>
-                    <span class="grow" dir="auto">{{ q.options.items?.[itemIndex] }}</span>
+                    <span class="grow" [attr.dir]="q.options.items?.[itemIndex] | textDir">{{ q.options.items?.[itemIndex] | bidi }}</span>
                     <button class="btn ghost icon sm" type="button" (click)="move(q, pos, -1)" [disabled]="pos === 0 || !!reveal" [attr.aria-label]="'attempt.moveUp' | t"><rw-icon name="chevron-up" [size]="14" /></button>
                     <button class="btn ghost icon sm" type="button" (click)="move(q, pos, 1)" [disabled]="last || !!reveal" [attr.aria-label]="'attempt.moveDown' | t"><rw-icon name="chevron-down" [size]="14" /></button>
                   </li>
@@ -109,7 +109,7 @@
         @if (reveal) {
           <div class="feedback" [class.ok]="reveal.isCorrect" [class.bad]="reveal.isCorrect === false">
             <strong><rw-icon [name]="reveal.isCorrect ? 'check-circle' : 'alert-circle'" [size]="18" /> {{ (reveal.isCorrect ? 'attempt.correct' : 'attempt.incorrect') | t }}</strong>
-            @if (!reveal.isCorrect) { <p class="small"><strong>{{ 'attempt.correctAnswer' | t }}:</strong> <span dir="auto">{{ reveal.correctAnswer }}</span></p> }
+            @if (!reveal.isCorrect) { <p class="small"><strong>{{ 'attempt.correctAnswer' | t }}:</strong> <span [attr.dir]="reveal.correctAnswer | textDir">{{ reveal.correctAnswer | bidi }}</span></p> }
             <rw-markdown [content]="reveal.explanation" />
             @if (reveal.sourcePage && quiz()?.bookId) {
               <a class="small" [routerLink]="['/read', quiz()!.bookId]" [queryParams]="{ page: reveal.sourcePage }"><rw-icon name="book-open" [size]="14" /> {{ 'common.pageN' | t: { n: reveal.sourcePage } }}</a>
