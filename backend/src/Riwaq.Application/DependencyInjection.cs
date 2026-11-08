@@ -28,6 +28,7 @@ public static class DependencyInjection
 
         services.AddScoped<DocumentProcessor>();
         services.AddScoped<TranscriptStructurer>();
+        services.AddScoped<Features.Summaries.SummaryPdfService>();
         services.AddScoped<BooksService>();
         services.AddScoped<ProfileService>();
         services.AddScoped<AiUsageGuard>();

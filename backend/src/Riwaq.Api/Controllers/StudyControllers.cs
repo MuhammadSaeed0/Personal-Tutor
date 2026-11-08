@@ -84,6 +84,15 @@ public sealed class SummariesController(SummaryService summaries) : ControllerBa
         return NoContent();
     }
 
+    /// <summary>The summary as a printable PDF (Arabic and math typeset by the browser engine).</summary>
+    [HttpGet("{id:guid}/pdf")]
+    [Produces("application/pdf")]
+    public async Task<IActionResult> Pdf(Guid id, [FromServices] SummaryPdfService pdf, CancellationToken ct)
+    {
+        var (fileName, bytes) = await pdf.RenderAsync(User.GetUserId(), id, ct);
+        return File(bytes, "application/pdf", fileName);
+    }
+
     [HttpGet("{id:guid}/export")]
     [Produces("text/markdown")]
     public async Task<IActionResult> Export(Guid id, CancellationToken ct)

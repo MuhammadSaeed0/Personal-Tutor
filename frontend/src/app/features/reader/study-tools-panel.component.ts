@@ -9,6 +9,8 @@ import { IconComponent } from '../../shared/icon.component';
 import { MarkdownComponent } from '../../shared/markdown.component';
 import { ReaderStore } from './reader-store';
 
+import { downloadSummaryPdf } from '../summaries/summary-pdf';
+
 export const SUMMARY_STYLES: SummaryStyle[] = ['quick', 'simple', 'detailed', 'keyPoints', 'definitions', 'formulas', 'comparisons', 'causesEffects', 'examQuestions', 'revisionSheet'];
 
 @Component({
@@ -170,5 +172,19 @@ export class StudyToolsPanelComponent {
   protected warningText(w: string): string {
     const [code, param] = w.split('|');
     return this.i18n.t('summaryWarnings.' + code, { pages: param, page: param });
+  }
+
+  protected readonly downloadingPdf = signal(false);
+
+  protected async downloadPdf(summary: { id: string; title: string }): Promise<void> {
+    if (this.downloadingPdf()) return;
+    this.downloadingPdf.set(true);
+    try {
+      await downloadSummaryPdf(this.api, summary);
+    } catch (e) {
+      this.toast.error(e);
+    } finally {
+      this.downloadingPdf.set(false);
+    }
   }
 }

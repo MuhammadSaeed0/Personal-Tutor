@@ -33,7 +33,12 @@
         @if (summary(); as s) {
           <article class="result">
             <header class="row between"><strong class="small" dir="auto">{{ s.title }}</strong>
-              <a class="btn ghost sm" [routerLink]="['/summaries', s.id]">{{ 'common.open' | t }}</a></header>
+              <span class="row">
+                <button class="btn ghost sm" type="button" (click)="downloadPdf(s)" [disabled]="downloadingPdf()" [attr.aria-label]="'summaries.downloadPdf' | t">
+                  @if (downloadingPdf()) { <span class="spinner"></span> } @else { <rw-icon name="download" [size]="14" /> } PDF
+                </button>
+                <a class="btn ghost sm" [routerLink]="['/summaries', s.id]">{{ 'common.open' | t }}</a>
+              </span></header>
             @for (w of s.warnings; track w) { <div class="alert warning xsmall">{{ warningText(w) }}</div> }
             <rw-markdown [content]="s.content" [citations]="s.citations" [bookId]="store.book()?.id ?? null" (citationClick)="store.navigate($event.page)" />
             <p class="xsmall subtle">{{ 'tools.summaryDisclaimer' | t }}</p>

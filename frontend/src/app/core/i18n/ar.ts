@@ -213,7 +213,7 @@ export const AR: typeof EN = {
   summaries: {
     title: 'الملخصات وأدلة المذاكرة', subtitle: 'كل ما ولّدته من كتبك — قابل للتعديل والتصدير.', edited: 'معدَّل',
     emptyTitle: 'لا ملخصات بعد', emptyText: 'افتح كتابًا واستخدم الأدوات ← ملخص لإنشاء ملخص لصفحة أو فصل أو الكتاب كاملًا.',
-    print: 'طباعة / PDF', content: 'محتوى الملخص', editHint: 'يدعم Markdown. مراجع الصفحات تُكتب هكذا [p:12].', next: 'تابع',
+    downloadPdf: 'تنزيل PDF', preparingPdf: 'جارٍ تجهيز الملف…', exportMarkdown: 'Markdown', print: 'طباعة', content: 'محتوى الملخص', editHint: 'يدعم Markdown. مراجع الصفحات تُكتب هكذا [p:12].', next: 'تابع',
     toCards: 'حوّله إلى بطاقات', toQuiz: 'اختبرني فيه', regenerate: 'إعادة التوليد', deleteTitle: 'حذف هذا الملخص؟', deleteMessage: 'لا يمكن التراجع عن ذلك.'
   },
   flashcards: {
@@ -385,6 +385,7 @@ export const AR: typeof EN = {
     email_taken: 'يوجد حساب بهذا البريد الإلكتروني بالفعل.', weak_password: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل وتحتوي على رقم.',
     account_locked: 'محاولات فاشلة كثيرة. حاول بعد بضع دقائق.', wrong_password: 'كلمة المرور غير صحيحة.', invalid_reset_token: 'رابط الاستعادة غير صالح أو منتهي الصلاحية.',
     file_not_pdf: 'يمكن رفع ملفات PDF فقط.',
+    pdf_unavailable: 'تنزيل PDF يحتاج إلى متصفح Edge أو Chrome مثبتًا على الخادم.', pdf_failed: 'تعذّر إنشاء ملف PDF. حاول مرة أخرى.',
     video_url_invalid: 'هذا ليس رابط فيديو على يوتيوب.', video_no_captions: 'هذا الفيديو بلا ترجمة نصية، لذا لا يمكن قراءة محتواه.',
     video_unavailable: 'تعذّرت قراءة الفيديو، فربما يكون خاصًا أو محذوفًا أو مقيّدًا بالعمر.', video_too_long: 'هذا الفيديو طويل جدًا.',
     image_unreadable: 'أحد الملفات ليس صورة مدعومة.', image_too_large: 'حجم إحدى الصور كبير جدًا.', too_many_images: 'عدد الصور أكبر من المسموح للمصدر الواحد.',

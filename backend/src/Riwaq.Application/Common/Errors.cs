@@ -33,3 +33,9 @@ public sealed class ForbiddenException(string code, string message) : AppExcepti
 {
     public override int StatusCode => 403;
 }
+
+/// <summary>A server capability that is not installed or not reachable right now (e.g. PDF rendering).</summary>
+public sealed class ServiceUnavailableException(string code, string message) : AppException(code, message)
+{
+    public override int StatusCode => 503;
+}

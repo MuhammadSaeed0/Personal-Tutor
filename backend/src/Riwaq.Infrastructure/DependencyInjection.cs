@@ -35,6 +35,8 @@ public static class DependencyInjection
         services.AddSingleton<AiVisionOcrEngine>();
         services.AddSingleton<IOcrEngine, OcrEngineSelector>();
         services.AddSingleton<IImageProcessor, Media.SkiaImageProcessor>();
+        services.Configure<PdfRenderOptions>(configuration.GetSection(PdfRenderOptions.Section));
+        services.AddSingleton<IPdfRenderer, BrowserPdfRenderer>();
         services.AddHttpClient<IVideoTranscriptSource, Media.YouTubeTranscriptSource>(c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddSingleton<IProcessingSignal, ProcessingSignal>();
         services.AddSingleton(TimeProvider.System);

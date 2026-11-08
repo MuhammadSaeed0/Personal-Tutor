@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="PDFtoImage" Version="5.4.0" />
+    <PackageReference Include="PuppeteerSharp" Version="25.15.0" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="YoutubeExplode" Version="6.6.2" />
@@ -25,4 +26,9 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Riwaq.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- KaTeX (MIT) for typesetting math in PDF exports; copied next to the application. -->
+    <None Include="Pdf/assets/**/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

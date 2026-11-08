@@ -31,6 +31,7 @@ user-secrets (development) or a vault — never from committed files.
 | `Processing:OcrParallelism` | 2 | scanned pages read at the same time |
 | `Processing:MaxImagesPerSource` / `MaxImageMb` | 100 / 25 | photo sources |
 | `Processing:MaxVideoMinutes` | 240 | longest YouTube video accepted |
+| `Pdf:BrowserPath` / `TimeoutSeconds` | auto / 60 | Edge or Chrome used to print summaries to PDF (found in the usual install paths when empty) |
 | `Storage:RootPath` | `App_Data/storage` | where PDFs are stored |
 | `Email:AppBaseUrl` | `http://localhost:4200` | base for reset links |
 | `Cors:AllowedOrigins` | `[]` | only needed when the SPA is served from another origin |

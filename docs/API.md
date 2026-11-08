@@ -81,6 +81,7 @@ Actions: `explain, simplify, summarize, translate, example, steps, questions, de
 | GET / POST | `/api/summaries` | POST `{bookId, scope: selection|page|pageRange|chapter|book, style, language?, page?, pageStart?, pageEnd?, chapterId?, selectedText?}` |
 | GET / PATCH / DELETE | `/api/summaries/{id}` | edit title/content |
 | GET | `/api/summaries/{id}/export` | Markdown file |
+| GET | `/api/summaries/{id}/pdf` | the summary as a PDF (`pdf_unavailable` 503 when no Edge/Chrome is installed on the server) |
 | GET | `/api/flashcards?subjectId&bookId&state&search&page` | state: `new|due|learning|mastered|suspended` |
 | GET | `/api/flashcards/due` · `/stats` | review queue / statistics & 7-day forecast |
 | POST | `/api/flashcards` · `/batch` · `/generate` · `/from-attempt/{attemptId}` | manual, bulk save, AI drafts (not saved), from quiz mistakes |

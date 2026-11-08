@@ -29,7 +29,9 @@ not-grounded notice, "beyond the textbook" labelling, follow-up suggestions, fee
 language selector, prompt-injection containment, per-user quotas.
 
 **Study resources** — ten summary styles for selection/page/range/chapter/book with page citations, extraction
-warnings, editing, regeneration in another style/language, Markdown export and print-to-PDF; flashcards (manual, from
+warnings, editing, regeneration in another style/language, **PDF download** (rendered on the server by the installed
+Edge/Chrome: real selectable Arabic text, KaTeX math, citations as pages, photos or video times, page numbers),
+Markdown export and print; flashcards (manual, from
 selection, AI drafts with review, from summaries, notes and quiz mistakes) scheduled with FSRS-5, interval preview,
 due queue, statistics, retention, forecast, suspend.
 

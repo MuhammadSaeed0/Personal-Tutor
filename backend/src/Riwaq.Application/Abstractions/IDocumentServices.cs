@@ -87,3 +87,16 @@ public interface IRealtimeNotifier
 {
     Task SendToUserAsync(Guid userId, string eventName, object payload, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Prints an HTML document to PDF with a real browser engine (correct Arabic shaping, selectable text). Math written as
+/// <c>\( … \)</c> / <c>\[ … \]</c> is typeset with KaTeX first. The document must not load anything from the network.
+/// </summary>
+public interface IPdfRenderer
+{
+    bool IsAvailable { get; }
+
+    /// <param name="html">A complete HTML document.</param>
+    /// <param name="footerHtml">Footer printed on every page; may contain <c>pageNumber</c> / <c>totalPages</c> spans.</param>
+    Task<byte[]> RenderAsync(string html, string footerHtml, CancellationToken cancellationToken);
+}

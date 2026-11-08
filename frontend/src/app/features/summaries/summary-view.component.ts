@@ -7,6 +7,7 @@ import { GeneratedFlashcards, Summary, SummaryStyle } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { CitationClick, MarkdownComponent } from '../../shared/markdown.component';
+import { downloadSummaryPdf } from './summary-pdf';
 import { ConfirmService } from '../../shared/ui';
 import { SUMMARY_STYLES } from '../reader/study-tools-panel.component';
 
@@ -31,8 +32,11 @@ import { SUMMARY_STYLES } from '../reader/study-tools-panel.component';
               <button class="btn primary" type="button" (click)="save()">{{ 'common.save' | t }}</button>
             } @else {
               <button class="btn" type="button" (click)="startEdit()"><rw-icon name="pencil" [size]="16" /> {{ 'common.edit' | t }}</button>
-              <button class="btn" type="button" (click)="export()"><rw-icon name="download" [size]="16" /> {{ 'common.export' | t }}</button>
-              <button class="btn" type="button" (click)="print()"><rw-icon name="file-text" [size]="16" /> {{ 'summaries.print' | t }}</button>
+              <button class="btn primary" type="button" (click)="downloadPdf()" [disabled]="downloadingPdf()">
+                @if (downloadingPdf()) { <span class="spinner"></span> {{ 'summaries.preparingPdf' | t }} } @else { <rw-icon name="download" [size]="16" /> {{ 'summaries.downloadPdf' | t }} }
+              </button>
+              <button class="btn" type="button" (click)="export()"><rw-icon name="file-text" [size]="16" /> {{ 'summaries.exportMarkdown' | t }}</button>
+              <button class="btn ghost" type="button" (click)="print()">{{ 'summaries.print' | t }}</button>
               <button class="btn ghost icon" type="button" (click)="remove()" [attr.aria-label]="'common.delete' | t"><rw-icon name="trash" [size]="16" /></button>
             }
           </div>
@@ -130,6 +134,21 @@ export class SummaryViewComponent {
       this.toast.success('common.saved');
     } catch (e) {
       this.toast.error(e);
+    }
+  }
+
+  protected readonly downloadingPdf = signal(false);
+
+  protected async downloadPdf(): Promise<void> {
+    const s = this.summary();
+    if (!s || this.downloadingPdf()) return;
+    this.downloadingPdf.set(true);
+    try {
+      await downloadSummaryPdf(this.api, s);
+    } catch (e) {
+      this.toast.error(e);
+    } finally {
+      this.downloadingPdf.set(false);
     }
   }
 

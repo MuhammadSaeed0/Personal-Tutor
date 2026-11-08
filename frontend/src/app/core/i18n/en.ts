@@ -210,7 +210,7 @@ export const EN = {
   summaries: {
     title: 'Summaries & study guides', subtitle: 'Everything you generated from your books — editable and exportable.', edited: 'Edited',
     emptyTitle: 'No summaries yet', emptyText: 'Open a book and use Tools → Summary to create one for a page, chapter or the whole book.',
-    print: 'Print / PDF', content: 'Summary content', editHint: 'Markdown supported. Page references look like [p:12].', next: 'Keep going',
+    downloadPdf: 'Download PDF', preparingPdf: 'Preparing the PDF…', exportMarkdown: 'Markdown', print: 'Print', content: 'Summary content', editHint: 'Markdown supported. Page references look like [p:12].', next: 'Keep going',
     toCards: 'Turn into flashcards', toQuiz: 'Quiz me on this', regenerate: 'Regenerate', deleteTitle: 'Delete this summary?', deleteMessage: 'This cannot be undone.'
   },
   flashcards: {
@@ -382,6 +382,7 @@ export const EN = {
     email_taken: 'An account with this email already exists.', weak_password: 'The password must be at least 8 characters and include a number.',
     account_locked: 'Too many failed attempts. Try again in a few minutes.', wrong_password: 'The password is incorrect.', invalid_reset_token: 'The reset link is invalid or has expired.',
     file_not_pdf: 'Only PDF files can be uploaded.',
+    pdf_unavailable: 'PDF download needs Microsoft Edge or Google Chrome installed on the server.', pdf_failed: 'The PDF could not be created. Please try again.',
     video_url_invalid: 'This is not a YouTube video link.', video_no_captions: 'This video has no captions, so its content cannot be read.',
     video_unavailable: 'The video could not be read. It may be private, removed or age-restricted.', video_too_long: 'This video is too long.',
     image_unreadable: 'One of the files is not a supported image.', image_too_large: 'One of the photos is too large.', too_many_images: 'Too many photos for one source.',

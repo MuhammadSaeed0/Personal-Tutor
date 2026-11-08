@@ -51,8 +51,21 @@ export class ApiService {
     return this.run(this.http.delete<T>(url));
   }
 
-  blob(url: string, query?: Query): Promise<Blob> {
-    return this.run(this.http.get(url, { params: toParams(query), responseType: 'blob' }));
+  async blob(url: string, query?: Query): Promise<Blob> {
+    try {
+      return await firstValueFrom(this.http.get(url, { params: toParams(query), responseType: 'blob' }));
+    } catch (error) {
+      // Error bodies arrive as a Blob too; read the problem details so the error code is not lost.
+      if (error instanceof HttpErrorResponse && error.error instanceof Blob) {
+        try {
+          const body = JSON.parse(await error.error.text());
+          if (body && typeof body === 'object' && 'code' in body) throw new ApiError({ ...(body as ApiProblem), status: error.status });
+        } catch (parsed) {
+          if (parsed instanceof ApiError) throw parsed;
+        }
+      }
+      throw toApiError(error);
+    }
   }
 
   private async run<T>(request: import('rxjs').Observable<T>): Promise<T> {
