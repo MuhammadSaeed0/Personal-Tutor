@@ -42,7 +42,8 @@ checks) in practice quizzes and mock exams, scope, weak-area focus, exam bluepri
 with server-side deadlines, autosave, answer sheet, mark for review, hints with point penalty, immediate-feedback
 practice mode, AI-generated questions validated against the source (unsupported/ambiguous ones discarded), deterministic
 grading, AI rubric grading with self-assessment fallback, results with topic breakdown, review pages, explanations and
-personal bests, attempt history.
+personal bests, attempt history; an **exam assistant** side chat available for the whole quiz or exam (no daily
+quota) that explains meanings, terms and laws but never gives or confirms answers, with each use counted on the result.
 
 **Planning & progress** — adaptive 7-day plan (exams, weakness, difficulty, backlog, due cards, availability, no
 pile-up), complete/skip/reschedule, focus timer with Pomodoro presets, goals, notes and history, dashboard, subject

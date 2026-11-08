@@ -312,6 +312,8 @@ export interface Reveal { questionId: string; isCorrect: boolean | null; fractio
 export interface Attempt {
   id: string; quizId: string; status: 'inProgress' | 'submitted'; startedAt: string; deadline: string | null; submittedAt: string | null;
   quiz: QuizDetail; responses: QuizResponse[]; revealed: Reveal[];
+  /** Times the side chat assistant was asked during this attempt. */
+  assistantUses: number;
 }
 
 export interface QuestionReview {
@@ -323,6 +325,7 @@ export interface AttemptResult {
   attemptId: string; quizId: string; quizTitle: string; bookId: string | null; score: number; maxScore: number; percent: number;
   durationSeconds: number; correctCount: number; incorrectCount: number; pendingCount: number; questions: QuestionReview[];
   topics: { topic: string; correct: number; total: number }[]; reviewPages: number[]; isPersonalBest: boolean; submittedAt: string;
+  assistantUses: number;
 }
 
 export interface AttemptSummary {

@@ -65,6 +65,9 @@ public class QuizAttempt
     public double Score { get; set; }
     public double MaxScore { get; set; }
     public int DurationSeconds { get; set; }
+
+    /// <summary>How many times the side chat assistant was asked during this attempt.</summary>
+    public int AssistantUses { get; set; }
     public List<QuizResponse> Responses { get; set; } = [];
 }
 

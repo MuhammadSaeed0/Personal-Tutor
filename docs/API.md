@@ -93,6 +93,7 @@ Actions: `explain, simplify, summarize, translate, example, steps, questions, de
 | GET | `/api/attempts?subjectId&quizId` · `/api/attempts/{id}` | |
 | PUT | `/api/attempts/{id}/responses/{questionId}` | `{answer, markedForReview, hintUsed}` → `{response, reveal?}` |
 | POST | `/api/attempts/{id}/submit` · GET `/result` | graded result with explanations and source pages |
+| POST | `/api/attempts/{attemptId}/assistant` | exam side chat (SSE `delta` → `done` with `uses`); only while the attempt is in progress |
 | POST | `/api/attempts/{id}/responses/{questionId}/self-assess` | `{correct}` for answers the AI could not grade |
 | GET / POST / PUT / DELETE | `/api/notes[/{id}]` · POST `/from-message` · GET `/export` | |
 | POST | `/api/search` | `{query, bookIds?, subjectId?, chapterId?, limit}` — scope is explicit in the response |

@@ -253,6 +253,11 @@ export const EN = {
     ordering: 'Ordering', numerical: 'Numerical', structured: 'Structured answer'
   },
   difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Hard', mixed: 'Mixed' },
+  examAssistant: {
+    button: 'Assistant', title: 'Exam assistant', lead: 'Ask as often as you like about meanings, terms and laws. It explains, but does not give the answers.',
+    empty: 'Stuck on a word or an idea? Ask here — for example:', placeholder: 'Ask about a meaning or an idea…',
+    suggestMeaning: 'What does this term in the question mean?', suggestLaw: 'Remind me of the law this question is about', suggestFigure: 'What does the figure show?'
+  },
   attempt: {
     answered: '{n} of {total} answered', saving: 'saving…', timer: 'Time', sheet: 'Answer sheet', submit: 'Submit', questionN: 'Question {n} of {total}',
     points: '{n} points', markReview: 'Mark for review', true: 'True', false: 'False', yourAnswer: 'Your answer',
@@ -264,7 +269,7 @@ export const EN = {
     legendAnswered: 'Answered', legendMarked: 'Marked for review'
   },
   result: {
-    score: 'Score', scoreLine: '{score} out of {max} points', correctN: '{n} correct', wrongN: '{n} incorrect', pendingN: '{n} awaiting marking',
+    assistantUsed: 'Assistant used {n}×', score: 'Score', scoreLine: '{score} out of {max} points', correctN: '{n} correct', wrongN: '{n} incorrect', pendingN: '{n} awaiting marking',
     personalBest: 'Personal best', byTopic: 'By topic', noTopics: 'No topic data for this quiz.', nextSteps: 'What next?',
     reviewPages: 'Review these pages:', makeCards: 'Make flashcards from my mistakes', cardsCreated: 'Flashcards created', practiceWeak: 'Practise again',
     review: 'Review', mistakes: 'Mistakes', pending: 'Needs marking', yourAnswer: 'Your answer', noAnswer: '(no answer)',

@@ -59,3 +59,12 @@
   .question-area { padding: 18px; }
   .match-row { grid-template-columns: 1fr; }
 }
+
+.assistant {
+  position: fixed; inset-block: 57px 0; inset-inline-end: 0; width: min(400px, 100vw); z-index: 20;
+  border-inline-start: 1px solid var(--line); box-shadow: var(--shadow-3);
+  transform: translateX(var(--assistant-hidden, 105%)); visibility: hidden; transition: transform var(--dur) var(--ease), visibility var(--dur);
+}
+:host-context([dir='rtl']) .assistant { --assistant-hidden: -105%; }
+.assistant.open { transform: none; visibility: visible; }
+@media (max-width: 720px) { .assistant { inset-block-start: 30vh; width: 100vw; border-radius: 16px 16px 0 0; } }

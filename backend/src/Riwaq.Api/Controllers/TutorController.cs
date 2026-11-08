@@ -48,6 +48,16 @@ public sealed class TutorController(TutorService tutor, IOptions<JsonOptions> js
     public Task Retry(Guid id, Guid messageId, CancellationToken ct) =>
         StreamAsync(tutor.RetryAsync(User.GetUserId(), id, messageId, ct), ct);
 
+    /// <summary>
+    /// The side chat during a quiz or exam (SSE: <c>delta</c> then <c>done</c> or <c>error</c>). Explains meanings and
+    /// concepts without giving away answers; not limited by the daily AI quota; every use is counted on the attempt.
+    /// </summary>
+    [HttpPost("/api/attempts/{attemptId:guid}/assistant")]
+    [EnableRateLimiting(RateLimitPolicies.Ai)]
+    [Produces("text/event-stream")]
+    public Task ExamAssistant(Guid attemptId, ExamAssistantRequest request, [FromServices] ExamAssistantService assistant, CancellationToken ct) =>
+        StreamAsync(assistant.AskAsync(User.GetUserId(), attemptId, request, ct), ct);
+
     [HttpPut("{id:guid}/messages/{messageId:guid}/feedback")]
     public Task<MessageDto> Feedback(Guid id, Guid messageId, FeedbackRequest request, CancellationToken ct) =>
         tutor.SetFeedbackAsync(User.GetUserId(), id, messageId, request, ct);

@@ -256,6 +256,11 @@ export const AR: typeof EN = {
     ordering: 'ترتيب', numerical: 'مسألة عددية', structured: 'سؤال مقالي'
   },
   difficulty: { easy: 'سهل', medium: 'متوسط', hard: 'صعب', mixed: 'متدرّج' },
+  examAssistant: {
+    button: 'المساعد', title: 'مساعد الامتحان', lead: 'اسأل كما تشاء عن المعاني والمصطلحات والقوانين. يشرح لك، لكنه لا يعطيك الإجابات.',
+    empty: 'توقفت عند كلمة أو فكرة؟ اسأل هنا، مثلًا:', placeholder: 'اسأل عن معنى أو فكرة…',
+    suggestMeaning: 'ما معنى المصطلح الوارد في السؤال؟', suggestLaw: 'ذكّرني بالقانون الذي يتناوله هذا السؤال', suggestFigure: 'ماذا يوضح الشكل؟'
+  },
   attempt: {
     answered: 'أجبت عن {n} من {total}', saving: 'جارٍ الحفظ…', timer: 'الوقت', sheet: 'ورقة الإجابات', submit: 'تسليم', questionN: 'السؤال {n} من {total}',
     points: '{n} درجات', markReview: 'تعليم للمراجعة', true: 'صح', false: 'خطأ', yourAnswer: 'إجابتك',
@@ -267,7 +272,7 @@ export const AR: typeof EN = {
     legendAnswered: 'تمت الإجابة', legendMarked: 'معلَّم للمراجعة'
   },
   result: {
-    score: 'الدرجة', scoreLine: '{score} من {max} درجة', correctN: '{n} صحيحة', wrongN: '{n} خاطئة', pendingN: '{n} بانتظار التصحيح',
+    assistantUsed: 'استُخدم المساعد {n} مرة', score: 'الدرجة', scoreLine: '{score} من {max} درجة', correctN: '{n} صحيحة', wrongN: '{n} خاطئة', pendingN: '{n} بانتظار التصحيح',
     personalBest: 'أفضل نتيجة لك', byTopic: 'حسب الموضوع', noTopics: 'لا بيانات مواضيع لهذا الاختبار.', nextSteps: 'ماذا بعد؟',
     reviewPages: 'راجع هذه الصفحات:', makeCards: 'أنشئ بطاقات من أخطائي', cardsCreated: 'أُنشئت البطاقات', practiceWeak: 'تدرّب مجددًا',
     review: 'المراجعة', mistakes: 'الأخطاء', pending: 'تحتاج تصحيحًا', yourAnswer: 'إجابتك', noAnswer: '(بلا إجابة)',

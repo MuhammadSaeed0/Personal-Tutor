@@ -8,11 +8,12 @@ import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { MarkdownComponent } from '../../shared/markdown.component';
 import { DiagramComponent } from '../../shared/diagram.component';
+import { ExamAssistantComponent } from './exam-assistant.component';
 import { ConfirmService, clock } from '../../shared/ui';
 
 @Component({
   selector: 'rw-attempt',
-  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, MarkdownComponent, DiagramComponent],
+  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, MarkdownComponent, DiagramComponent, ExamAssistantComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './attempt.component.html',
   styleUrl: './attempt.component.scss'
@@ -26,6 +27,8 @@ export class AttemptComponent implements OnDestroy {
   private readonly confirm = inject(ConfirmService);
 
   protected readonly attempt = signal<Attempt | null>(null);
+  protected readonly assistantOpen = signal(false);
+  protected readonly assistantUses = signal(0);
   protected readonly index = signal(0);
   protected readonly answers = signal<Record<string, unknown>>({});
   protected readonly marked = signal<Record<string, boolean>>({});
@@ -81,6 +84,7 @@ export class AttemptComponent implements OnDestroy {
       this.marked.set(marked);
       this.reveals.set(Object.fromEntries(attempt.revealed.map(r => [r.questionId, r])));
       this.attempt.set(attempt);
+      this.assistantUses.set(attempt.assistantUses ?? 0);
       this.timer = setInterval(() => this.now.set(Date.now()), 1000);
     } catch (e) {
       this.toast.error(e);

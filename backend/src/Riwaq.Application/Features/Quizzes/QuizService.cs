@@ -47,7 +47,7 @@ public sealed record ResponseDto(Guid QuestionId, JsonElement Answer, bool Marke
 public sealed record RevealDto(Guid QuestionId, bool? IsCorrect, double Fraction, string CorrectAnswer, string Explanation, int? SourcePage, string? SourceQuote);
 
 public sealed record AttemptDto(Guid Id, Guid QuizId, AttemptStatus Status, DateTime StartedAt, DateTime? Deadline, DateTime? SubmittedAt,
-    QuizDetailDto Quiz, IReadOnlyList<ResponseDto> Responses, IReadOnlyList<RevealDto> Revealed);
+    QuizDetailDto Quiz, IReadOnlyList<ResponseDto> Responses, IReadOnlyList<RevealDto> Revealed, int AssistantUses = 0);
 
 public sealed record SaveResponseRequest(JsonElement Answer, bool MarkedForReview = false, bool HintUsed = false);
 
@@ -60,7 +60,7 @@ public sealed record TopicScoreDto(string Topic, int Correct, int Total);
 public sealed record AttemptResultDto(
     Guid AttemptId, Guid QuizId, string QuizTitle, Guid? BookId, double Score, double MaxScore, double Percent, int DurationSeconds,
     int CorrectCount, int IncorrectCount, int PendingCount, IReadOnlyList<QuestionReviewDto> Questions, IReadOnlyList<TopicScoreDto> Topics,
-    IReadOnlyList<int> ReviewPages, bool IsPersonalBest, DateTime SubmittedAt);
+    IReadOnlyList<int> ReviewPages, bool IsPersonalBest, DateTime SubmittedAt, int AssistantUses = 0);
 
 public sealed record AttemptSummaryDto(Guid Id, Guid QuizId, string QuizTitle, int SubjectId, QuizMode Mode, AttemptStatus Status, double Score, double MaxScore, double Percent, DateTime StartedAt, DateTime? SubmittedAt);
 
@@ -394,7 +394,9 @@ public sealed class QuizService(
         {
             var empty = new QuizResponse { Id = Ids.New(), AttemptId = attempt.Id, QuestionId = q.Id, AnswerJson = "null", UpdatedAt = now };
             db.QuizResponses.Add(empty);
-            attempt.Responses.Add(empty);
+            // EF's relationship fix-up may already have attached it to the tracked attempt; adding it twice made
+            // submitting an exam with unanswered questions fail.
+            if (!attempt.Responses.Contains(empty)) attempt.Responses.Add(empty);
             responses[q.Id] = empty;
         }
 
@@ -517,7 +519,7 @@ public sealed class QuizService(
         return new AttemptResultDto(attempt.Id, quiz.Id, quiz.Title, quiz.BookId, Math.Round(attempt.Score, 2), attempt.MaxScore, percent,
             attempt.DurationSeconds, attempt.Responses.Count(r => r.IsCorrect == true), attempt.Responses.Count(r => r.IsCorrect == false),
             attempt.Responses.Count(r => r.GradingMethod == GradingMethod.Pending), reviews, topics, reviewPages,
-            previousBest is not null && percent > previousBest * 100, attempt.SubmittedAt ?? clock.GetUtcNow().UtcDateTime);
+            previousBest is not null && percent > previousBest * 100, attempt.SubmittedAt ?? clock.GetUtcNow().UtcDateTime, attempt.AssistantUses);
     }
 
     // ---- Helpers ---------------------------------------------------------------------------------------
@@ -555,7 +557,7 @@ public sealed class QuizService(
                 .Select(r => Reveal(quiz.Questions.First(q => q.Id == r.QuestionId), r, quiz.Language)).ToList()
             : [];
         return new AttemptDto(attempt.Id, quiz.Id, attempt.Status, attempt.StartedAt, deadline, attempt.SubmittedAt, ToDetail(quiz, 0, null),
-            attempt.Responses.Select(ToResponseDto).ToList(), revealed);
+            attempt.Responses.Select(ToResponseDto).ToList(), revealed, attempt.AssistantUses);
     }
 
     private static List<QuestionType> DefaultTypes() =>

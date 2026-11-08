@@ -8,6 +8,9 @@
     <span class="timer num" [class.warn]="remaining() !== null && remaining()! < 300" role="timer" [attr.aria-label]="'attempt.timer' | t">
       <rw-icon [name]="remaining() !== null ? 'timer' : 'clock'" [size]="16" /> {{ clockText() }}
     </span>
+    <button class="btn ghost" type="button" (click)="assistantOpen.set(!assistantOpen())" [attr.aria-expanded]="assistantOpen()" [class.active]="assistantOpen()">
+      <rw-icon name="sparkles" [size]="16" /> {{ 'examAssistant.button' | t }}@if (assistantUses() > 0) { <span class="badge num">{{ assistantUses() }}</span> }
+    </button>
     <button class="btn ghost sheet-btn" type="button" (click)="sheetOpen.set(!sheetOpen())" [attr.aria-expanded]="sheetOpen()"><rw-icon name="columns" [size]="16" /> {{ 'attempt.sheet' | t }}</button>
     <button class="btn primary" type="button" (click)="submit()" [disabled]="submitting()">@if (submitting()) { <span class="spinner"></span> } {{ 'attempt.submit' | t }}</button>
   </header>
@@ -144,4 +147,11 @@
       </div>
     </aside>
   </div>
+  <!-- Side chat: kept alive while hidden so the conversation survives closing the panel. -->
+  @if (attempt()?.status === 'inProgress') {
+    <aside class="assistant" [class.open]="assistantOpen()" [attr.aria-hidden]="!assistantOpen()" [attr.aria-label]="'examAssistant.title' | t">
+      <rw-exam-assistant [attemptId]="attemptId()" [questionId]="current()?.id ?? null" [language]="quiz()?.language ?? 'ar'"
+        (closed)="assistantOpen.set(false)" (used)="assistantUses.set($event)" />
+    </aside>
+  }
 </div>

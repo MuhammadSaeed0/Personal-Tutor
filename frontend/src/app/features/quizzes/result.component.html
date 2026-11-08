@@ -14,6 +14,7 @@
           @if (r.pendingCount > 0) { <span class="badge warning">{{ 'result.pendingN' | t: { n: r.pendingCount } }}</span> }
           <span class="badge"><rw-icon name="clock" [size]="12" /> {{ duration() }}</span>
           @if (r.isPersonalBest) { <span class="badge gold"><rw-icon name="trophy" [size]="12" /> {{ 'result.personalBest' | t }}</span> }
+          @if (r.assistantUses > 0) { <span class="badge info"><rw-icon name="sparkles" [size]="12" /> {{ 'result.assistantUsed' | t: { n: r.assistantUses } }}</span> }
         </div>
       </div>
     </section>

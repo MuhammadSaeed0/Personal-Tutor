@@ -1388,6 +1388,9 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("AssistantUses")
+                        .HasColumnType("int");
+
                     b.Property<int>("DurationSeconds")
                         .HasColumnType("int");
 
