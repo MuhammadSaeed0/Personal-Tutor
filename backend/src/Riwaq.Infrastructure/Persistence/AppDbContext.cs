@@ -307,6 +307,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Explanation).HasColumnType("nvarchar(max)");
             e.Property(x => x.Hint).HasMaxLength(1000);
             e.Property(x => x.Topic).HasMaxLength(200);
+            e.Property(x => x.DiagramSvg).HasColumnType("nvarchar(max)");
+            e.Property(x => x.DiagramAlt).HasMaxLength(2000);
             e.Property(x => x.SourceQuote).HasMaxLength(1000);
         });
 

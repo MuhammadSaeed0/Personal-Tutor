@@ -45,7 +45,7 @@
       <section class="grid cols-2">
         <div class="field"><span class="field-label">{{ 'builder.difficulty' | t }}</span>
           <div class="segmented" role="group">
-            @for (d of ['easy', 'medium', 'hard']; track d) {
+            @for (d of ['easy', 'medium', 'hard', 'mixed']; track d) {
               <button type="button" [attr.aria-pressed]="difficulty === d" (click)="difficulty = $any(d)">{{ 'difficulty.' + d | t }}</button>
             }
           </div></div>
@@ -53,6 +53,12 @@
           <div class="field"><label for="q-count">{{ 'builder.count' | t }}: <strong class="num">{{ count }}</strong></label>
             <input id="q-count" type="range" min="3" max="40" [(ngModel)]="count" class="slider" /></div>
         }
+      </section>
+
+      <section class="field diagrams">
+        <label for="q-diagrams">{{ 'builder.diagrams' | t }}: <strong class="num">{{ diagramCount() }}</strong></label>
+        <input id="q-diagrams" type="range" min="0" [max]="maxDiagrams()" [ngModel]="diagramCount()" (ngModelChange)="diagramCount.set(+$event)" class="slider" />
+        <p class="xsmall subtle">{{ ('builder.diagramHint.' + diagramSubject()) | t }} {{ 'builder.diagramCost' | t }}</p>
       </section>
 
       @if (!(mode() === 'exam' && useBlueprint)) {

@@ -276,7 +276,7 @@ export interface FlashcardStats {
 export interface IntervalPreview { again: number; hard: number; good: number; easy: number; }
 
 export type QuestionType = 'multipleChoice' | 'trueFalse' | 'fillBlank' | 'shortAnswer' | 'matching' | 'ordering' | 'numerical' | 'structured';
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'mixed';
 
 export interface Question {
   id: string;
@@ -288,6 +288,9 @@ export interface Question {
   difficulty: Difficulty;
   topic: string | null;
   points: number;
+  /** Sanitised SVG drawing the question refers to, with its text alternative. */
+  diagramSvg: string | null;
+  diagramAlt: string | null;
 }
 
 export interface Quiz {

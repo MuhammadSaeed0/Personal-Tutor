@@ -28,9 +28,11 @@ public sealed record GenerateQuizRequest(
     bool FocusWeakAreas = false,
     QuizMode Mode = QuizMode.Practice,
     string? Language = null,
-    string? Title = null);
+    string? Title = null,
+    int DiagramCount = 0);
 
-public sealed record QuestionDto(Guid Id, int Ordinal, QuestionType Type, string Prompt, JsonElement Options, string? Hint, Difficulty Difficulty, string? Topic, double Points);
+public sealed record QuestionDto(Guid Id, int Ordinal, QuestionType Type, string Prompt, JsonElement Options, string? Hint, Difficulty Difficulty, string? Topic, double Points,
+    string? DiagramSvg = null, string? DiagramAlt = null);
 
 public sealed record QuizDto(
     Guid Id, int SubjectId, Guid? BookId, Guid? ChapterId, string Title, QuizMode Mode, Difficulty Difficulty, int? PageStart, int? PageEnd,
@@ -109,48 +111,98 @@ public sealed class QuizService(
         var prefs = await db.UserPreferences.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId, ct) ?? new UserPreferences();
         var language = request.Language is "ar" or "en" or "fr" ? request.Language : LanguageForSubject(source.Subject, prefs.ExplanationLanguage);
 
-        var userTurn = new StringBuilder(Prompts.SourcePages(pages));
-        userTurn.AppendLine().AppendLine($"Write {Math.Min(40, count + Math.Max(2, count / 4))} candidate questions (some may be discarded during validation).");
-        userTurn.AppendLine(blueprint is { Count: > 0 }
-            ? "Use exactly this mix of types: " + string.Join(", ", blueprint.Select(b => $"{b.Value} × {QuestionValidator.TypeName(b.Key)}")) + "."
-            : "Allowed types: " + string.Join(", ", types.Select(QuestionValidator.TypeName)) + ".");
-        userTurn.AppendLine($"Target difficulty: {request.Difficulty.ToString().ToLowerInvariant()}.");
-        if (weakTopics.Count > 0) userTurn.AppendLine("Prioritise these topics where the student has been making mistakes: " + string.Join("; ", weakTopics.Select(Prompts.Escape)) + ".");
+        // Diagram questions come from their own, smaller requests: SVG markup is long, and one request for a whole
+        // long exam with drawings would overrun the output limit. Text and diagram requests run side by side.
+        var diagramCount = Math.Clamp(request.DiagramCount, 0, Math.Min(MaxDiagramQuestions, 40));
+        var textCount = blueprint is { Count: > 0 } ? count : Math.Max(0, count - diagramCount);
+        var diagramTypes = types.Where(t => t is not (QuestionType.Matching or QuestionType.Ordering)).ToList();
+        if (diagramTypes.Count == 0) diagramTypes = [QuestionType.MultipleChoice, QuestionType.Numerical, QuestionType.ShortAnswer];
+        var difficultyLine = DifficultyInstruction(request.Difficulty);
 
-        ChatResult? result = null;
-        try
+        var calls = new List<(bool Diagram, Task<ChatResult> Task)>();
+        if (textCount > 0)
         {
-            result = await chat.CompleteAsync(new ChatRequest
+            var userTurn = new StringBuilder(Prompts.SourcePages(pages));
+            userTurn.AppendLine().AppendLine($"Write {Math.Min(40, textCount + Math.Max(2, textCount / 4))} candidate questions (some may be discarded during validation).");
+            userTurn.AppendLine(blueprint is { Count: > 0 }
+                ? "Use exactly this mix of types: " + string.Join(", ", blueprint.Select(b => $"{b.Value} × {QuestionValidator.TypeName(b.Key)}")) + "."
+                : "Allowed types: " + string.Join(", ", types.Select(QuestionValidator.TypeName)) + ".");
+            userTurn.AppendLine(difficultyLine);
+            if (weakTopics.Count > 0) userTurn.AppendLine("Prioritise these topics where the student has been making mistakes: " + string.Join("; ", weakTopics.Select(Prompts.Escape)) + ".");
+            calls.Add((false, chat.CompleteAsync(new ChatRequest
             {
                 Feature = "quiz", SystemPrompt = GenerationPrompt(source.Subject.Code, language), JsonSchema = QuestionSchema,
                 Messages = [new ChatTurn(ChatRole.User, userTurn.ToString())], MaxTokens = 16000, Effort = "medium"
-            }, ct);
-        }
-        finally
-        {
-            usage.Record(userId, "quiz", result, chat.ModelName, result is not null);
-            await db.SaveChangesAsync(CancellationToken.None);
+            }, ct)));
         }
 
-        var parsed = AiJson.Parse<QuestionEnvelope>(result.Text);
+        var batches = (int)Math.Ceiling(diagramCount / (double)DiagramBatchSize);
+        for (var b = 0; b < batches; b++)
+        {
+            var wanted = Math.Min(DiagramBatchSize, diagramCount - b * DiagramBatchSize);
+            // Each batch reads a different share of the pages, so the drawings cover different topics.
+            var share = pages.Where((_, i) => i % batches == b).ToList();
+            var userTurn = new StringBuilder(Prompts.SourcePages(SamplePages(share.Count > 0 ? share : pages, 40_000)));
+            userTurn.AppendLine().AppendLine($"Write {wanted + 2} candidate questions. Every question must be built around a diagram you draw (some may be discarded during validation).");
+            userTurn.AppendLine("Allowed types: " + string.Join(", ", diagramTypes.Select(QuestionValidator.TypeName)) + ".");
+            userTurn.AppendLine(difficultyLine);
+            calls.Add((true, chat.CompleteAsync(new ChatRequest
+            {
+                Feature = "quiz", SystemPrompt = GenerationPrompt(source.Subject.Code, language) + "\n" + DiagramRules(source.Subject.Code),
+                JsonSchema = DiagramQuestionSchema, Messages = [new ChatTurn(ChatRole.User, userTurn.ToString())], MaxTokens = 16000, Effort = "medium"
+            }, ct)));
+        }
+
+        try { await Task.WhenAll(calls.Select(c => c.Task)); }
+        catch { /* inspected per request below */ }
+        foreach (var call in calls)
+            usage.Record(userId, "quiz", call.Task.IsCompletedSuccessfully ? call.Task.Result : null, chat.ModelName, call.Task.IsCompletedSuccessfully);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        // The quiz stands on the text questions; failed diagram requests only reduce the number of drawings.
+        var textCall = calls.FirstOrDefault(c => !c.Diagram);
+        if (calls.All(c => !c.Task.IsCompletedSuccessfully))
+            await (textCall.Task ?? calls[0].Task); // nothing succeeded: rethrow the provider error (rate limit, not configured, ...)
+        var result = calls.First(c => c.Task.IsCompletedSuccessfully).Task.Result;
+
         var random = new Random();
         var accepted = new List<ValidatedQuestion>();
         var rejected = 0;
         var perType = new Dictionary<QuestionType, int>();
-        foreach (var raw in parsed.Questions ?? [])
+        if (textCall.Task is { IsCompletedSuccessfully: true })
         {
-            var outcome = QuestionValidator.Validate(raw, pageMap, random);
-            if (outcome.Question is null || !types.Contains(outcome.Question.Type) || IsDuplicate(accepted, outcome.Question))
+            foreach (var raw in ParseQuestions(textCall.Task.Result.Text))
             {
-                rejected++;
-                continue;
+                var outcome = QuestionValidator.Validate(raw, pageMap, random);
+                if (outcome.Question is null || !types.Contains(outcome.Question.Type) || IsDuplicate(accepted, outcome.Question))
+                {
+                    rejected++;
+                    continue;
+                }
+                var q = outcome.Question;
+                if (blueprint is { Count: > 0 } && perType.GetValueOrDefault(q.Type) >= blueprint.GetValueOrDefault(q.Type)) continue;
+                perType[q.Type] = perType.GetValueOrDefault(q.Type) + 1;
+                accepted.Add(q);
+                if (accepted.Count >= textCount) break;
             }
-            var q = outcome.Question;
-            if (blueprint is { Count: > 0 } && perType.GetValueOrDefault(q.Type) >= blueprint.GetValueOrDefault(q.Type)) continue;
-            perType[q.Type] = perType.GetValueOrDefault(q.Type) + 1;
-            accepted.Add(q);
-            if (accepted.Count >= count) break;
         }
+
+        var drawn = new List<ValidatedQuestion>();
+        foreach (var call in calls.Where(c => c.Diagram && c.Task.IsCompletedSuccessfully))
+        {
+            foreach (var raw in ParseQuestions(call.Task.Result.Text))
+            {
+                if (drawn.Count >= diagramCount) break;
+                var outcome = QuestionValidator.Validate(raw, pageMap, random, requireDiagram: true);
+                if (outcome.Question is null || !diagramTypes.Contains(outcome.Question.Type) || IsDuplicate(accepted, outcome.Question) || IsDuplicate(drawn, outcome.Question))
+                {
+                    rejected++;
+                    continue;
+                }
+                drawn.Add(outcome.Question);
+            }
+        }
+        accepted = Arrange(accepted, drawn, request.Difficulty);
         if (accepted.Count == 0) throw new AiUnavailableException("ai_invalid_output", "No reliable questions could be generated from this content. Try a different range.");
 
         var chapters = await db.Chapters.AsNoTracking().Where(c => c.BookId == source.Book.Id).Select(c => new { c.Id, c.StartPage, c.EndPage, c.Level }).ToListAsync(ct);
@@ -170,6 +222,7 @@ public sealed class QuizService(
             Id = Ids.New(), QuizId = quiz.Id, Ordinal = i + 1, Type = q.Type, Prompt = q.Prompt, OptionsJson = q.OptionsJson,
             AnswerKeyJson = q.AnswerKeyJson, Explanation = q.Explanation, Hint = q.Hint, Difficulty = q.Difficulty, Topic = q.Topic,
             SourcePage = q.SourcePage, SourceQuote = q.SourceQuote, Points = q.Type is QuestionType.Structured ? 2 : 1,
+            DiagramSvg = q.DiagramSvg, DiagramAlt = q.DiagramAlt,
             ChapterId = source.Chapter?.Id ?? (q.SourcePage is int p
                 ? chapters.Where(c => p >= c.StartPage && p <= c.EndPage).OrderByDescending(c => c.Level).Select(c => (Guid?)c.Id).FirstOrDefault()
                 : null)
@@ -397,6 +450,7 @@ public sealed class QuizService(
                 var answer = r.AnswerJson.StartsWith('"') ? JsonSerializer.Deserialize<string>(r.AnswerJson) : r.AnswerJson;
                 sb.AppendLine($"<item id=\"{i + 1}\" points=\"{q.Points}\">");
                 sb.AppendLine($"<question>{Prompts.Escape(q.Prompt)}</question>");
+                if (q.DiagramAlt is not null) sb.AppendLine($"<figure_description>{Prompts.Escape(q.DiagramAlt)}</figure_description>");
                 sb.AppendLine($"<model_answer>{Prompts.Escape(key?["modelAnswer"]?.GetValue<string>() ?? "")}</model_answer>");
                 var rubric = key?["rubric"]?.AsArray().Select(x => x?.GetValue<string>()).Where(x => x is not null) ?? [];
                 sb.AppendLine($"<rubric>{Prompts.Escape(string.Join(" | ", rubric))}</rubric>");
@@ -531,6 +585,66 @@ public sealed class QuizService(
         return result;
     }
 
+    private const int DiagramBatchSize = 5;
+    private const int MaxDiagramQuestions = 20;
+
+    private static string DifficultyInstruction(Difficulty difficulty) => difficulty == Difficulty.Mixed
+        ? "Target difficulty: a graded mix — about 30% easy, 40% medium and 30% hard questions; set each question's difficulty accordingly."
+        : $"Target difficulty: {difficulty.ToString().ToLowerInvariant()}.";
+
+    private static List<RawQuestion> ParseQuestions(string json)
+    {
+        try { return AiJson.Parse<QuestionEnvelope>(json).Questions ?? []; }
+        catch (AiUnavailableException) { return []; }
+    }
+
+    /// <summary>
+    /// Mixed difficulty runs from easy to hard (as in an exam paper); otherwise diagram questions are spread evenly
+    /// between the text questions.
+    /// </summary>
+    internal static List<ValidatedQuestion> Arrange(List<ValidatedQuestion> text, List<ValidatedQuestion> drawn, Difficulty difficulty)
+    {
+        if (difficulty == Difficulty.Mixed)
+            return text.Concat(drawn).Select((q, i) => (q, i)).OrderBy(x => x.q.Difficulty).ThenBy(x => x.i).Select(x => x.q).ToList();
+        if (drawn.Count == 0) return text;
+        if (text.Count == 0) return drawn;
+
+        var result = new List<ValidatedQuestion>(text.Count + drawn.Count);
+        var step = (double)(text.Count + drawn.Count) / drawn.Count;
+        int t = 0, d = 0;
+        for (var i = 0; i < text.Count + drawn.Count; i++)
+        {
+            var wantDiagram = d < drawn.Count && (t >= text.Count || i + 1 >= Math.Round((d + 1) * step));
+            result.Add(wantDiagram ? drawn[d++] : text[t++]);
+        }
+        return result;
+    }
+
+    private static string DiagramRules(string subjectCode) => $$"""
+        Diagram questions — every question in this response includes a diagram you draw as SVG in the "diagram" field:
+        - A complete <svg> element with a viewBox (about 400×260), white or transparent background, black or dark strokes,
+          simple flat shapes, no scripts, styles, images, links or external references.
+        - Draw only what the textbook pages describe. Keep it schematic and geometrically correct: work out the coordinates
+          so directions and angles are true (a component parallel to an incline runs along its surface, a perpendicular one
+          is at 90° to it, the weight points straight down). Every vector is a line with an arrowhead: define one
+          <marker> in <defs> and use marker-end="url(#arrow)". Every angle that is named gets an arc next to its label.
+          Circuits use standard symbols; apparatus and structures are clearly separated.
+        - Labels inside the drawing are only short markers: numbers (1, 2, 3), letters (A, B, C or س, ص, ع) or quantities
+          with units (5 N, 30°, 2 Ω). Write explanations in the question text, never as sentences inside the drawing.
+        - Every marker the question or its options mention, written as (1), (A) or (س), must appear as a <text> label in the
+          drawing. Every value needed to answer must also be written in the question text.
+        - The drawing must never show, highlight or label the correct answer.
+        - "diagramAlt": one or two sentences describing exactly what the drawing shows, including every label.
+        Subject ideas: {{subjectCode switch
+        {
+            "physics" => "free-body diagrams, inclined planes, motion graphs (axes with labelled ticks), circuits, ray diagrams, waves.",
+            "chemistry" => "lab apparatus, electrolysis or galvanic cells, particle diagrams, simple structural formulas, energy profiles. Write reaction equations in the question text with \\ce{...}, not in the drawing.",
+            "biology" => "labelled cells, organs, systems and processes (numbered parts), simple genetic crosses as diagrams, cycles.",
+            "geology" => "rock layers and fossils, folds and faults, crystal systems and axes, the rock cycle, cross-sections.",
+            _ => "diagrams, graphs or labelled figures that test understanding of the pages."
+        }}}
+        """;
+
     private static string BuildTitle(SourceMaterial source, QuizMode mode, string language)
     {
         var kind = mode == QuizMode.Exam
@@ -590,6 +704,10 @@ public sealed class QuizService(
          "required":["questions"],"additionalProperties":false}
         """;
 
+    private static readonly string DiagramQuestionSchema = QuestionSchema
+        .Replace("\"sourceQuote\":{\"type\":[\"string\",\"null\"]}},", "\"sourceQuote\":{\"type\":[\"string\",\"null\"]},\"diagram\":{\"type\":\"string\"},\"diagramAlt\":{\"type\":\"string\"}},")
+        .Replace("\"page\",\"sourceQuote\"]", "\"page\",\"sourceQuote\",\"diagram\",\"diagramAlt\"]");
+
     private const string GradingSchema = """
         {"type":"object","properties":{"results":{"type":"array","items":{"type":"object","properties":{
           "id":{"type":"integer"},"score":{"type":"number"},"feedback":{"type":"string"},"misconception":{"type":["string","null"]}},
@@ -606,7 +724,8 @@ public sealed class QuizService(
     // ---- Mapping -------------------------------------------------------------------------------------
 
     private static QuestionDto ToQuestionDto(QuizQuestion q, bool includeHint) =>
-        new(q.Id, q.Ordinal, q.Type, q.Prompt, JsonDocument.Parse(q.OptionsJson).RootElement.Clone(), includeHint ? q.Hint : null, q.Difficulty, q.Topic, q.Points);
+        new(q.Id, q.Ordinal, q.Type, q.Prompt, JsonDocument.Parse(q.OptionsJson).RootElement.Clone(), includeHint ? q.Hint : null, q.Difficulty, q.Topic, q.Points,
+            q.DiagramSvg, q.DiagramAlt);
 
     private static QuizDto ToDto(Quiz q, int questionCount, int attempts, double? best) => new(q.Id, q.SubjectId, q.BookId, q.ChapterId, q.Title, q.Mode,
         q.Difficulty, q.PageStart, q.PageEnd, q.TimeLimitSeconds, q.HintsAllowed, q.RevealImmediately, q.Language, questionCount, q.ExcludedQuestionCount,

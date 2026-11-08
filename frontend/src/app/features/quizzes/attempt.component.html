@@ -27,6 +27,7 @@
         </div>
 
         <div class="prompt"><rw-markdown [content]="q.prompt" /></div>
+        @if (q.diagramSvg) { <rw-diagram [svg]="q.diagramSvg" [alt]="q.diagramAlt" /> }
 
         <div class="answer" [class.locked]="!!reveal">
           @switch (q.type) {

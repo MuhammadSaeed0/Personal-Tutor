@@ -10,11 +10,12 @@ namespace Riwaq.Application.Features.Quizzes;
 public sealed record RawQuestion(
     string? Type, string? Prompt, List<string>? Options, List<string>? MatchRight, int? CorrectIndex, bool? CorrectBool,
     List<string>? AcceptedAnswers, double? NumericAnswer, double? Tolerance, string? Unit, string? ModelAnswer, List<string>? Rubric,
-    string? Explanation, string? Hint, string? Difficulty, string? Topic, int? Page, string? SourceQuote);
+    string? Explanation, string? Hint, string? Difficulty, string? Topic, int? Page, string? SourceQuote,
+    string? Diagram = null, string? DiagramAlt = null);
 
 public sealed record ValidatedQuestion(
     QuestionType Type, string Prompt, string OptionsJson, string AnswerKeyJson, string Explanation, string? Hint,
-    Difficulty Difficulty, string? Topic, int? SourcePage, string? SourceQuote);
+    Difficulty Difficulty, string? Topic, int? SourcePage, string? SourceQuote, string? DiagramSvg = null, string? DiagramAlt = null);
 
 public sealed record ValidationOutcome(ValidatedQuestion? Question, string? RejectionReason);
 
@@ -25,7 +26,8 @@ public sealed record ValidationOutcome(ValidatedQuestion? Question, string? Reje
 /// </summary>
 public static class QuestionValidator
 {
-    public static ValidationOutcome Validate(RawQuestion raw, IReadOnlyDictionary<int, string> sourcePages, Random random)
+    /// <param name="requireDiagram">Diagram questions must carry a safe SVG whose labels match the question and that does not show the answer.</param>
+    public static ValidationOutcome Validate(RawQuestion raw, IReadOnlyDictionary<int, string> sourcePages, Random random, bool requireDiagram = false)
     {
         var type = ParseType(raw.Type);
         if (type is null) return Reject("unknown_type");
@@ -103,10 +105,32 @@ public static class QuestionValidator
             }
         }
 
+        string? diagram = null, diagramAlt = null;
+        if (requireDiagram)
+        {
+            diagram = QuizDiagram.Sanitize(raw.Diagram);
+            if (diagram is null) return Reject("invalid_diagram");
+            diagramAlt = raw.DiagramAlt?.Trim();
+            if (diagramAlt is null || diagramAlt.Length < 10) return Reject("missing_diagram_alt");
+            if (diagramAlt.Length > 2000) diagramAlt = diagramAlt[..2000];
+
+            var labels = QuizDiagram.Labels(diagram);
+            var referenced = QuizDiagram.ReferencedMarkers(prompt + " " + string.Join(" ", raw.Options ?? []));
+            if (referenced.Any(m => !labels.Contains(m))) return Reject("diagram_label_missing");
+
+            var answers = type switch
+            {
+                QuestionType.MultipleChoice => Clean(raw.Options).Where((_, i) => i == raw.CorrectIndex),
+                QuestionType.FillBlank => Clean(raw.AcceptedAnswers),
+                _ => []
+            };
+            if (QuizDiagram.RevealsAnswer(diagram, answers)) return Reject("diagram_reveals_answer");
+        }
+
         var difficulty = raw.Difficulty?.ToLowerInvariant() switch { "easy" => Difficulty.Easy, "hard" => Difficulty.Hard, _ => Difficulty.Medium };
         var topic = string.IsNullOrWhiteSpace(raw.Topic) ? null : raw.Topic.Trim().Length > 200 ? raw.Topic.Trim()[..200] : raw.Topic.Trim();
         var hint = string.IsNullOrWhiteSpace(raw.Hint) ? null : raw.Hint.Trim().Length > 1000 ? raw.Hint.Trim()[..1000] : raw.Hint.Trim();
-        return new ValidationOutcome(new ValidatedQuestion(type.Value, prompt, options, key, explanation, hint, difficulty, topic, page, quote), null);
+        return new ValidationOutcome(new ValidatedQuestion(type.Value, prompt, options, key, explanation, hint, difficulty, topic, page, quote, diagram, diagramAlt), null);
     }
 
     public static QuestionType? ParseType(string? type) => type?.Trim().ToLowerInvariant().Replace("-", "_") switch

@@ -7,11 +7,12 @@ import { Attempt, AttemptResult, Question, QuizResponse, Reveal } from '../../co
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { MarkdownComponent } from '../../shared/markdown.component';
+import { DiagramComponent } from '../../shared/diagram.component';
 import { ConfirmService, clock } from '../../shared/ui';
 
 @Component({
   selector: 'rw-attempt',
-  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, MarkdownComponent],
+  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, MarkdownComponent, DiagramComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './attempt.component.html',
   styleUrl: './attempt.component.scss'

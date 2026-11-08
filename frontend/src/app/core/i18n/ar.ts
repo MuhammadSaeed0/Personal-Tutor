@@ -239,6 +239,7 @@ export const AR: typeof EN = {
     inProgress: 'قيد الحل', noHistory: 'لا محاولات بعد.', deleteTitle: 'حذف هذا الاختبار؟', deleteMessage: 'ستُحذف كل محاولات هذا الاختبار.'
   },
   builder: {
+    diagrams: 'أسئلة بالرسومات', diagramHint: { physics: 'مخططات القوى، والمستوى المائل، ومنحنيات الحركة، والدوائر الكهربية.', chemistry: 'أجهزة التجارب، والخلايا، ورسومات الجسيمات، والصيغ البنائية، وتُكتب التفاعلات كمعادلات.', biology: 'رسومات توضيحية للخلايا والأعضاء والعمليات بأجزاء مرقّمة.', geology: 'طبقات الصخور، والطيّات والفوالق، والأنظمة البلورية، ودورة الصخور.', other: 'رسومات وأشكال بيانية مأخوذة من كتابك.' }, diagramCost: 'تستغرق أسئلة الرسومات وقتًا أطول، وتستهلك قدرًا أكبر من خطتك.',
     title: 'إنشاء اختبار', examTitle: 'إنشاء امتحان تجريبي', subtitle: 'اختر ما تريد التدرّب عليه. تُستبعد الأسئلة غير المدعومة بكتابك.',
     noBooks: 'لا كتب جاهزة بعد', noBooksText: 'ارفع كتابًا وانتظر حتى تكتمل معالجته.', book: 'الكتاب', wholeBook: 'الكتاب كاملًا',
     chapter: 'فصل', pages: 'نطاق صفحات', fromPage: 'من الصفحة', toPage: 'إلى الصفحة', difficulty: 'الصعوبة', count: 'عدد الأسئلة',
@@ -254,7 +255,7 @@ export const AR: typeof EN = {
     multipleChoice: 'اختيار من متعدد', trueFalse: 'صح / خطأ', fillBlank: 'أكمل الفراغ', shortAnswer: 'إجابة قصيرة', matching: 'توصيل',
     ordering: 'ترتيب', numerical: 'مسألة عددية', structured: 'سؤال مقالي'
   },
-  difficulty: { easy: 'سهل', medium: 'متوسط', hard: 'صعب' },
+  difficulty: { easy: 'سهل', medium: 'متوسط', hard: 'صعب', mixed: 'متدرّج' },
   attempt: {
     answered: 'أجبت عن {n} من {total}', saving: 'جارٍ الحفظ…', timer: 'الوقت', sheet: 'ورقة الإجابات', submit: 'تسليم', questionN: 'السؤال {n} من {total}',
     points: '{n} درجات', markReview: 'تعليم للمراجعة', true: 'صح', false: 'خطأ', yourAnswer: 'إجابتك',

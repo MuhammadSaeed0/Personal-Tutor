@@ -172,7 +172,10 @@ public enum Difficulty
 {
     Easy = 0,
     Medium = 1,
-    Hard = 2
+    Hard = 2,
+
+    /// <summary>Quiz level only: a graded mix of easy, medium and hard questions.</summary>
+    Mixed = 3
 }
 
 public enum AttemptStatus

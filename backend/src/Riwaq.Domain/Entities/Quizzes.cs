@@ -47,6 +47,10 @@ public class QuizQuestion
     public int? SourcePage { get; set; }
     public string? SourceQuote { get; set; }
     public double Points { get; set; } = 1;
+
+    /// <summary>Optional diagram the question refers to: sanitised SVG markup and its text alternative.</summary>
+    public string? DiagramSvg { get; set; }
+    public string? DiagramAlt { get; set; }
 }
 
 public class QuizAttempt

@@ -6,11 +6,12 @@ import { Attempt, AttemptResult, QuestionReview } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { MarkdownComponent } from '../../shared/markdown.component';
+import { DiagramComponent } from '../../shared/diagram.component';
 import { RingComponent, clock } from '../../shared/ui';
 
 @Component({
   selector: 'rw-result',
-  imports: [RouterLink, TranslatePipe, IconComponent, MarkdownComponent, RingComponent],
+  imports: [RouterLink, TranslatePipe, IconComponent, MarkdownComponent, RingComponent, DiagramComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './result.component.html',
   styleUrl: './result.component.scss'

@@ -236,6 +236,7 @@ export const EN = {
     inProgress: 'In progress', noHistory: 'No attempts yet.', deleteTitle: 'Delete this quiz?', deleteMessage: 'All attempts of this quiz will be deleted.'
   },
   builder: {
+    diagrams: 'Questions with diagrams', diagramHint: { physics: 'Free-body diagrams, inclined planes, motion graphs and circuits.', chemistry: 'Lab apparatus, cells, particle diagrams and structural formulas; reactions are written as equations.', biology: 'Labelled cells, organs and processes with numbered parts.', geology: 'Rock layers, folds and faults, crystal systems and the rock cycle.', other: 'Labelled figures and graphs drawn from your book.' }, diagramCost: 'Diagram questions take longer to create and use more of your AI plan.',
     title: 'Create a quiz', examTitle: 'Create a mock exam', subtitle: 'Choose what to practise. Questions that are not supported by your book are discarded.',
     noBooks: 'No books ready yet', noBooksText: 'Upload a textbook and wait for it to finish processing.', book: 'Book', wholeBook: 'Whole book',
     chapter: 'Chapter', pages: 'Page range', fromPage: 'From page', toPage: 'To page', difficulty: 'Difficulty', count: 'Number of questions',
@@ -251,7 +252,7 @@ export const EN = {
     multipleChoice: 'Multiple choice', trueFalse: 'True / false', fillBlank: 'Fill in the blank', shortAnswer: 'Short answer', matching: 'Matching',
     ordering: 'Ordering', numerical: 'Numerical', structured: 'Structured answer'
   },
-  difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Hard' },
+  difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Hard', mixed: 'Mixed' },
   attempt: {
     answered: '{n} of {total} answered', saving: 'saving…', timer: 'Time', sheet: 'Answer sheet', submit: 'Submit', questionN: 'Question {n} of {total}',
     points: '{n} points', markReview: 'Mark for review', true: 'True', false: 'False', yourAnswer: 'Your answer',

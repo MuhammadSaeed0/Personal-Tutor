@@ -35,7 +35,10 @@ Markdown export and print; flashcards (manual, from
 selection, AI drafts with review, from summaries, notes and quiz mistakes) scheduled with FSRS-5, interval preview,
 due queue, statistics, retention, forecast, suspend.
 
-**Assessment** — 8 question types, subject-aware defaults, difficulty, scope, weak-area focus, exam blueprints, timers
+**Assessment** — 8 question types, subject-aware defaults, difficulty (easy, medium, hard or a graded mix ordered from
+easy to hard), **diagram questions** (free-body diagrams, circuits, apparatus, labelled biological figures, crystal
+systems, rock layers… drawn by Claude as SVG, sanitised on the server and in the browser, with label and answer-leak
+checks) in practice quizzes and mock exams, scope, weak-area focus, exam blueprints, timers
 with server-side deadlines, autosave, answer sheet, mark for review, hints with point penalty, immediate-feedback
 practice mode, AI-generated questions validated against the source (unsupported/ambiguous ones discarded), deterministic
 grading, AI rubric grading with self-assessment fallback, results with topic breakdown, review pages, explanations and
@@ -55,6 +58,9 @@ isolation and opt-in live-model tests), 30 frontend tests,
 i18n coverage check, browser smoke test.
 
 ## Known limitations
+- **Diagram questions** are drawn by the AI: they are checked automatically for safety, matching labels and not giving
+  the answer away, but not for scientific accuracy — an occasional drawing can be imprecise. They take longer and use
+  more of the AI plan than text questions.
 - **YouTube videos need captions.** Videos without any captions are rejected; automatic captions can contain
   recognition errors (flagged per video). Captions are read with YoutubeExplode, an unofficial client that can break
   when YouTube changes; only public videos work. What is shown on screen (slides, drawings) is not read — only speech.

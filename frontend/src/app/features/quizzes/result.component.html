@@ -71,6 +71,7 @@
           </span>
         </header>
         <rw-markdown [content]="q.question.prompt" />
+        @if (q.question.diagramSvg) { <rw-diagram [svg]="q.question.diagramSvg" [alt]="q.question.diagramAlt" /> }
         <div class="answers">
           <div><span class="xsmall subtle">{{ 'result.yourAnswer' | t }}</span><p class="small pre" dir="auto">{{ studentAnswer(q) }}</p></div>
           <div><span class="xsmall subtle">{{ 'attempt.correctAnswer' | t }}</span><p class="small pre" dir="auto">{{ q.correctAnswer }}</p></div>

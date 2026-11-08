@@ -1437,6 +1437,14 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ChapterId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("DiagramAlt")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("DiagramSvg")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Difficulty")
                         .HasColumnType("int");
 

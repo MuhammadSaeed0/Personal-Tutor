@@ -51,6 +51,8 @@ export class QuizBuilderComponent {
   protected pageEnd = 10;
   protected difficulty: Difficulty = 'medium';
   protected count = 10;
+  /** Questions built around a drawing (counted within the total; added to an exam blueprint). */
+  protected readonly diagramCount = signal(0);
   protected readonly types = signal<QuestionType[]>(['multipleChoice', 'trueFalse', 'fillBlank', 'shortAnswer']);
   protected useBlueprint = false;
   protected blueprint: Record<string, number> = { multipleChoice: 10, shortAnswer: 3, structured: 1 };
@@ -115,7 +117,7 @@ export class QuizBuilderComponent {
     const book = this.book();
     if (!book) return;
     const body: Record<string, unknown> = {
-      bookId: book.id, difficulty: this.difficulty, count: this.count, types: this.types(), mode: this.mode(),
+      bookId: book.id, difficulty: this.difficulty, count: this.count, types: this.types(), mode: this.mode(), diagramCount: Math.min(this.diagramCount(), this.maxDiagrams()),
       timeLimitMinutes: this.timeLimit > 0 ? this.timeLimit : null, hintsAllowed: this.hints, revealImmediately: this.reveal,
       focusWeakAreas: this.focusWeak, language: this.language || null, title: this.title.trim() || null
     };
@@ -134,5 +136,15 @@ export class QuizBuilderComponent {
     } finally {
       this.generating.set(false);
     }
+  }
+
+  protected maxDiagrams(): number {
+    return this.mode() === 'exam' && this.useBlueprint ? 20 : Math.min(20, Number(this.count) || 0);
+  }
+
+  /** Which subject's drawing examples to show. */
+  protected diagramSubject(): string {
+    const code = this.store.subject(this.books().find(b => b.id === this.bookId())?.subjectId)?.code ?? '';
+    return ['physics', 'chemistry', 'biology', 'geology'].includes(code) ? code : 'other';
   }
 }
