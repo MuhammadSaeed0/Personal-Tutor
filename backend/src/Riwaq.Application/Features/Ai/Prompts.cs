@@ -46,6 +46,12 @@ public static class Prompts
         _ => "Adapt explanations to the subject."
     };
 
+    /// <summary>Arabic tutor answers are fully vocalised so students read terms and quoted textbook sentences correctly.</summary>
+    internal const string ArabicDiacritics =
+        "Write all Arabic text with full diacritics (tashkeel: fatha, damma, kasra, sukun, shadda, tanween) on every word, " +
+        "including headings, bold labels, words and sentences quoted from the textbook, and the follow-up questions, so the student can read them correctly. " +
+        "Use correct grammatical endings (i'rab). Do not add diacritics to formulas, numbers, symbols or non-Arabic words.";
+
     public static string Tutor(string? subjectCode, string subjectName, string? bookTitle, string language, bool bilingual, string teachingStyle,
         SourceKind kind = SourceKind.Pdf)
     {
@@ -64,7 +70,7 @@ public static class Prompts
                 _ => $" The student is studying the textbook \"{bookTitle}\"."
             })}
 
-            Language: write your answer in {LanguageName(language)}, even if the textbook or question is in another language.{(bilingual ? " When you use a subject term whose textbook form is in another language, give the original term in parentheses the first time." : "")}
+            Language: write your answer in {LanguageName(language)}, even if the textbook or question is in another language.{(bilingual ? " When you use a subject term whose textbook form is in another language, give the original term in parentheses the first time." : "")}{(language == "ar" ? " " + ArabicDiacritics : "")}
             Formatting: Markdown. Math in LaTeX: inline $...$, display $$...$$. Chemical formulas with {CeHint}. Keep paragraphs short.
 
             {style}

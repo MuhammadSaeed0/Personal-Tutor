@@ -163,3 +163,13 @@ public class VisionOcrTests
         Assert.True(result.MeanConfidence < 60);
     }
 }
+
+public class TutorPromptTests
+{
+    [Fact]
+    public void Arabic_answers_are_asked_for_full_diacritics_and_other_languages_are_not()
+    {
+        Assert.Contains("full diacritics", Riwaq.Application.Features.Ai.Prompts.Tutor("physics", "Physics", "كتاب", "ar", false, "guided"));
+        Assert.DoesNotContain("diacritics", Riwaq.Application.Features.Ai.Prompts.Tutor("physics", "Physics", "Book", "en", false, "guided"));
+    }
+}
