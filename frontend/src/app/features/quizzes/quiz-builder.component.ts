@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ApiService } from '../../core/api.service';
+import { ApiError, ApiService } from '../../core/api.service';
+import { QuizGenerationService } from '../../core/quiz-generation.service';
 import { I18nService, TranslatePipe } from '../../core/i18n.service';
 import { Attempt, Book, BookDetail, Chapter, Difficulty, QuestionType, QuizDetail } from '../../core/models';
 import { StoreService } from '../../core/store.service';
@@ -29,7 +30,7 @@ const SUBJECT_TYPES: Record<string, QuestionType[]> = {
   templateUrl: './quiz-builder.component.html',
   styleUrl: './quiz-builder.component.scss'
 })
-export class QuizBuilderComponent {
+export class QuizBuilderComponent implements OnDestroy {
   protected readonly i18n = inject(I18nService);
   protected readonly store = inject(StoreService);
   private readonly api = inject(ApiService);
@@ -42,6 +43,13 @@ export class QuizBuilderComponent {
   protected readonly chapters = signal<Chapter[]>([]);
   protected readonly loaded = signal(false);
   protected readonly generating = signal(false);
+  private readonly jobs = inject(QuizGenerationService);
+  private readonly pendingId = signal<string | null>(null);
+  protected readonly followResult = effect(() => {
+    const id = this.pendingId();
+    const state = id ? this.jobs.states()[id] : undefined;
+    if (id && state && state.status !== 'generating') untracked(() => void this.onFinished(id, state.status as 'ready' | 'failed', state.errorCode));
+  });
 
   protected readonly bookId = signal<string | null>(null);
   protected readonly mode = signal<'practice' | 'exam'>('practice');
@@ -127,15 +135,41 @@ export class QuizBuilderComponent {
 
     this.generating.set(true);
     try {
-      const quiz = await this.api.post<QuizDetail>('/api/quizzes', body);
+      // The server only queues the quiz; its questions are written in the background.
+      const queued = await this.api.post<QuizDetail>('/api/quizzes', body);
+      this.pendingId.set(queued.quiz.id);
+      this.jobs.watch(queued.quiz.id);
+      this.jobs.track(queued.quiz.id, queued.quiz.title);
+    } catch (e) {
+      this.toast.error(e);
+      this.generating.set(false);
+    }
+  }
+
+  /** Reacts to the quiz this screen is waiting for. */
+  private async onFinished(id: string, status: 'ready' | 'failed', errorCode: string | null): Promise<void> {
+    this.pendingId.set(null);
+    this.jobs.unwatch(id);
+    try {
+      if (status === 'failed') {
+        this.toast.error(new ApiError({ status: 503, code: errorCode ?? 'unknown_error' }));
+        return;
+      }
+      const quiz = await this.api.get<QuizDetail>(`/api/quizzes/${id}`);
       if (quiz.quiz.excludedQuestionCount > 0) this.toast.show(this.i18n.t('builder.excluded', { n: quiz.quiz.excludedQuestionCount }));
-      const attempt = await this.api.post<Attempt>(`/api/quizzes/${quiz.quiz.id}/attempts`);
+      const attempt = await this.api.post<Attempt>(`/api/quizzes/${id}/attempts`);
       void this.router.navigate(['/quiz/attempt', attempt.id]);
     } catch (e) {
       this.toast.error(e);
     } finally {
       this.generating.set(false);
     }
+  }
+
+  ngOnDestroy(): void {
+    // Leaving the page keeps the quiz going; a toast will say when it is ready.
+    const id = this.pendingId();
+    if (id) this.jobs.unwatch(id);
   }
 
   protected maxDiagrams(): number {

@@ -1353,6 +1353,10 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                     b.Property<int?>("PageStart")
                         .HasColumnType("int");
 
+                    b.Property<string>("RequestJson")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("RevealImmediately")
                         .HasColumnType("bit");
 

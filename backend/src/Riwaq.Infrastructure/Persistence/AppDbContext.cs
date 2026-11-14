@@ -47,9 +47,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
     {
         // All timestamps are UTC; store with sufficient precision.
-        builder.Properties<DateTime>().HavePrecision(3);
+        builder.Properties<DateTime>().HavePrecision(3).HaveConversion<UtcConverter>();
+        builder.Properties<DateTime?>().HaveConversion<NullableUtcConverter>();
         builder.Properties<string>().HaveMaxLength(400);
     }
+
+    // SQL Server keeps no time zone, so values read back are marked UTC again; otherwise they are sent to the browser
+    // without "Z" and read as local time (an exam timer two hours off in Egypt, for example).
+    private sealed class UtcConverter() : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+        v => v.Kind == DateTimeKind.Local ? v.ToUniversalTime() : v,
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+    private sealed class NullableUtcConverter() : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime?, DateTime?>(
+        v => v.HasValue && v.Value.Kind == DateTimeKind.Local ? v.Value.ToUniversalTime() : v,
+        v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -293,6 +304,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Title).HasMaxLength(300);
             e.Property(x => x.Language).HasMaxLength(5);
             e.Property(x => x.ErrorMessage).HasMaxLength(1000);
+            e.Property(x => x.RequestJson).HasColumnType("nvarchar(max)");
             e.Property(x => x.Model).HasMaxLength(120);
             e.HasOne(x => x.Book).WithMany().HasForeignKey(x => x.BookId).OnDelete(DeleteBehavior.SetNull);
             e.HasMany(x => x.Questions).WithOne().HasForeignKey(x => x.QuizId).OnDelete(DeleteBehavior.Cascade);

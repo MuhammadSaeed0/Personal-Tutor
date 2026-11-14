@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Riwaq.Application.Abstractions;
 using Riwaq.Application.Common;
 using Riwaq.Application.Features.Ai;
@@ -37,7 +38,7 @@ public sealed record QuestionDto(Guid Id, int Ordinal, QuestionType Type, string
 public sealed record QuizDto(
     Guid Id, int SubjectId, Guid? BookId, Guid? ChapterId, string Title, QuizMode Mode, Difficulty Difficulty, int? PageStart, int? PageEnd,
     int? TimeLimitSeconds, bool HintsAllowed, bool RevealImmediately, string Language, int QuestionCount, int ExcludedQuestionCount,
-    DateTime CreatedAt, int AttemptCount, double? BestPercent);
+    DateTime CreatedAt, int AttemptCount, double? BestPercent, QuizStatus Status = QuizStatus.Ready, string? ErrorCode = null);
 
 public sealed record QuizDetailDto(QuizDto Quiz, IReadOnlyList<QuestionDto> Questions);
 
@@ -69,15 +70,108 @@ public sealed class QuizService(
     IChatModel chat,
     AiUsageGuard usage,
     MasteryService mastery,
-    TimeProvider clock)
+    IQuizGenerationQueue queue,
+    IRealtimeNotifier notifier,
+    TimeProvider clock,
+    ILogger<QuizService> logger)
 {
     private static readonly TimeSpan Grace = TimeSpan.FromSeconds(30);
+    private const int MaxGeneratingPerUser = 3;
+    private static readonly JsonSerializerOptions RequestJsonOptions = new(JsonSerializerDefaults.Web);
 
     // ---- Generation ---------------------------------------------------------------------------------
 
+    /// <summary>
+    /// Checks the request, saves the quiz as <see cref="QuizStatus.Generating"/> and queues it. The questions are written
+    /// in the background (<see cref="RunGenerationAsync"/>); the student is told over SignalR (quizUpdated) and by a
+    /// notification when the quiz is ready or has failed.
+    /// </summary>
     public async Task<QuizDetailDto> GenerateAsync(Guid userId, GenerateQuizRequest request, CancellationToken ct)
     {
         await usage.EnsureAllowedAsync(userId, ct);
+        if (!chat.IsConfigured) throw new AiUnavailableException("ai_not_configured", "No AI provider is configured.");
+        var busy = await db.Quizzes.CountAsync(q => q.UserId == userId && q.Status == QuizStatus.Generating, ct);
+        if (busy >= MaxGeneratingPerUser)
+            throw new ConflictException("quiz_generation_busy", "Wait for the quizzes being prepared before starting another.");
+
+        var scope = request.ChapterId is not null ? SummaryScope.Chapter
+            : request.PageStart is not null ? SummaryScope.PageRange
+            : SummaryScope.Book;
+        var source = await SummaryService.LoadSourceAsync(db, userId, request.BookId, scope, null, request.PageStart, request.PageEnd, request.ChapterId, null, ct);
+        var prefs = await db.UserPreferences.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId, ct) ?? new UserPreferences();
+        var language = request.Language is "ar" or "en" or "fr" ? request.Language : LanguageForSubject(source.Subject, prefs.ExplanationLanguage);
+
+        var quiz = new Quiz
+        {
+            Id = Ids.New(), UserId = userId, SubjectId = source.Book.SubjectId, BookId = source.Book.Id, ChapterId = source.Chapter?.Id,
+            Title = string.IsNullOrWhiteSpace(request.Title) ? BuildTitle(source, request.Mode, language) : request.Title.Trim()[..Math.Min(300, request.Title.Trim().Length)],
+            Mode = request.Mode, Status = QuizStatus.Generating, Difficulty = request.Difficulty, PageStart = source.PageStart, PageEnd = source.PageEnd,
+            TimeLimitSeconds = request.TimeLimitMinutes is int m && m > 0 ? Math.Clamp(m, 1, 600) * 60 : null,
+            HintsAllowed = request.Mode == QuizMode.Practice && request.HintsAllowed,
+            RevealImmediately = request.Mode == QuizMode.Practice && request.RevealImmediately,
+            FocusWeakAreas = request.FocusWeakAreas, Language = language, CreatedAt = clock.GetUtcNow().UtcDateTime,
+            RequestJson = JsonSerializer.Serialize(request with { Language = language }, RequestJsonOptions)
+        };
+        db.Quizzes.Add(quiz);
+        await db.SaveChangesAsync(ct);
+        queue.Enqueue(quiz.Id);
+        return ToDetail(quiz, 0, null);
+    }
+
+    /// <summary>Writes the questions of a queued quiz. Called by the background worker in its own scope.</summary>
+    public async Task RunGenerationAsync(Guid quizId, CancellationToken ct)
+    {
+        var quiz = await db.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId && q.Status == QuizStatus.Generating, ct);
+        if (quiz is null) return; // deleted, or already finished
+        string? errorCode = null;
+        try
+        {
+            var request = JsonSerializer.Deserialize<GenerateQuizRequest>(quiz.RequestJson ?? "{}", RequestJsonOptions)
+                          ?? throw new InvalidOperationException("Missing quiz request.");
+            await WriteQuestionsAsync(quiz, request, ct);
+            quiz.Status = QuizStatus.Ready;
+            quiz.ErrorMessage = null;
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw; // shutting down: the quiz stays Generating and is picked up again on the next start
+        }
+        catch (Exception ex)
+        {
+            // Only the code is kept: it is what the student sees (translated) and it never carries source text.
+            errorCode = ex switch { AiUnavailableException ai => ai.Code, AppException app => app.Code, _ => "quiz_generation_failed" };
+            if (ex is AiUnavailableException or AppException) logger.LogWarning("Quiz {QuizId} generation failed: {Code}", quizId, errorCode);
+            else logger.LogError(ex, "Quiz {QuizId} generation failed", quizId);
+            ((DbContext)db).ChangeTracker.Clear();
+            quiz = await db.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId, ct);
+            if (quiz is null) return;
+            quiz.Status = QuizStatus.Failed;
+            quiz.ErrorMessage = errorCode;
+        }
+
+        if (!await db.Quizzes.AnyAsync(q => q.Id == quizId, ct)) return; // deleted while it was being written
+        db.Notifications.Add(new Notification
+        {
+            Id = Ids.New(), UserId = quiz.UserId, Type = errorCode is null ? "quiz_ready" : "quiz_failed",
+            EntityId = quiz.Id.ToString(), Data = quiz.Title, CreatedAt = clock.GetUtcNow().UtcDateTime
+        });
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            if (await db.Quizzes.AsNoTracking().AnyAsync(q => q.Id == quizId, CancellationToken.None)) throw;
+            return; // deleted at the last moment
+        }
+
+        await notifier.SendToUserAsync(quiz.UserId, "quizUpdated",
+            new { quizId = quiz.Id, status = quiz.Status, errorCode, questionCount = quiz.Questions.Count, title = quiz.Title }, CancellationToken.None);
+    }
+
+    private async Task WriteQuestionsAsync(Quiz quiz, GenerateQuizRequest request, CancellationToken ct)
+    {
+        var userId = quiz.UserId;
         var count = Math.Clamp(request.Count, 1, 40);
         var blueprint = request.Blueprint?.Where(b => b.Value > 0).ToDictionary(b => b.Key, b => Math.Min(b.Value, 20));
         if (blueprint is { Count: > 0 }) count = Math.Min(40, blueprint.Values.Sum());
@@ -108,8 +202,7 @@ public sealed class QuizService(
         pages = SamplePages(pages, 100_000);
         var pageMap = pages.ToDictionary(p => p.Page, p => p.Text);
 
-        var prefs = await db.UserPreferences.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId, ct) ?? new UserPreferences();
-        var language = request.Language is "ar" or "en" or "fr" ? request.Language : LanguageForSubject(source.Subject, prefs.ExplanationLanguage);
+        var language = quiz.Language;
 
         // Diagram questions come from their own, smaller requests: SVG markup is long, and one request for a whole
         // long exam with drawings would overrun the output limit. Text and diagram requests run side by side.
@@ -206,17 +299,8 @@ public sealed class QuizService(
         if (accepted.Count == 0) throw new AiUnavailableException("ai_invalid_output", "No reliable questions could be generated from this content. Try a different range.");
 
         var chapters = await db.Chapters.AsNoTracking().Where(c => c.BookId == source.Book.Id).Select(c => new { c.Id, c.StartPage, c.EndPage, c.Level }).ToListAsync(ct);
-        var now = clock.GetUtcNow().UtcDateTime;
-        var quiz = new Quiz
-        {
-            Id = Ids.New(), UserId = userId, SubjectId = source.Book.SubjectId, BookId = source.Book.Id, ChapterId = source.Chapter?.Id,
-            Title = string.IsNullOrWhiteSpace(request.Title) ? BuildTitle(source, request.Mode, language) : request.Title.Trim()[..Math.Min(300, request.Title.Trim().Length)],
-            Mode = request.Mode, Status = QuizStatus.Ready, Difficulty = request.Difficulty, PageStart = source.PageStart, PageEnd = source.PageEnd,
-            TimeLimitSeconds = request.TimeLimitMinutes is int m && m > 0 ? Math.Clamp(m, 1, 600) * 60 : null,
-            HintsAllowed = request.Mode == QuizMode.Practice && request.HintsAllowed,
-            RevealImmediately = request.Mode == QuizMode.Practice && request.RevealImmediately,
-            FocusWeakAreas = request.FocusWeakAreas, Language = language, ExcludedQuestionCount = rejected, Model = result.Model, CreatedAt = now
-        };
+        quiz.ExcludedQuestionCount = rejected;
+        quiz.Model = result.Model;
         quiz.Questions = accepted.Select((q, i) => new QuizQuestion
         {
             Id = Ids.New(), QuizId = quiz.Id, Ordinal = i + 1, Type = q.Type, Prompt = q.Prompt, OptionsJson = q.OptionsJson,
@@ -227,10 +311,8 @@ public sealed class QuizService(
                 ? chapters.Where(c => p >= c.StartPage && p <= c.EndPage).OrderByDescending(c => c.Level).Select(c => (Guid?)c.Id).FirstOrDefault()
                 : null)
         }).ToList();
-
-        db.Quizzes.Add(quiz);
-        await db.SaveChangesAsync(ct);
-        return ToDetail(quiz, 0, null);
+        // The questions carry their ids already, so they are added explicitly (otherwise EF would treat them as existing rows).
+        ((DbContext)db).AddRange(quiz.Questions);
     }
 
     // ---- Queries -------------------------------------------------------------------------------------
@@ -285,6 +367,7 @@ public sealed class QuizService(
     public async Task<AttemptDto> StartAttemptAsync(Guid userId, Guid quizId, CancellationToken ct)
     {
         var quiz = await LoadQuizAsync(userId, quizId, ct);
+        if (quiz.Status != QuizStatus.Ready) throw new ConflictException("quiz_not_ready", "This quiz is not ready yet.");
         var open = await db.QuizAttempts.Include(a => a.Responses)
             .FirstOrDefaultAsync(a => a.QuizId == quizId && a.UserId == userId && a.Status == AttemptStatus.InProgress, ct);
         if (open is not null)
@@ -731,7 +814,7 @@ public sealed class QuizService(
 
     private static QuizDto ToDto(Quiz q, int questionCount, int attempts, double? best) => new(q.Id, q.SubjectId, q.BookId, q.ChapterId, q.Title, q.Mode,
         q.Difficulty, q.PageStart, q.PageEnd, q.TimeLimitSeconds, q.HintsAllowed, q.RevealImmediately, q.Language, questionCount, q.ExcludedQuestionCount,
-        q.CreatedAt, attempts, best);
+        q.CreatedAt, attempts, best, q.Status, q.Status == QuizStatus.Failed ? q.ErrorMessage : null);
 
     private static QuizDetailDto ToDetail(Quiz quiz, int attempts, double? best) =>
         new(ToDto(quiz, quiz.Questions.Count, attempts, best), quiz.Questions.OrderBy(q => q.Ordinal).Select(q => ToQuestionDto(q, quiz.HintsAllowed)).ToList());

@@ -298,7 +298,10 @@ export interface Quiz {
   mode: 'practice' | 'exam'; difficulty: Difficulty; pageStart: number | null; pageEnd: number | null;
   timeLimitSeconds: number | null; hintsAllowed: boolean; revealImmediately: boolean; language: string;
   questionCount: number; excludedQuestionCount: number; createdAt: string; attemptCount: number; bestPercent: number | null;
+  status: QuizStatus; errorCode: string | null;
 }
+
+export type QuizStatus = 'generating' | 'ready' | 'failed';
 
 export interface QuizDetail { quiz: Quiz; questions: Question[]; }
 

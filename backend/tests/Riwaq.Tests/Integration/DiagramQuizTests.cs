@@ -37,13 +37,37 @@ public sealed class DiagramQuizTests(RiwaqApiFactory factory) : IClassFixture<Ri
         """;
 
     [Fact]
+    public async Task A_quiz_is_written_in_the_background_and_a_failed_one_cannot_be_started()
+    {
+        factory.Chat.Respond("quiz", _ => "{\"questions\":[]}"); // nothing usable comes back
+        var client = await factory.CreateStudentAsync();
+        var bookId = await client.UploadAndProcessAsync();
+
+        var queued = await (await client.PostAsync("/api/quizzes", JsonBody(new { bookId, count = 3 }))).ReadJsonAsync();
+        Assert.Equal("generating", queued.GetProperty("quiz").GetProperty("status").GetString());
+        Assert.Empty(queued.GetProperty("questions").EnumerateArray());
+
+        var quiz = await client.GenerateQuizAsync(new { bookId, count = 3 });
+        Assert.Equal("failed", quiz.GetProperty("quiz").GetProperty("status").GetString());
+        Assert.Equal("ai_invalid_output", quiz.GetProperty("quiz").GetProperty("errorCode").GetString());
+
+        var start = await client.PostAsync($"/api/quizzes/{quiz.GetProperty("quiz").GetProperty("id").GetGuid()}/attempts", null);
+        Assert.Equal(System.Net.HttpStatusCode.Conflict, start.StatusCode);
+
+        var notifications = await (await client.GetAsync("/api/notifications")).ReadJsonAsync();
+        Assert.Contains("quiz_failed", notifications.ToString());
+        // Timestamps read back from the database are sent as UTC ("Z"), so the browser does not shift them.
+        Assert.EndsWith("Z", notifications[0].GetProperty("createdAt").GetString());
+    }
+
+    [Fact]
     public async Task Diagram_questions_are_mixed_in_with_a_sanitised_drawing_and_ordered_from_easy_to_hard()
     {
         factory.Chat.Respond("quiz", request => request.JsonSchema!.Contains("\"diagram\"") ? DiagramQuestions(Drawing) : TextQuestions);
         var client = await factory.CreateStudentAsync();
         var bookId = await client.UploadAndProcessAsync();
 
-        var quiz = await (await client.PostAsync("/api/quizzes", JsonBody(new { bookId, count = 3, diagramCount = 1, difficulty = "mixed" }))).ReadJsonAsync();
+        var quiz = await client.GenerateQuizAsync(new { bookId, count = 3, diagramCount = 1, difficulty = "mixed" });
 
         Assert.Equal("mixed", quiz.GetProperty("quiz").GetProperty("difficulty").GetString());
         var questions = quiz.GetProperty("questions").EnumerateArray().ToList();
@@ -68,7 +92,7 @@ public sealed class DiagramQuizTests(RiwaqApiFactory factory) : IClassFixture<Ri
         var client = await factory.CreateStudentAsync();
         var bookId = await client.UploadAndProcessAsync();
 
-        var quiz = await (await client.PostAsync("/api/quizzes", JsonBody(new { bookId, count = 3, diagramCount = 1 }))).ReadJsonAsync();
+        var quiz = await client.GenerateQuizAsync(new { bookId, count = 3, diagramCount = 1 });
 
         var questions = quiz.GetProperty("questions").EnumerateArray().ToList();
         Assert.Equal(2, questions.Count);

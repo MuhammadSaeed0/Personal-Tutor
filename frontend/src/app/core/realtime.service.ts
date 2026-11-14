@@ -1,7 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
 import { AuthService } from './auth.service';
-import { ProcessingStatus } from './models';
+import { ProcessingStatus, QuizStatus } from './models';
+
+export interface QuizUpdate { quizId: string; status: QuizStatus; errorCode: string | null; questionCount: number; title: string; }
 
 /** SignalR connection for live document-processing progress. Falls back silently to polling in the UI. */
 @Injectable({ providedIn: 'root' })
@@ -12,6 +14,9 @@ export class RealtimeService {
   /** Latest processing update per book id. */
   readonly processing = signal<Record<string, ProcessingStatus>>({});
 
+  /** Latest background quiz-generation update per quiz id. */
+  readonly quizzes = signal<Record<string, QuizUpdate>>({});
+
   async connect(): Promise<void> {
     if (this.connection && this.connection.state !== HubConnectionState.Disconnected) return;
     this.connection = new HubConnectionBuilder()
@@ -21,6 +26,8 @@ export class RealtimeService {
       .build();
     this.connection.on('processingUpdated', (status: ProcessingStatus) =>
       this.processing.update(map => ({ ...map, [status.bookId]: status })));
+    this.connection.on('quizUpdated', (update: QuizUpdate) =>
+      this.quizzes.update(map => ({ ...map, [update.quizId]: update })));
     try {
       await this.connection.start();
     } catch {

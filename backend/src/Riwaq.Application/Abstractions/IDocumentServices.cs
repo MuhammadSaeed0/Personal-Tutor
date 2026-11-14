@@ -82,6 +82,12 @@ public interface IProcessingSignal
     Task WaitAsync(TimeSpan timeout, CancellationToken cancellationToken);
 }
 
+/// <summary>Hands a saved <c>Generating</c> quiz to the background worker that writes its questions.</summary>
+public interface IQuizGenerationQueue
+{
+    void Enqueue(Guid quizId);
+}
+
 /// <summary>Pushes real-time updates to a user's connected clients (SignalR).</summary>
 public interface IRealtimeNotifier
 {

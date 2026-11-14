@@ -90,6 +90,7 @@ export class ShellComponent {
 
   protected openNotification(n: AppNotification): void {
     if (n.type === 'book_ready' && n.entityId) void this.router.navigate(['/library', n.entityId]);
+    if (n.type === 'quiz_ready' || n.type === 'quiz_failed') void this.router.navigate(n.type === 'quiz_ready' ? ['/quizzes'] : ['/quizzes/new']);
   }
 
   protected logout(): void {

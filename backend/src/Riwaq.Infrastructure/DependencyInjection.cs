@@ -39,6 +39,8 @@ public static class DependencyInjection
         services.AddSingleton<IPdfRenderer, BrowserPdfRenderer>();
         services.AddHttpClient<IVideoTranscriptSource, Media.YouTubeTranscriptSource>(c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddSingleton<IProcessingSignal, ProcessingSignal>();
+        services.AddSingleton<QuizGenerationQueue>();
+        services.AddSingleton<IQuizGenerationQueue>(sp => sp.GetRequiredService<QuizGenerationQueue>());
         services.AddSingleton(TimeProvider.System);
 
         AddAiProviders(services);
@@ -47,6 +49,7 @@ public static class DependencyInjection
         {
             services.AddHostedService<DocumentProcessingWorker>();
             services.AddHostedService<EmbeddingBackfillWorker>();
+            services.AddHostedService<QuizGenerationWorker>();
         }
         return services;
     }

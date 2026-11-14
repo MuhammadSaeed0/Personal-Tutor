@@ -72,7 +72,7 @@
           <div class="menu notif-menu" cdkMenu>
             @for (n of notifications(); track n.id) {
               <button cdkMenuItem type="button" (click)="openNotification(n)">
-                <rw-icon [name]="n.type === 'book_ready' ? 'book-open-check' : 'bell'" [size]="16" />
+                <rw-icon [name]="n.type === 'book_ready' ? 'book-open-check' : n.type === 'quiz_ready' ? 'list-checks' : 'bell'" [size]="16" />
                 <span class="grow">{{ ('notifications.' + n.type) | t: { title: n.data } }}<br><span class="subtle xsmall">{{ i18n.relative(n.createdAt) }}</span></span>
               </button>
             } @empty {

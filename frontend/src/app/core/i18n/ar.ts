@@ -248,7 +248,7 @@ export const AR: typeof EN = {
     timeLimitOptional: 'الزمن (بالدقائق، 0 = بلا حد)', revealImmediately: 'إظهار الإجابة بعد كل سؤال', hints: 'السماح بالتلميحات (−25% من الدرجة)',
     focusWeak: 'التركيز على نقاط ضعفي', language: 'لغة الأسئلة', languageAuto: 'تلقائي', customTitle: 'العنوان (اختياري)',
     disclaimer: 'أسئلة التدريب مولّدة بالذكاء الاصطناعي من كتابك، ولا تتنبأ بأسئلة امتحانك الحقيقي.',
-    generate: 'توليد', generating: 'جارٍ كتابة أسئلتك ومراجعتها…', generatingText: 'يستغرق ذلك عادةً من 20 إلى 60 ثانية.',
+    generate: 'توليد', generating: 'جارٍ كتابة أسئلتك ومراجعتها…', generatingText: 'يستغرق ذلك عادةً من 20 إلى 60 ثانية. يمكنك الانتقال إلى صفحة أخرى، وسننبّهك عندما يجهز.', readyToast: 'اختبار «{title}» جاهز.', failedToast: 'تعذّر إنشاء اختبار «{title}».', openQuizzes: 'الاختبارات',
     excluded: 'استُبعد {n} سؤال لتعذّر التحقق منه مقابل كتابك.'
   },
   questionTypes: {
@@ -357,7 +357,7 @@ export const AR: typeof EN = {
     export: 'تصدير بياناتي (JSON)', deleteTitle: 'حذف الحساب', deleteLead: 'سيحذف هذا حسابك وكتبك وملفاتك وكل بيانات مذاكرتك نهائيًا، ولا يمكن التراجع عنه.',
     deleteMessage: 'سيُحذف كل شيء نهائيًا. هل أنت متأكد؟', deleteConfirm: 'احذف حسابي'
   },
-  notifications: { empty: 'لا إشعارات', book_ready: '«{title}» جاهز للمذاكرة' },
+  notifications: { empty: 'لا إشعارات', book_ready: '«{title}» جاهز للمذاكرة', quiz_ready: 'اختبار «{title}» جاهز', quiz_failed: 'تعذّر إنشاء اختبار «{title}»' },
   achievements: {
     first_book: { title: 'أول كتاب', text: 'رفعت أول كتاب مدرسي.' },
     first_chapter: { title: 'أول فصل', text: 'أكملت أول فصل.' },
@@ -408,6 +408,6 @@ export const AR: typeof EN = {
     request_failed: 'فشل الطلب.', unknown_error: 'حدث خطأ ما.', attempt_submitted: 'سُلّمت هذه المحاولة بالفعل.',
     time_expired: 'انتهى الوقت — سُلّمت إجاباتك.', answer_locked: 'تم التحقق من هذه الإجابة بالفعل.', empty_question: 'اكتب سؤالًا أولًا.',
     question_too_long: 'السؤال طويل جدًا.', empty_note: 'تحتاج الملاحظة إلى عنوان أو محتوى.', invalid_query: 'ابحث بحرفين على الأقل.',
-    unauthorized: 'سجّل الدخول مجددًا.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
+    unauthorized: 'سجّل الدخول مجددًا.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
   }
 };

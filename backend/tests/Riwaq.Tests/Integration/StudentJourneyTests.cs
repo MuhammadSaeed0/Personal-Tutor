@@ -79,10 +79,10 @@ public partial class StudentJourneyTests(RiwaqApiFactory factory)
         Assert.Equal("learning", reviewed.GetProperty("card").GetProperty("state").GetString());
 
         // 10. Generate and complete a quiz.
-        var quiz = await (await client.PostAsync("/api/quizzes", JsonBody(new
+        var quiz = await client.GenerateQuizAsync(new
         {
             bookId, count = 10, types = new[] { "multipleChoice", "trueFalse", "numerical", "shortAnswer", "fillBlank" }, revealImmediately = false, language = "en"
-        }))).ReadJsonAsync();
+        });
         var questions = quiz.GetProperty("questions").EnumerateArray().ToList();
         Assert.Equal(5, questions.Count);                                        // unsupported + ambiguous questions were excluded
         Assert.Equal(2, quiz.GetProperty("quiz").GetProperty("excludedQuestionCount").GetInt32());

@@ -21,7 +21,7 @@ public sealed class ExamAssistantTests(RiwaqApiFactory factory) : IClassFixture<
         factory.Chat.Respond("exam_assistant", _ => "Acceleration is the rate of change of velocity [1].");
         var client = await factory.CreateStudentAsync();
         var bookId = await client.UploadAndProcessAsync();
-        var quiz = await (await client.PostAsync("/api/quizzes", JsonBody(new { bookId, count = 1, mode = "exam", timeLimitMinutes = 30 }))).ReadJsonAsync();
+        var quiz = await client.GenerateQuizAsync(new { bookId, count = 1, mode = "exam", timeLimitMinutes = 30 });
         var questionId = quiz.GetProperty("questions")[0].GetProperty("id").GetGuid();
         var attemptId = (await (await client.PostAsync($"/api/quizzes/{quiz.GetProperty("quiz").GetProperty("id").GetGuid()}/attempts", null)).ReadJsonAsync())
             .GetProperty("id").GetGuid();
@@ -59,7 +59,7 @@ public sealed class ExamAssistantTests(RiwaqApiFactory factory) : IClassFixture<
         factory.Chat.Respond("quiz", _ => Quiz);
         var owner = await factory.CreateStudentAsync();
         var bookId = await owner.UploadAndProcessAsync();
-        var quiz = await (await owner.PostAsync("/api/quizzes", JsonBody(new { bookId, count = 1 }))).ReadJsonAsync();
+        var quiz = await owner.GenerateQuizAsync(new { bookId, count = 1 });
         var attemptId = (await (await owner.PostAsync($"/api/quizzes/{quiz.GetProperty("quiz").GetProperty("id").GetGuid()}/attempts", null)).ReadJsonAsync())
             .GetProperty("id").GetGuid();
 

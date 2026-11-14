@@ -6,6 +6,7 @@ export interface Toast {
   id: number;
   kind: 'info' | 'success' | 'error';
   message: string;
+  action?: { link: string[]; label: string };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -14,8 +15,8 @@ export class ToastService {
   private nextId = 1;
   readonly toasts = signal<Toast[]>([]);
 
-  show(message: string, kind: Toast['kind'] = 'info', ms = 4500): void {
-    const toast = { id: this.nextId++, kind, message };
+  show(message: string, kind: Toast['kind'] = 'info', ms = 4500, action?: Toast['action']): void {
+    const toast: Toast = { id: this.nextId++, kind, message, action };
     this.toasts.update(list => [...list.slice(-3), toast]);
     setTimeout(() => this.dismiss(toast.id), ms);
   }

@@ -108,6 +108,10 @@ that point to supplied passages and replaces them with stored chunk metadata (bo
 numbers shown to the student never come from model output. Answers without matching passages are flagged as not grounded.
 Stopping the stream saves the partial answer as "stopped"; failures are saved as errors and can be retried.
 
+Quizzes are written in the background: `POST /api/quizzes` checks the request and saves the quiz as `Generating`;
+`QuizGenerationWorker` (at most two at a time, resumed after restarts) writes and validates the questions, then sets
+`Ready` or `Failed` (error code only), adds a notification and sends `quizUpdated` over SignalR.
+
 Summaries, flashcard drafts and quizzes use the same grounding idea with `[p:N]` page markers validated against the pages
 actually supplied. Large scopes are summarised map-reduce style. Quiz questions are generated with structured output,
 then validated: structure per type, unique choices, a supporting quote that must really occur on the cited page; options

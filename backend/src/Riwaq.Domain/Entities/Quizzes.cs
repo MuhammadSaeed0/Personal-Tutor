@@ -20,7 +20,11 @@ public class Quiz
     public bool FocusWeakAreas { get; set; }
     public string Language { get; set; } = "ar";
     public int ExcludedQuestionCount { get; set; }
+    /// <summary>Error code when generation failed (never provider messages or source text).</summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>The generation request, kept so a quiz written in the background survives restarts.</summary>
+    public string? RequestJson { get; set; }
     public string? Model { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<QuizQuestion> Questions { get; set; } = [];

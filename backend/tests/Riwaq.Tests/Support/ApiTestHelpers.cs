@@ -49,6 +49,21 @@ public static class ApiTestHelpers
         return bookId;
     }
 
+    /// <summary>Requests a quiz, checks it is queued, then waits until the background worker has written it.</summary>
+    public static async Task<JsonElement> GenerateQuizAsync(this HttpClient client, object body, TimeSpan? timeout = null)
+    {
+        var queued = await (await client.PostAsync("/api/quizzes", JsonBody(body))).ReadJsonAsync();
+        var quizId = queued.GetProperty("quiz").GetProperty("id").GetGuid();
+        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(60));
+        while (DateTime.UtcNow < deadline)
+        {
+            var quiz = await (await client.GetAsync($"/api/quizzes/{quizId}")).ReadJsonAsync();
+            if (quiz.GetProperty("quiz").GetProperty("status").GetString() != "generating") return quiz;
+            await Task.Delay(200);
+        }
+        throw new TimeoutException("Quiz generation did not finish in time.");
+    }
+
     public static StringContent JsonBody(object value) =>
         new(JsonSerializer.Serialize(value, RiwaqApiFactory.Json), System.Text.Encoding.UTF8, "application/json");
 }
