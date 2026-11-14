@@ -1,3 +1,4 @@
+using Riwaq.Application.Features.Ai;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Riwaq.Api.Infrastructure;
@@ -84,10 +85,14 @@ public sealed class SessionsController(SessionsService sessions) : ControllerBas
 
 [ApiController]
 [Route("api")]
-public sealed class AccountController(AccountService account, UserManager<AppUser> users) : ControllerBase
+public sealed class AccountController(AccountService account, UserManager<AppUser> users, AiUsageGuard usage) : ControllerBase
 {
     [HttpPost("search")]
     public Task<SearchResultDto> Search(SearchRequest request, CancellationToken ct) => account.SearchAsync(User.GetUserId(), request, ct);
+
+    /// <summary>The student's own AI usage (requests and tokens) per day and per feature.</summary>
+    [HttpGet("account/ai-usage")]
+    public Task<AiUsageDto> AiUsage([FromQuery] int days, CancellationToken ct) => usage.GetUsageAsync(User.GetUserId(), days is 0 ? 14 : days, ct);
 
     [HttpGet("account/export")]
     public async Task<IActionResult> Export(CancellationToken ct)

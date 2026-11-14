@@ -45,6 +45,11 @@ public sealed class MistakesTests(RiwaqApiFactory factory) : IClassFixture<Riwaq
         var subjectId = quiz.GetProperty("quiz").GetProperty("subjectId").GetInt32();
         await AnswerAndSubmitAsync(client, quiz.GetProperty("quiz").GetProperty("id").GetGuid(), correct: false);
 
+        var usage = await (await client.GetAsync("/api/account/ai-usage?days=14")).ReadJsonAsync();
+        Assert.Equal(14, usage.GetProperty("daily").GetArrayLength());
+        Assert.True(usage.GetProperty("todayRequests").GetInt32() >= 1);
+        Assert.Contains(usage.GetProperty("byFeature").EnumerateArray(), f => f.GetProperty("feature").GetString() == "quiz");
+
         var notebook = await (await client.GetAsync("/api/mistakes")).ReadJsonAsync();
         var item = Assert.Single(notebook.GetProperty("items").EnumerateArray());
         Assert.Equal("Mass times acceleration", item.GetProperty("correctAnswer").GetString());

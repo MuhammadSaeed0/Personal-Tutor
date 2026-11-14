@@ -341,7 +341,7 @@ export const AR: typeof EN = {
   },
   settings: {
     title: 'الإعدادات',
-    tabs: { profile: 'الملف الشخصي', preferences: 'التفضيلات', academic: 'الملف الأكاديمي', exams: 'الامتحانات', sessions: 'الأجهزة', privacy: 'الخصوصية والبيانات' },
+    tabs: { profile: 'الملف الشخصي', preferences: 'التفضيلات', academic: 'الملف الأكاديمي', exams: 'الامتحانات', usage: 'الاستخدام', sessions: 'الأجهزة', privacy: 'الخصوصية والبيانات' },
     changePassword: 'تغيير كلمة المرور', currentPassword: 'كلمة المرور الحالية', passwordChanged: 'تم تغيير كلمة المرور',
     interfaceLanguage: 'لغة الواجهة', theme: 'المظهر', themes: { system: 'مثل جهازي', light: 'فاتح', dark: 'داكن' },
     teachingStyle: 'أسلوب الشرح', styles: { guided: 'موجَّه (خطوة بخطوة)', concise: 'مختصر' }, weeklyGoal: 'الهدف الأسبوعي (بالدقائق)',
@@ -356,6 +356,14 @@ export const AR: typeof EN = {
     aiProviders: { 'claude-account': 'Claude — حساب Claude الخاص بمالك الخادم', anthropic: 'واجهة Claude البرمجية (API)', none: 'غير مُعدّ' },
     export: 'تصدير بياناتي (JSON)', deleteTitle: 'حذف الحساب', deleteLead: 'سيحذف هذا حسابك وكتبك وملفاتك وكل بيانات مذاكرتك نهائيًا، ولا يمكن التراجع عنه.',
     deleteMessage: 'سيُحذف كل شيء نهائيًا. هل أنت متأكد؟', deleteConfirm: 'احذف حسابي'
+  },
+  usage: {
+    lead: 'استخدامك للذكاء الاصطناعي في آخر أيام: عدد الطلبات والتوكنز لكل يوم ولكل ميزة.',
+    todayRequests: 'طلبات اليوم', todayTokens: 'توكنز الإخراج اليوم', resets: 'يتجدد الحد اليومي عند منتصف الليل (UTC).',
+    perDay: 'الطلبات يوميًا (آخر {n} يومًا)', perFeature: 'حسب الميزة', none: 'لا استخدام في هذه الفترة.',
+    feature: 'الميزة', requests: 'الطلبات', failed: 'فشلت', input: 'توكنز الإدخال', output: 'توكنز الإخراج',
+    features: { tutor: 'المعلّم الذكي', quiz: 'إنشاء الاختبارات', quiz_review: 'مراجعة الرسومات', grading: 'تصحيح الإجابات المقالية',
+      flashcards: 'البطاقات', summary: 'الملخصات', exam_assistant: 'مساعد الامتحان', ocr: 'قراءة الصفحات الممسوحة', transcript: 'تنقيح نصوص الفيديو' }
   },
   today: {
     start: 'ابدأ مذاكرة اليوم', title: 'مذاكرة اليوم', subtitle: 'كل ما يستحق المراجعة اليوم في جلسة واحدة: البطاقات، ثم الأخطاء، ثم مهام خطتك.',

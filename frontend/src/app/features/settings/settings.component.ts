@@ -10,12 +10,13 @@ import { ThemeChoice } from '../../core/theme.service';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { ConfirmService } from '../../shared/ui';
+import { AiUsageComponent } from './ai-usage.component';
 
-type Tab = 'profile' | 'preferences' | 'academic' | 'exams' | 'sessions' | 'privacy';
+type Tab = 'profile' | 'preferences' | 'academic' | 'exams' | 'usage' | 'sessions' | 'privacy';
 
 @Component({
   selector: 'rw-settings',
-  imports: [FormsModule, TranslatePipe, IconComponent],
+  imports: [FormsModule, TranslatePipe, IconComponent, AiUsageComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
@@ -29,7 +30,7 @@ export class SettingsComponent {
   private readonly confirm = inject(ConfirmService);
   private readonly router = inject(Router);
 
-  protected readonly tabs: Tab[] = ['profile', 'preferences', 'academic', 'exams', 'sessions', 'privacy'];
+  protected readonly tabs: Tab[] = ['profile', 'preferences', 'academic', 'exams', 'usage', 'sessions', 'privacy'];
   protected readonly tab = signal<Tab>((inject(ActivatedRoute).snapshot.queryParamMap.get('tab') as Tab) ?? 'profile');
   protected readonly exams = signal<Exam[]>([]);
   protected readonly sessions = signal<SessionInfo[]>([]);

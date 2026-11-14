@@ -85,6 +85,11 @@
           </div>
         }
 
+        @case ('usage') {
+          <h2>{{ 'settings.tabs.usage' | t }}</h2>
+          <rw-ai-usage />
+        }
+
         @case ('sessions') {
           <h2>{{ 'settings.tabs.sessions' | t }}</h2>
           <p class="muted small">{{ 'settings.sessionsLead' | t }}</p>

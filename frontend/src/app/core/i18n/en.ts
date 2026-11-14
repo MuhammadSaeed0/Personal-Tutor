@@ -338,7 +338,7 @@ export const EN = {
   },
   settings: {
     title: 'Settings',
-    tabs: { profile: 'Profile', preferences: 'Preferences', academic: 'Academic profile', exams: 'Exams', sessions: 'Devices', privacy: 'Privacy & data' },
+    tabs: { profile: 'Profile', preferences: 'Preferences', academic: 'Academic profile', exams: 'Exams', usage: 'Usage', sessions: 'Devices', privacy: 'Privacy & data' },
     changePassword: 'Change password', currentPassword: 'Current password', passwordChanged: 'Password changed',
     interfaceLanguage: 'Interface language', theme: 'Theme', themes: { system: 'Match my device', light: 'Light', dark: 'Dark' },
     teachingStyle: 'Teaching style', styles: { guided: 'Guided (step by step)', concise: 'Concise' }, weeklyGoal: 'Weekly goal (minutes)',
@@ -353,6 +353,14 @@ export const EN = {
     aiProviders: { 'claude-account': 'Claude — the server owner’s Claude account', anthropic: 'Claude API', none: 'Not configured' },
     export: 'Export my data (JSON)', deleteTitle: 'Delete account', deleteLead: 'This permanently deletes your account, books, files and all study data. It cannot be undone.',
     deleteMessage: 'Everything will be permanently deleted. Are you sure?', deleteConfirm: 'Delete my account'
+  },
+  usage: {
+    lead: 'Your AI use over recent days: requests and tokens per day and per feature.',
+    todayRequests: 'Requests today', todayTokens: 'Output tokens today', resets: 'The daily limit resets at midnight UTC.',
+    perDay: 'Requests per day (last {n} days)', perFeature: 'By feature', none: 'No usage in this period.',
+    feature: 'Feature', requests: 'Requests', failed: 'Failed', input: 'Input tokens', output: 'Output tokens',
+    features: { tutor: 'AI tutor', quiz: 'Quiz generation', quiz_review: 'Diagram review', grading: 'Grading written answers',
+      flashcards: 'Flashcards', summary: 'Summaries', exam_assistant: 'Exam assistant', ocr: 'Reading scanned pages', transcript: 'Tidying video transcripts' }
   },
   today: {
     start: 'Start today’s study', title: 'Today’s study', subtitle: 'Everything due today in one session: flashcards, then mistakes, then your plan’s tasks.',

@@ -419,3 +419,9 @@ export interface TodayOverview {
   cardsDue: number; newCards: number; mistakesDue: number; mistakesBySubject: { subjectId: number; count: number }[];
   plan: PlanDay | null; minutesToday: number; currentStreak: number;
 }
+
+export interface AiUsage {
+  days: number; daily: { date: string; requests: number; inputTokens: number; outputTokens: number }[];
+  byFeature: { feature: string; requests: number; failed: number; inputTokens: number; outputTokens: number }[];
+  todayRequests: number; todayOutputTokens: number; dailyRequestLimit: number; dailyOutputTokenLimit: number;
+}
