@@ -407,3 +407,10 @@ export interface AppNotification { id: string; type: string; entityId: string | 
 export interface ApiProblem { status: number; code: string; title?: string; errors?: Record<string, string[]>; [key: string]: unknown; }
 
 export interface PageTextDto { pageNumber: number; text: string; extractionMethod: ExtractionMethod; isScanned: boolean; startSeconds: number | null; endSeconds: number | null; }
+
+export interface Mistake {
+  id: string; subjectId: number; bookId: string | null; bookTitle: string | null; chapterTitle: string | null; questionId: string;
+  type: QuestionType; prompt: string; diagramSvg: string | null; diagramAlt: string | null; correctAnswer: string; explanation: string;
+  sourcePage: number | null; timesWrong: number; correctStreak: number; nextReviewAt: string; due: boolean; masteredAt: string | null; lastWrongAt: string;
+}
+export interface MistakesOverview { items: Mistake[]; dueCount: number; openCount: number; masteredCount: number; }

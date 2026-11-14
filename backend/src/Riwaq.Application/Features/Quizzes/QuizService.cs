@@ -70,6 +70,7 @@ public sealed class QuizService(
     IChatModel chat,
     AiUsageGuard usage,
     MasteryService mastery,
+    Mistakes.MistakeService mistakes,
     IQuizGenerationQueue queue,
     IRealtimeNotifier notifier,
     TimeProvider clock,
@@ -463,6 +464,7 @@ public sealed class QuizService(
         ApplyGrade(response, question, request.Correct, request.Correct ? 1 : 0, GradingMethod.SelfAssessed, response.Feedback);
         attempt.Score = attempt.Responses.Sum(r => r.PointsAwarded);
         await mastery.RecordAsync(userId, quiz.SubjectId, quiz.BookId, question.ChapterId, question.Topic, EvidenceKind.Question, request.Correct ? 1 : 0, question.SourcePage, ct);
+        await mistakes.RecordAsync(userId, quiz, question, request.Correct, ct);
         await db.SaveChangesAsync(ct);
         return await BuildResultAsync(userId, quiz, attempt, ct);
     }
@@ -517,6 +519,7 @@ public sealed class QuizService(
             if (r.GradingMethod == GradingMethod.Pending) continue;
             await mastery.RecordAsync(userId, quiz.SubjectId, quiz.BookId, q.ChapterId, q.Topic, EvidenceKind.Question,
                 q.Points > 0 ? r.PointsAwarded / q.Points : 0, q.SourcePage, ct);
+            await mistakes.RecordAsync(userId, quiz, q, r.PointsAwarded >= q.Points - 1e-9, ct);
         }
         await db.SaveChangesAsync(ct);
     }

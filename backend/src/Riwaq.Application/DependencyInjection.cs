@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<MasteryService>();
         services.AddScoped<FlashcardService>();
         services.AddScoped<QuizService>();
+        services.AddScoped<Features.Mistakes.MistakeService>();
         services.AddScoped<ReaderService>();
         services.AddScoped<NotesService>();
         services.AddScoped<SessionsService>();

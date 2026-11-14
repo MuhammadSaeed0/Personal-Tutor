@@ -1207,6 +1207,61 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                     b.ToTable("Highlights");
                 });
 
+            modelBuilder.Entity("Riwaq.Domain.Entities.MistakeEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CorrectStreak")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("LastWrongAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("MasteredAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("NextReviewAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Stage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TimesWrong")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("UserId", "QuestionId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "MasteredAt", "NextReviewAt");
+
+                    b.ToTable("Mistakes");
+                });
+
             modelBuilder.Entity("Riwaq.Domain.Entities.Note", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1471,6 +1526,9 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("Ordinal")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("OriginQuestionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double>("Points")
                         .HasColumnType("float");
@@ -2333,6 +2391,17 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Riwaq.Domain.Entities.MistakeEntry", b =>
+                {
+                    b.HasOne("Riwaq.Domain.Entities.QuizQuestion", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("Riwaq.Domain.Entities.Note", b =>
                 {
                     b.HasOne("Riwaq.Domain.Entities.Book", null)
@@ -2405,11 +2474,13 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Riwaq.Domain.Entities.QuizQuestion", b =>
                 {
-                    b.HasOne("Riwaq.Domain.Entities.Quiz", null)
+                    b.HasOne("Riwaq.Domain.Entities.Quiz", "Quiz")
                         .WithMany("Questions")
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Quiz");
                 });
 
             modelBuilder.Entity("Riwaq.Domain.Entities.QuizResponse", b =>

@@ -42,6 +42,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<TopicMasteryRecord> TopicMastery => Set<TopicMasteryRecord>();
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<MistakeEntry> Mistakes => Set<MistakeEntry>();
     public DbSet<AiUsageRecord> AiUsage => Set<AiUsageRecord>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
@@ -307,7 +308,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.RequestJson).HasColumnType("nvarchar(max)");
             e.Property(x => x.Model).HasMaxLength(120);
             e.HasOne(x => x.Book).WithMany().HasForeignKey(x => x.BookId).OnDelete(DeleteBehavior.SetNull);
-            e.HasMany(x => x.Questions).WithOne().HasForeignKey(x => x.QuizId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Questions).WithOne(x => x.Quiz).HasForeignKey(x => x.QuizId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<QuizQuestion>(e =>
@@ -373,6 +374,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.HasIndex(x => new { x.UserId, x.Code }).IsUnique();
             e.Property(x => x.Code).HasMaxLength(60);
+        });
+
+        b.Entity<MistakeEntry>(e =>
+        {
+            // Deleting a quiz removes its mistakes with its questions; the user link is a plain column (one cascade path).
+            e.HasOne(x => x.Question).WithMany().HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.UserId, x.QuestionId }).IsUnique();
+            e.HasIndex(x => new { x.UserId, x.MasteredAt, x.NextReviewAt });
         });
 
         b.Entity<Notification>(e =>

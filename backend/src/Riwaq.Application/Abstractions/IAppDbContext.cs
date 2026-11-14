@@ -43,6 +43,7 @@ public interface IAppDbContext
     DbSet<TopicMasteryRecord> TopicMastery { get; }
     DbSet<Achievement> Achievements { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<MistakeEntry> Mistakes { get; }
     DbSet<AiUsageRecord> AiUsage { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

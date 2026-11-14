@@ -10,7 +10,7 @@ export const EN = {
   nav: {
     account: 'Account', analytics: 'Progress', flashcards: 'Flashcards', focus: 'Focus mode', home: 'Home', library: 'Library', logout: 'Sign out',
     mainNavigation: 'Main navigation', notes: 'Notebook', notifications: 'Notifications', openMenu: 'Open menu', plan: 'Study plan',
-    practice: 'Practice', quizzes: 'Quizzes', searchPlaceholder: 'Search your books…', settings: 'Settings', skipToContent: 'Skip to content',
+    practice: 'Practice', mistakes: 'Mistakes notebook', quizzes: 'Quizzes', searchPlaceholder: 'Search your books…', settings: 'Settings', skipToContent: 'Skip to content',
     subjects: 'Subjects', summaries: 'Summaries', switchLanguage: 'Switch language', toggleTheme: 'Toggle dark mode', tutor: 'AI tutor', uploadBook: 'Add a source'
   },
   auth: {
@@ -354,6 +354,13 @@ export const EN = {
     export: 'Export my data (JSON)', deleteTitle: 'Delete account', deleteLead: 'This permanently deletes your account, books, files and all study data. It cannot be undone.',
     deleteMessage: 'Everything will be permanently deleted. Are you sure?', deleteConfirm: 'Delete my account'
   },
+  mistakes: {
+    title: 'Mistakes notebook', subtitle: 'Every question you got wrong comes back after a day, then after three days, until you answer it correctly twice in a row.',
+    due: 'Due for review now', open: 'Not mastered yet', mastered: 'Mastered', showMastered: 'Show mastered',
+    retest: 'Retest me ({n})', nothingDue: 'Nothing due today', noChapter: 'No chapter', masteredBadge: 'Mastered', dueBadge: 'Due',
+    nextReview: 'Next review {date}', timesWrong: 'Wrong {n} time(s)', correctAnswer: 'Correct answer', explanation: 'Explanation',
+    emptyTitle: 'No mistakes recorded', emptyText: 'When you answer a quiz question wrongly it is added here to review later.'
+  },
   notifications: { empty: 'No notifications', book_ready: '“{title}” is ready to study', quiz_ready: 'Quiz “{title}” is ready', quiz_failed: 'Quiz “{title}” could not be created' },
   achievements: {
     first_book: { title: 'First book', text: 'You uploaded your first textbook.' },
@@ -405,6 +412,6 @@ export const EN = {
     request_failed: 'The request failed.', unknown_error: 'Something went wrong.', attempt_submitted: 'This attempt was already submitted.',
     time_expired: 'Time is up — your answers were submitted.', answer_locked: 'This answer was already checked.', empty_question: 'Type a question first.',
     question_too_long: 'The question is too long.', empty_note: 'A note needs a title or some content.', invalid_query: 'Search for at least 2 characters.',
-    quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
+    no_due_mistakes: 'No mistakes are due for review in this subject right now.', quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
   }
 };

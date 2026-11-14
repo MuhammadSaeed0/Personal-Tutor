@@ -5,6 +5,7 @@ using Riwaq.Api.Infrastructure;
 using Riwaq.Application.Common;
 using Riwaq.Application.Features.Flashcards;
 using Riwaq.Application.Features.Notes;
+using Riwaq.Application.Features.Mistakes;
 using Riwaq.Application.Features.Quizzes;
 using Riwaq.Application.Features.Reader;
 using Riwaq.Application.Features.Summaries;
@@ -232,5 +233,25 @@ public sealed class NotesController(NotesService notes) : ControllerBase
     {
         var (fileName, markdown) = await notes.ExportAsync(User.GetUserId(), subjectId, bookId, ct);
         return File(Encoding.UTF8.GetBytes(markdown), "text/markdown; charset=utf-8", fileName);
+    }
+}
+
+[ApiController]
+[Route("api/mistakes")]
+public sealed class MistakesController(MistakeService mistakes) : ControllerBase
+{
+    [HttpGet]
+    public Task<MistakesDto> List([FromQuery] int? subjectId, [FromQuery] bool includeMastered, CancellationToken ct) =>
+        mistakes.ListAsync(User.GetUserId(), subjectId, includeMastered, ct);
+
+    /// <summary>A practice quiz of the due mistakes of one subject (questions are copied; no AI call).</summary>
+    [HttpPost("retest")]
+    public Task<RetestResultDto> Retest(RetestRequest request, CancellationToken ct) => mistakes.CreateRetestAsync(User.GetUserId(), request, ct);
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        await mistakes.DeleteAsync(User.GetUserId(), id, ct);
+        return NoContent();
     }
 }

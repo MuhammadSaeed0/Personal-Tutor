@@ -47,6 +47,7 @@ export class ShellComponent {
   protected readonly practice: NavItem[] = [
     { path: '/flashcards', icon: 'layers', label: 'nav.flashcards' },
     { path: '/quizzes', icon: 'list-checks', label: 'nav.quizzes' },
+    { path: '/mistakes', icon: 'rotate-ccw', label: 'nav.mistakes' },
     { path: '/summaries', icon: 'file-text', label: 'nav.summaries' },
     { path: '/notes', icon: 'notebook-pen', label: 'nav.notes' },
     { path: '/analytics', icon: 'bar-chart', label: 'nav.analytics' }

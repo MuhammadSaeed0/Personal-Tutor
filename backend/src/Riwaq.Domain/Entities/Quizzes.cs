@@ -34,6 +34,7 @@ public class QuizQuestion
 {
     public Guid Id { get; set; }
     public Guid QuizId { get; set; }
+    public Quiz? Quiz { get; set; }
     public int Ordinal { get; set; }
     public QuestionType Type { get; set; }
     public string Prompt { get; set; } = string.Empty;
@@ -55,6 +56,32 @@ public class QuizQuestion
     /// <summary>Optional diagram the question refers to: sanitised SVG markup and its text alternative.</summary>
     public string? DiagramSvg { get; set; }
     public string? DiagramAlt { get; set; }
+
+    /// <summary>For a question copied into a review quiz: the question it was copied from (its mistake is updated).</summary>
+    public Guid? OriginQuestionId { get; set; }
+}
+
+/// <summary>
+/// A question the student got wrong, brought back on a widening schedule (1, 3, 7, 14 days) until it is answered
+/// correctly twice in a row.
+/// </summary>
+public class MistakeEntry
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid QuestionId { get; set; }
+    public QuizQuestion? Question { get; set; }
+    public int SubjectId { get; set; }
+    public Guid? BookId { get; set; }
+    public int TimesWrong { get; set; }
+    public int CorrectStreak { get; set; }
+
+    /// <summary>Index into the review intervals: 0 = 1 day, 1 = 3 days, 2 = 7 days, 3 = 14 days.</summary>
+    public int Stage { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime LastWrongAt { get; set; }
+    public DateTime NextReviewAt { get; set; }
+    public DateTime? MasteredAt { get; set; }
 }
 
 public class QuizAttempt

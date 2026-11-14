@@ -49,6 +49,7 @@ export const routes: Routes = [
       { path: 'flashcards', loadComponent: () => import('./features/flashcards/flashcards.component').then(m => m.FlashcardsComponent) },
       { path: 'flashcards/review', loadComponent: () => import('./features/flashcards/review.component').then(m => m.ReviewComponent) },
       { path: 'quizzes', loadComponent: () => import('./features/quizzes/quizzes.component').then(m => m.QuizzesComponent) },
+      { path: 'mistakes', loadComponent: () => import('./features/mistakes/mistakes.component').then(m => m.MistakesComponent) },
       { path: 'quizzes/new', loadComponent: () => import('./features/quizzes/quiz-builder.component').then(m => m.QuizBuilderComponent) },
       { path: 'quiz/result/:attemptId', loadComponent: () => import('./features/quizzes/result.component').then(m => m.ResultComponent) },
       { path: 'plan', loadComponent: () => import('./features/planner/planner.component').then(m => m.PlannerComponent) },

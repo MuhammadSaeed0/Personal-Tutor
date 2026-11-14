@@ -13,7 +13,7 @@ export const AR: typeof EN = {
   nav: {
     account: 'الحساب', analytics: 'التقدّم', flashcards: 'البطاقات', focus: 'وضع التركيز', home: 'الرئيسية', library: 'المكتبة', logout: 'تسجيل الخروج',
     mainNavigation: 'التنقل الرئيسي', notes: 'الدفتر', notifications: 'الإشعارات', openMenu: 'فتح القائمة', plan: 'خطة المذاكرة',
-    practice: 'التدريب', quizzes: 'الاختبارات', searchPlaceholder: 'ابحث في كتبك…', settings: 'الإعدادات', skipToContent: 'تخطَّ إلى المحتوى',
+    practice: 'التدريب', quizzes: 'الاختبارات', mistakes: 'كراسة الأخطاء', searchPlaceholder: 'ابحث في كتبك…', settings: 'الإعدادات', skipToContent: 'تخطَّ إلى المحتوى',
     subjects: 'المواد', summaries: 'الملخصات', switchLanguage: 'تغيير اللغة', toggleTheme: 'الوضع الداكن', tutor: 'المعلّم الذكي', uploadBook: 'إضافة مصدر'
   },
   auth: {
@@ -357,6 +357,13 @@ export const AR: typeof EN = {
     export: 'تصدير بياناتي (JSON)', deleteTitle: 'حذف الحساب', deleteLead: 'سيحذف هذا حسابك وكتبك وملفاتك وكل بيانات مذاكرتك نهائيًا، ولا يمكن التراجع عنه.',
     deleteMessage: 'سيُحذف كل شيء نهائيًا. هل أنت متأكد؟', deleteConfirm: 'احذف حسابي'
   },
+  mistakes: {
+    title: 'كراسة الأخطاء', subtitle: 'كل سؤال أخطأت فيه يعود إليك بعد يوم، ثم بعد ثلاثة أيام، حتى تجيبه صحيحًا مرتين متتاليتين.',
+    due: 'مستحقة للمراجعة الآن', open: 'لم تُتقن بعد', mastered: 'أتقنتها', showMastered: 'إظهار ما أتقنته',
+    retest: 'أعِد اختباري ({n})', nothingDue: 'لا شيء مستحق اليوم', noChapter: 'بدون فصل', masteredBadge: 'أُتقن', dueBadge: 'مستحق',
+    nextReview: 'المراجعة القادمة {date}', timesWrong: 'أخطأت فيه {n} مرة', correctAnswer: 'الإجابة الصحيحة', explanation: 'الشرح',
+    emptyTitle: 'لا أخطاء مسجّلة', emptyText: 'عندما تخطئ في سؤال اختبار يُضاف هنا لتراجعه لاحقًا.'
+  },
   notifications: { empty: 'لا إشعارات', book_ready: '«{title}» جاهز للمذاكرة', quiz_ready: 'اختبار «{title}» جاهز', quiz_failed: 'تعذّر إنشاء اختبار «{title}»' },
   achievements: {
     first_book: { title: 'أول كتاب', text: 'رفعت أول كتاب مدرسي.' },
@@ -408,6 +415,6 @@ export const AR: typeof EN = {
     request_failed: 'فشل الطلب.', unknown_error: 'حدث خطأ ما.', attempt_submitted: 'سُلّمت هذه المحاولة بالفعل.',
     time_expired: 'انتهى الوقت — سُلّمت إجاباتك.', answer_locked: 'تم التحقق من هذه الإجابة بالفعل.', empty_question: 'اكتب سؤالًا أولًا.',
     question_too_long: 'السؤال طويل جدًا.', empty_note: 'تحتاج الملاحظة إلى عنوان أو محتوى.', invalid_query: 'ابحث بحرفين على الأقل.',
-    unauthorized: 'سجّل الدخول مجددًا.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
+    unauthorized: 'سجّل الدخول مجددًا.', no_due_mistakes: 'لا أخطاء مستحقة للمراجعة في هذه المادة الآن.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
   }
 };
