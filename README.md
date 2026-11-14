@@ -75,6 +75,13 @@ In Development a random JWT signing key is generated at start when none is confi
 `Jwt:SigningKey` (32+ chars) is required.
 
 ### 4. Run
+One command (PowerShell, from the repository root) builds the API, starts the API and the web app in the background,
+waits until both answer and opens the browser; logs go to `backend/api-run.log` and `frontend/ng-serve.log`:
+```powershell
+.\run.ps1            # options: -NoBrowser, -SkipBuild
+.\stop.ps1           # stops only Riwaq's processes (API, dev server, PDF-export browser)
+```
+Or by hand, in two terminals:
 ```bash
 # terminal 1 — API on http://localhost:5080 (Swagger at /swagger)
 cd backend
@@ -96,6 +103,8 @@ cd frontend && npm run check:i18n    # every UI string key exists in Arabic and 
 cd e2e && npm install && npm run journey   # browser smoke test against the running app
 ```
 Integration tests create and drop a database named `Riwaq_Test_<guid>`; set `RIWAQ_TEST_SQL` to target another server.
+Every push to `master` runs the same checks on GitHub Actions (`.github/workflows/ci.yml`), with a temporary SQL Server
+container for the integration tests.
 Real-provider tests run only when opted in: `RIWAQ_TEST_CLAUDE_CLI=1` (your Claude account) or
 `RIWAQ_TEST_ANTHROPIC_KEY=sk-ant-...` (API).
 
