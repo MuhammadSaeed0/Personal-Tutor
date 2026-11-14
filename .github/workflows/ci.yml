@@ -27,6 +27,8 @@ jobs:
     env:
       RIWAQ_TEST_SQL: Server=localhost,1433;User Id=sa;Password=Ci-Only-Passw0rd!;TrustServerCertificate=True
       DOTNET_NOLOGO: "1"
+      # Ubuntu 24 runners block Chrome's sandbox for normal users; the PDF test renders only its own fixed HTML.
+      RIWAQ_PDF_NO_SANDBOX: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

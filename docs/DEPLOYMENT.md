@@ -31,6 +31,7 @@ user-secrets (development) or a vault — never from committed files.
 | `Processing:MaxImagesPerSource` / `MaxImageMb` | 100 / 25 | photo sources |
 | `Processing:MaxVideoMinutes` | 240 | longest YouTube video accepted |
 | `Pdf:BrowserPath` / `TimeoutSeconds` | auto / 60 | Edge or Chrome used to print summaries to PDF (found in the usual install paths when empty) |
+| `Pdf:NoSandbox` | false | start the browser with `--no-sandbox`; only for Linux hosts that block the sandbox (e.g. Ubuntu 24 CI) |
 | `Storage:RootPath` | `App_Data/storage` | where PDFs are stored |
 | `Email:AppBaseUrl` | `http://localhost:4200` | base for reset links |
 | `Cors:AllowedOrigins` | `[]` | only needed when the SPA is served from another origin |

@@ -103,7 +103,7 @@ public class BrowserPdfRendererTests
     [BrowserFact]
     public async Task Prints_an_arabic_summary_with_math_to_pdf()
     {
-        await using var renderer = new BrowserPdfRenderer(Options.Create(new PdfRenderOptions()), NullLogger<BrowserPdfRenderer>.Instance);
+        await using var renderer = new BrowserPdfRenderer(Options.Create(new PdfRenderOptions { NoSandbox = Environment.GetEnvironmentVariable("RIWAQ_PDF_NO_SANDBOX") == "1" }), NullLogger<BrowserPdfRenderer>.Instance);
         var summary = new GeneratedSummary
         {
             Title = "ملخص الحركة", Language = "ar", Style = SummaryStyle.Detailed,

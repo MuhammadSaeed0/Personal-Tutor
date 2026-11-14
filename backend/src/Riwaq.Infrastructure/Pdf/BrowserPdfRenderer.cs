@@ -17,6 +17,12 @@ public sealed class PdfRenderOptions
     public string? BrowserPath { get; set; }
     public int TimeoutSeconds { get; set; } = 60;
 
+    /// <summary>
+    /// Start the browser without its sandbox. Only for Linux hosts that block the sandbox (e.g. Ubuntu 24 CI runners);
+    /// the browser only ever renders the app's own sanitised HTML. Leave off everywhere else.
+    /// </summary>
+    public bool NoSandbox { get; set; }
+
     /// <summary>The browser is closed after this long without exports, so it only runs while the student exports.</summary>
     public int IdleSeconds { get; set; } = 120;
 }
@@ -113,6 +119,7 @@ public sealed partial class BrowserPdfRenderer(IOptions<PdfRenderOptions> option
                          "--disable-background-networking", "--disable-sync", "about:blank"
                      })
                 start.ArgumentList.Add(arg);
+            if (_options.NoSandbox) start.ArgumentList.Insert(0, "--no-sandbox");
             _process = Process.Start(start) ?? throw new InvalidOperationException("The browser did not start.");
 
             // msedge.exe may hand over to child processes and exit at once, so only the port file is awaited.
