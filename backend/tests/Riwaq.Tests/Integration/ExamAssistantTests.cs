@@ -54,6 +54,26 @@ public sealed class ExamAssistantTests(RiwaqApiFactory factory) : IClassFixture<
     }
 
     [Fact]
+    public async Task A_reply_that_gives_the_answer_away_is_withheld()
+    {
+        factory.Chat.Respond("quiz", _ => Quiz);
+        factory.Chat.Respond("exam_assistant", _ => "The net force equals mass times acceleration, so pick that choice.");
+        var client = await factory.CreateStudentAsync();
+        var bookId = await client.UploadAndProcessAsync();
+        var quiz = await client.GenerateQuizAsync(new { bookId, count = 1, mode = "exam", timeLimitMinutes = 30 });
+        var questionId = quiz.GetProperty("questions")[0].GetProperty("id").GetGuid();
+        var attemptId = (await (await client.PostAsync($"/api/quizzes/{quiz.GetProperty("quiz").GetProperty("id").GetGuid()}/attempts", null)).ReadJsonAsync())
+            .GetProperty("id").GetGuid();
+
+        var events = await SseReader.ReadAllAsync(await client.PostAsync($"/api/attempts/{attemptId}/assistant",
+            JsonBody(new { question = "Which one is it?", questionId, language = "en" })));
+        Assert.DoesNotContain(events, e => e.Type == "delta");          // nothing reaches the student before the check
+        var content = Assert.Single(events, e => e.Type == "done").Data.GetProperty("content").GetString()!;
+        Assert.DoesNotContain("mass times acceleration", content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("can't give or confirm", content);
+    }
+
+    [Fact]
     public async Task Another_student_cannot_use_the_assistant_on_someone_elses_attempt()
     {
         factory.Chat.Respond("quiz", _ => Quiz);

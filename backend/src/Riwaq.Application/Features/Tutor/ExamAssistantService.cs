@@ -23,7 +23,8 @@ public sealed record ExamAssistantDoneEvent(string Content, IReadOnlyList<Source
 /// for context only (prompt, choices, figure description); its answer key is never sent. Each use is counted on the
 /// attempt and shown with the result.
 /// </summary>
-public sealed class ExamAssistantService(IAppDbContext db, IChatModel chat, RetrievalService retrieval, AiUsageGuard usage, TimeProvider clock)
+public sealed class ExamAssistantService(IAppDbContext db, IChatModel chat, RetrievalService retrieval, AiUsageGuard usage, TimeProvider clock,
+    Microsoft.Extensions.Logging.ILogger<ExamAssistantService> logger)
 {
     private static readonly TimeSpan Grace = TimeSpan.FromSeconds(30);
 
@@ -40,6 +41,7 @@ public sealed class ExamAssistantService(IAppDbContext db, IChatModel chat, Retr
         - When the student asks for the answer or to check their answer, say kindly in one sentence that you cannot during the
           exam, then offer the underlying idea instead.
         - Keep answers short and focused: the student is under time pressure. Skip the follow-up questions block.
+        - Your reply is checked before the student sees it; a reply containing the answer is withheld and wasted.
         """;
 
     public async IAsyncEnumerable<TutorEvent> AskAsync(Guid userId, Guid attemptId, ExamAssistantRequest request, [EnumeratorCancellation] CancellationToken ct)
@@ -109,11 +111,8 @@ public sealed class ExamAssistantService(IAppDbContext db, IChatModel chat, Retr
                     failure = ex;
                     break;
                 }
-                if (chunk.TextDelta is { } delta)
-                {
-                    text.Append(delta);
-                    yield return new TutorDeltaEvent(delta);
-                }
+                // Nothing is streamed: the whole reply is checked for a given-away answer before the student sees it.
+                if (chunk.TextDelta is { } delta) text.Append(delta);
                 if (chunk.Final is not null) final = chunk.Final;
             }
         }
@@ -127,6 +126,14 @@ public sealed class ExamAssistantService(IAppDbContext db, IChatModel chat, Retr
         if (failure is not null)
         {
             yield return new TutorErrorEvent(failure.Code, failure.Message, null);
+            yield break;
+        }
+
+        if (ExamAnswerGuard.Reveals(text.ToString(), current, quiz.Questions))
+        {
+            Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(logger,
+                "Exam assistant reply withheld on attempt {AttemptId}: it contained an exam answer", attempt.Id);
+            yield return new ExamAssistantDoneEvent(ExamAnswerGuard.SafeReply(language, current?.Topic), [], attempt.AssistantUses);
             yield break;
         }
 

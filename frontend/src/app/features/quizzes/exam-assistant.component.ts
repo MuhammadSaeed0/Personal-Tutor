@@ -46,7 +46,7 @@ type AssistantEvent =
           @if (m.role === 'user') { <p dir="auto">{{ m.content }}</p> }
           @else if (m.error) { <p class="error small" role="alert">{{ m.error }}</p> }
           @else { <rw-markdown [content]="m.content" [citations]="m.citations" [streaming]="!!m.streaming" />
-            @if (m.streaming && !m.content) { <span class="spinner"></span> } }
+            @if (m.streaming && !m.content) { <span class="typing small muted"><span class="spinner"></span> {{ 'examAssistant.typing' | t }}</span> } }
         </div>
       }
     </div>
@@ -75,6 +75,7 @@ type AssistantEvent =
     .composer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); align-items: flex-end; }
     .composer .textarea { flex: 1; min-height: 44px; resize: none; }
     .error { color: var(--danger); margin: 0; }
+    .typing { display: inline-flex; align-items: center; gap: 8px; }
   `]
 })
 export class ExamAssistantComponent implements OnDestroy {

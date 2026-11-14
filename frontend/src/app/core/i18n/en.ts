@@ -254,7 +254,7 @@ export const EN = {
   },
   difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Hard', mixed: 'Mixed' },
   examAssistant: {
-    button: 'Assistant', title: 'Exam assistant', lead: 'Ask as often as you like about meanings, terms and laws. It explains, but does not give the answers.',
+    typing: 'Typing…', button: 'Assistant', title: 'Exam assistant', lead: 'Ask as often as you like about meanings, terms and laws. It explains, but does not give the answers.',
     empty: 'Stuck on a word or an idea? Ask here — for example:', placeholder: 'Ask about a meaning or an idea…',
     suggestMeaning: 'What does this term in the question mean?', suggestLaw: 'Remind me of the law this question is about', suggestFigure: 'What does the figure show?'
   },
