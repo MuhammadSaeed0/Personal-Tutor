@@ -64,6 +64,7 @@ public sealed class DiagramQuizTests(RiwaqApiFactory factory) : IClassFixture<Ri
     public async Task Diagram_questions_are_mixed_in_with_a_sanitised_drawing_and_ordered_from_easy_to_hard()
     {
         factory.Chat.Respond("quiz", request => request.JsonSchema!.Contains("\"diagram\"") ? DiagramQuestions(Drawing) : TextQuestions);
+        factory.Chat.Respond("quiz_review", _ => "{\"reviews\":[{\"index\":0,\"ok\":true,\"problem\":null}]}");
         var client = await factory.CreateStudentAsync();
         var bookId = await client.UploadAndProcessAsync();
 
@@ -83,6 +84,25 @@ public sealed class DiagramQuizTests(RiwaqApiFactory factory) : IClassFixture<Ri
 
         // The answer key is not part of what the student receives.
         Assert.DoesNotContain("correct", drawn.GetProperty("options").GetRawText());
+    }
+
+    [Fact]
+    public async Task A_drawing_the_review_rejects_is_left_out()
+    {
+        factory.Chat.Respond("quiz", request => request.JsonSchema!.Contains("\"diagram\"") ? DiagramQuestions(Drawing) : TextQuestions);
+        factory.Chat.Respond("quiz_review", _ => "{\"reviews\":[{\"index\":0,\"ok\":false,\"problem\":\"force arrow points the wrong way\"}]}");
+        var client = await factory.CreateStudentAsync();
+        var bookId = await client.UploadAndProcessAsync();
+
+        var quiz = await client.GenerateQuizAsync(new { bookId, count = 3, diagramCount = 1 });
+
+        var questions = quiz.GetProperty("questions").EnumerateArray().ToList();
+        Assert.NotEmpty(questions);
+        Assert.DoesNotContain(questions, q => q.GetProperty("diagramSvg").ValueKind == JsonValueKind.String);
+        var review = factory.Chat.Requests.Last(r => r.Feature == "quiz_review");
+        Assert.Contains("<svg>", review.Messages[0].Content);
+        Assert.Contains("<correct_answer>", review.Messages[0].Content);
+        factory.Chat.Respond("quiz_review", _ => throw new InvalidOperationException("review down")); // later tests: fail open
     }
 
     [Fact]

@@ -296,6 +296,12 @@ public sealed class QuizService(
                 drawn.Add(outcome.Question);
             }
         }
+        if (drawn.Count > 0)
+        {
+            var kept = await ReviewDiagramsAsync(userId, drawn, ct);
+            rejected += drawn.Count - kept.Count;
+            drawn = kept;
+        }
         accepted = Arrange(accepted, drawn, request.Difficulty);
         if (accepted.Count == 0) throw new AiUnavailableException("ai_invalid_output", "No reliable questions could be generated from this content. Try a different range.");
 
@@ -679,6 +685,86 @@ public sealed class QuizService(
     private static string DifficultyInstruction(Difficulty difficulty) => difficulty == Difficulty.Mixed
         ? "Target difficulty: a graded mix — about 30% easy, 40% medium and 30% hard questions; set each question's difficulty accordingly."
         : $"Target difficulty: {difficulty.ToString().ToLowerInvariant()}.";
+
+    private const int DiagramReviewBatch = 5;
+
+    private const string DiagramReviewPrompt = """
+        You check drawings made for exam questions before a student sees them. For each item you get the question, its
+        choices, the correct answer, the figure description and the SVG source. Read the SVG coordinates and labels.
+        Reject an item (ok = false) only for a clear error a teacher would not accept:
+        - the drawing does not match the question (different quantities, labels, values, angles, directions or parts);
+        - it is scientifically wrong (a force or vector in the wrong direction, a wrong angle, wrong components, wrong
+          apparatus or structure, mislabeled parts);
+        - it shows or strongly gives away the answer;
+        - it is unreadable (overlapping labels, parts outside the picture, missing parts the question refers to).
+        Small style issues are fine. Give the problem in a few words when you reject.
+        """;
+
+    private const string DiagramReviewSchema = """
+        {"type":"object","properties":{"reviews":{"type":"array","items":{"type":"object","properties":{
+          "index":{"type":"integer"},"ok":{"type":"boolean"},"problem":{"type":["string","null"]}},
+          "required":["index","ok","problem"],"additionalProperties":false}}},"required":["reviews"],"additionalProperties":false}
+        """;
+
+    /// <summary>
+    /// A second look at each drawing (one short request per five) against its question and answer. Drawings flagged as
+    /// wrong are dropped; if the review itself fails, the drawings are kept as they are.
+    /// </summary>
+    private async Task<List<ValidatedQuestion>> ReviewDiagramsAsync(Guid userId, List<ValidatedQuestion> drawn, CancellationToken ct)
+    {
+        var batches = drawn.Select((q, i) => (q, i)).Chunk(DiagramReviewBatch).ToList();
+        var calls = batches.Select(batch =>
+        {
+            var turn = new StringBuilder();
+            foreach (var (q, i) in batch)
+            {
+                var answer = QuizAnswerText.Describe(new QuizQuestion { Type = q.Type, OptionsJson = q.OptionsJson, AnswerKeyJson = q.AnswerKeyJson }, "en");
+                turn.AppendLine($"<item index=\"{i}\">");
+                turn.AppendLine("<question>" + Prompts.Escape(q.Prompt) + "</question>");
+                using (var options = JsonDocument.Parse(q.OptionsJson))
+                    if (options.RootElement.TryGetProperty("choices", out var choices) && choices.ValueKind == JsonValueKind.Array)
+                        turn.AppendLine("<choices>" + Prompts.Escape(string.Join(" | ", choices.EnumerateArray().Select(c => c.GetString()))) + "</choices>");
+                turn.AppendLine("<correct_answer>" + Prompts.Escape(answer) + "</correct_answer>");
+                turn.AppendLine("<figure_description>" + Prompts.Escape(q.DiagramAlt ?? "") + "</figure_description>");
+                turn.AppendLine("<svg>" + Prompts.Escape(q.DiagramSvg ?? "") + "</svg>");
+                turn.AppendLine("</item>");
+            }
+            return chat.CompleteAsync(new ChatRequest
+            {
+                Feature = "quiz_review", SystemPrompt = DiagramReviewPrompt, JsonSchema = DiagramReviewSchema,
+                Messages = [new ChatTurn(ChatRole.User, turn.ToString())], MaxTokens = 2000, Effort = "low"
+            }, ct);
+        }).ToList();
+
+        try { await Task.WhenAll(calls); }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch { /* inspected per request below */ }
+
+        var rejectedIndexes = new HashSet<int>();
+        foreach (var call in calls)
+        {
+            usage.Record(userId, "quiz_review", call.IsCompletedSuccessfully ? call.Result : null, chat.ModelName, call.IsCompletedSuccessfully);
+            if (!call.IsCompletedSuccessfully) continue; // fail open: keep the drawings this request covered
+            try
+            {
+                using var doc = JsonDocument.Parse(call.Result.Text);
+                foreach (var review in doc.RootElement.GetProperty("reviews").EnumerateArray())
+                {
+                    if (review.GetProperty("ok").GetBoolean()) continue;
+                    var index = review.GetProperty("index").GetInt32();
+                    rejectedIndexes.Add(index);
+                    logger.LogInformation("Diagram {Index} rejected by review: {Problem}", index,
+                        review.TryGetProperty("problem", out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() : null);
+                }
+            }
+            catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
+            {
+                // unreadable review: keep the drawings
+            }
+        }
+        await db.SaveChangesAsync(CancellationToken.None);
+        return drawn.Where((_, i) => !rejectedIndexes.Contains(i)).ToList();
+    }
 
     private static List<RawQuestion> ParseQuestions(string json)
     {
