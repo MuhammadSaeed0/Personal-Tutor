@@ -19,6 +19,10 @@ public sealed class DashboardController(DashboardService dashboard, AnalyticsSer
     [HttpGet("dashboard")]
     public Task<DashboardDto> Get(CancellationToken ct) => dashboard.GetAsync(User.GetUserId(), ct);
 
+    /// <summary>What is due today: flashcards, mistakes to retest and the plan's tasks.</summary>
+    [HttpGet("today")]
+    public Task<TodayDto> Today(CancellationToken ct) => dashboard.GetTodayAsync(User.GetUserId(), ct);
+
     [HttpGet("achievements")]
     public Task<IReadOnlyList<AchievementDto>> Achievements(CancellationToken ct) => dashboard.GetAchievementsAsync(User.GetUserId(), ct);
 

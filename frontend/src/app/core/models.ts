@@ -414,3 +414,8 @@ export interface Mistake {
   sourcePage: number | null; timesWrong: number; correctStreak: number; nextReviewAt: string; due: boolean; masteredAt: string | null; lastWrongAt: string;
 }
 export interface MistakesOverview { items: Mistake[]; dueCount: number; openCount: number; masteredCount: number; }
+
+export interface TodayOverview {
+  cardsDue: number; newCards: number; mistakesDue: number; mistakesBySubject: { subjectId: number; count: number }[];
+  plan: PlanDay | null; minutesToday: number; currentStreak: number;
+}

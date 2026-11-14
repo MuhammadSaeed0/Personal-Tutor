@@ -54,6 +54,11 @@ public sealed class MistakesTests(RiwaqApiFactory factory) : IClassFixture<Riwaq
         var none = await client.PostAsync("/api/mistakes/retest", JsonBody(new { subjectId }));
         Assert.Equal(HttpStatusCode.Conflict, none.StatusCode);
 
+        await MakeAllDueAsync();
+        var today = await (await client.GetAsync("/api/today")).ReadJsonAsync();
+        Assert.Equal(1, today.GetProperty("mistakesDue").GetInt32());
+        Assert.Equal(subjectId, today.GetProperty("mistakesBySubject")[0].GetProperty("subjectId").GetInt32());
+
         // Two correct reviews in a row master it; review quizzes copy the question and make no AI call.
         for (var round = 1; round <= 2; round++)
         {

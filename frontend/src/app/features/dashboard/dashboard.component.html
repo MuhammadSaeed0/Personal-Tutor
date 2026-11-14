@@ -10,6 +10,7 @@
           @else if (d.today && d.today.tasks.length > 0) { {{ 'dashboard.leadPlan' | t: { done: todayDone(), total: d.today.tasks.length, minutes: i18n.duration(d.today.plannedMinutes) } }} }
           @else { {{ 'dashboard.leadFree' | t }} }
         </p>
+        @if (d.hasBooks) { <a class="btn primary lg start-today" routerLink="/today"><rw-icon name="play" [size]="18" /> {{ 'today.start' | t }}</a> }
       </div>
       <div class="hero-stats">
         @if (d.motivationEnabled) {

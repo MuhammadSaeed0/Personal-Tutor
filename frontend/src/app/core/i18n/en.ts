@@ -354,6 +354,13 @@ export const EN = {
     export: 'Export my data (JSON)', deleteTitle: 'Delete account', deleteLead: 'This permanently deletes your account, books, files and all study data. It cannot be undone.',
     deleteMessage: 'Everything will be permanently deleted. Are you sure?', deleteConfirm: 'Delete my account'
   },
+  today: {
+    start: 'Start today’s study', title: 'Today’s study', subtitle: 'Everything due today in one session: flashcards, then mistakes, then your plan’s tasks.',
+    focus: 'Focus timer', progress: '{done} of {total} steps done', minutes: '{n} min studied today', streak: '{n}-day streak',
+    cards: 'Review due flashcards', cardsDue: '{n} card(s) due now', cardsNone: 'No cards due. {n} new card(s) if you want more.', cardsDone: 'No cards due.',
+    review: 'Review', mistakes: 'Retest your mistakes', mistakesDone: 'No mistakes due today.', allMistakes: 'Mistakes notebook',
+    plan: 'Today’s plan tasks', noPlan: 'No tasks for today.', allDone: 'Today’s study is done!', allDoneText: 'You studied {n} minutes today. Well done, see you tomorrow.'
+  },
   mistakes: {
     title: 'Mistakes notebook', subtitle: 'Every question you got wrong comes back after a day, then after three days, until you answer it correctly twice in a row.',
     due: 'Due for review now', open: 'Not mastered yet', mastered: 'Mastered', showMastered: 'Show mastered',

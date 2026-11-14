@@ -26,6 +26,12 @@ public sealed record DashboardDto(
     IReadOnlyList<RecommendedQuizDto> RecommendedQuizzes, IReadOnlyList<AchievementDto> Achievements,
     IReadOnlyList<RecommendationDto> Recommendations, IReadOnlyList<ProcessingStatusDto> Processing);
 
+public sealed record SubjectCountDto(int SubjectId, int Count);
+
+/// <summary>Everything due today, in the order the "today's study" session walks through it.</summary>
+public sealed record TodayDto(int CardsDue, int NewCards, int MistakesDue, IReadOnlyList<SubjectCountDto> MistakesBySubject,
+    PlanDayDto? Plan, int MinutesToday, int CurrentStreak);
+
 public sealed class DashboardService(
     IAppDbContext db,
     AnalyticsService analytics,
@@ -33,6 +39,27 @@ public sealed class DashboardService(
     ProfileService profiles,
     TimeProvider clock)
 {
+    public async Task<TodayDto> GetTodayAsync(Guid userId, CancellationToken ct)
+    {
+        var now = clock.GetUtcNow().UtcDateTime;
+        var today = DateOnly.FromDateTime(now);
+        var cards = db.Flashcards.AsNoTracking().Where(f => f.UserId == userId && !f.IsSuspended);
+        var cardsDue = await cards.CountAsync(f => f.State != CardState.New && f.Due <= now, ct);
+        var newCards = await cards.CountAsync(f => f.State == CardState.New, ct);
+        var mistakes = await db.Mistakes.AsNoTracking().Where(m => m.UserId == userId && m.MasteredAt == null && m.NextReviewAt <= now)
+            .GroupBy(m => m.SubjectId).Select(g => new SubjectCountDto(g.Key, g.Count())).ToListAsync(ct);
+
+        PlanDayDto? plan = null;
+        if (await db.Books.AnyAsync(b => b.UserId == userId, ct))
+        {
+            var full = await planner.GetAsync(userId, ct);
+            plan = full.Days.FirstOrDefault(d => d.Date == today);
+        }
+        var minutes = await db.StudySessions.AsNoTracking().Where(s => s.UserId == userId && s.StartedAt >= now.Date).SumAsync(s => s.DurationSeconds, ct) / 60;
+        var (streak, _) = StreakCalculator.Compute(await analytics.ActiveDaysAsync(userId, ct), today);
+        return new TodayDto(cardsDue, newCards, mistakes.Sum(m => m.Count), mistakes.OrderByDescending(m => m.Count).ToList(), plan, minutes, streak);
+    }
+
     public async Task<DashboardDto> GetAsync(Guid userId, CancellationToken ct)
     {
         var now = clock.GetUtcNow().UtcDateTime;
