@@ -133,7 +133,7 @@ public sealed partial class BrowserPdfRenderer(IOptions<PdfRenderOptions> option
 
             // msedge.exe may hand over to child processes and exit at once, so only the port file is awaited.
             var portFile = Path.Combine(_profile, "DevToolsActivePort");
-            var deadline = DateTime.UtcNow.AddSeconds(30);
+            var deadline = DateTime.UtcNow.AddSeconds(Math.Max(30, _options.TimeoutSeconds)); // a cold start on a busy machine can be slow
             string[]? lines = null;
             while (DateTime.UtcNow < deadline)
             {
