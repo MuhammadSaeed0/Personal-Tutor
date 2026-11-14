@@ -6,6 +6,7 @@ using Riwaq.Application.Common;
 using Riwaq.Application.Features.Flashcards;
 using Riwaq.Application.Features.Notes;
 using Riwaq.Application.Features.Mistakes;
+using Riwaq.Application.Features.StudyPacks;
 using Riwaq.Application.Features.Quizzes;
 using Riwaq.Application.Features.Reader;
 using Riwaq.Application.Features.Summaries;
@@ -254,4 +255,19 @@ public sealed class MistakesController(MistakeService mistakes) : ControllerBase
         await mistakes.DeleteAsync(User.GetUserId(), id, ct);
         return NoContent();
     }
+}
+
+[ApiController]
+[Route("api/books/{bookId:guid}/study-pack")]
+public sealed class StudyPackController(StudyPackService packs) : ControllerBase
+{
+    /// <summary>The latest study pack of a source (204 when none was requested).</summary>
+    [HttpGet]
+    public async Task<IActionResult> Get(Guid bookId, CancellationToken ct) =>
+        await packs.GetAsync(User.GetUserId(), bookId, ct) is { } pack ? Ok(pack) : NoContent();
+
+    /// <summary>Prepares a quick summary, flashcards and a short quiz for each of the first chapters, in the background.</summary>
+    [HttpPost]
+    [EnableRateLimiting(RateLimitPolicies.Ai)]
+    public Task<StudyPackDto> Request(Guid bookId, CancellationToken ct) => packs.RequestAsync(User.GetUserId(), bookId, ct);
 }

@@ -40,6 +40,8 @@ public static class DependencyInjection
         services.AddHttpClient<IVideoTranscriptSource, Media.YouTubeTranscriptSource>(c => c.Timeout = TimeSpan.FromSeconds(60));
         services.AddSingleton<IProcessingSignal, ProcessingSignal>();
         services.AddSingleton<QuizGenerationQueue>();
+        services.AddSingleton<StudyPackSignal>();
+        services.AddSingleton<IStudyPackSignal>(sp => sp.GetRequiredService<StudyPackSignal>());
         services.AddSingleton<IQuizGenerationQueue>(sp => sp.GetRequiredService<QuizGenerationQueue>());
         services.AddSingleton(TimeProvider.System);
 
@@ -50,6 +52,7 @@ public static class DependencyInjection
             services.AddHostedService<DocumentProcessingWorker>();
             services.AddHostedService<EmbeddingBackfillWorker>();
             services.AddHostedService<QuizGenerationWorker>();
+            services.AddHostedService<StudyPackWorker>();
         }
         return services;
     }

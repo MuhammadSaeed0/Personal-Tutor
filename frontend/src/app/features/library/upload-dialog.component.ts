@@ -95,6 +95,8 @@ export class UploadDialogComponent implements OnDestroy {
   protected title = '';
   protected academicYear = '';
   protected tags = '';
+  /** Prepare a quick summary, flashcards and a short quiz per chapter once processing is done. */
+  protected studyPack = true;
 
   protected readonly status = computed<ProcessingStatus | null>(() => {
     const book = this.book();
@@ -205,6 +207,7 @@ export class UploadDialogComponent implements OnDestroy {
         });
         this.book.set(book);
         this.phase.set('processing');
+        this.requestStudyPack(book.id);
         this.startPolling(book.id);
       } catch (e) {
         this.fail(toApiError(e));
@@ -236,11 +239,18 @@ export class UploadDialogComponent implements OnDestroy {
         if (event.type === HttpEventType.Response && event.body) {
           this.book.set(event.body);
           this.phase.set('processing');
+          this.requestStudyPack(event.body.id);
           this.startPolling(event.body.id);
         }
       },
       error: err => this.fail(toApiError(err))
     });
+  }
+
+  /** Queued now; the server starts it when processing has finished. */
+  private requestStudyPack(bookId: string): void {
+    if (!this.studyPack) return;
+    this.api.post(`/api/books/${bookId}/study-pack`).catch(() => { /* optional: the source page offers it again */ });
   }
 
   private fail(apiError: ReturnType<typeof toApiError>): void {

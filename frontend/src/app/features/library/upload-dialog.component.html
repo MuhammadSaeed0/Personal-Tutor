@@ -94,6 +94,10 @@
             <label for="tags">{{ 'upload.tags' | t }}</label>
             <input id="tags" class="input" [(ngModel)]="tags" [placeholder]="'upload.tagsPlaceholder' | t" />
           </div>
+          <label class="field pack-option">
+            <span class="row"><input type="checkbox" [(ngModel)]="studyPack" name="studyPack" /> <strong class="small">{{ 'upload.studyPack' | t }}</strong></span>
+            <span class="xsmall subtle">{{ 'upload.studyPackHint' | t: { n: 10 } }}</span>
+          </label>
         </div>
       }
 

@@ -44,6 +44,7 @@ public interface IAppDbContext
     DbSet<Achievement> Achievements { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<MistakeEntry> Mistakes { get; }
+    DbSet<StudyPack> StudyPacks { get; }
     DbSet<AiUsageRecord> AiUsage { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

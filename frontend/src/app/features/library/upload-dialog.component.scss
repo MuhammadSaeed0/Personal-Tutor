@@ -26,3 +26,5 @@
 .photo-actions .btn { min-height: 26px; width: 26px; padding: 0; }
 .video-preview { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
 .video-preview img { width: 160px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; flex: none; }
+.pack-option { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.pack-option .row { gap: 8px; align-items: center; }

@@ -43,6 +43,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Achievement> Achievements => Set<Achievement>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<MistakeEntry> Mistakes => Set<MistakeEntry>();
+    public DbSet<StudyPack> StudyPacks => Set<StudyPack>();
     public DbSet<AiUsageRecord> AiUsage => Set<AiUsageRecord>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
@@ -374,6 +375,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             e.HasIndex(x => new { x.UserId, x.Code }).IsUnique();
             e.Property(x => x.Code).HasMaxLength(60);
+        });
+
+        b.Entity<StudyPack>(e =>
+        {
+            e.HasOne(x => x.Book).WithMany().HasForeignKey(x => x.BookId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.BookId, x.CreatedAt });
+            e.HasIndex(x => x.Status);
+            e.Property(x => x.ErrorCode).HasMaxLength(60);
         });
 
         b.Entity<MistakeEntry>(e =>

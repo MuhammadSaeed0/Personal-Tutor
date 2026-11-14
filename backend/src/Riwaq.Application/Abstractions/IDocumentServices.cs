@@ -82,6 +82,12 @@ public interface IProcessingSignal
     Task WaitAsync(TimeSpan timeout, CancellationToken cancellationToken);
 }
 
+/// <summary>Wakes the study-pack worker (a pack was requested, or a source finished processing).</summary>
+public interface IStudyPackSignal
+{
+    void Notify();
+}
+
 /// <summary>Hands a saved <c>Generating</c> quiz to the background worker that writes its questions.</summary>
 public interface IQuizGenerationQueue
 {

@@ -425,3 +425,8 @@ export interface AiUsage {
   byFeature: { feature: string; requests: number; failed: number; inputTokens: number; outputTokens: number }[];
   todayRequests: number; todayOutputTokens: number; dailyRequestLimit: number; dailyOutputTokenLimit: number;
 }
+
+export interface StudyPack {
+  id: string; bookId: string; status: 'pending' | 'running' | 'completed' | 'failed'; total: number; done: number;
+  summaries: number; cards: number; quizzes: number; errorCode: string | null; createdAt: string; updatedAt: string;
+}

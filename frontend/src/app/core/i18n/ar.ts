@@ -67,7 +67,7 @@ export const AR: typeof EN = {
     deleted: 'تم حذف الكتاب'
   },
   upload: {
-    title: 'إضافة مصدر للمذاكرة', subtitle: { pdf: 'كتاب أو ورقة عمل بصيغة PDF. تستمر المعالجة في الخلفية.', images: 'صور لصفحات كتاب أو كراسة أو أوراق عمل أو السبورة، وتصبح صفحاتٍ لمصدر واحد.', youTube: 'درس على يوتيوب. تُقرأ ترجمته النصية وتُنظَّم حسب الموضوعات.' },
+    studyPack: 'جهّز ملخصًا وبطاقات واختبارًا لكل فصل', studyPackHint: 'يعمل في الخلفية بعد المعالجة لأول {n} فصول، ويستهلك من خطة Claude.', title: 'إضافة مصدر للمذاكرة', subtitle: { pdf: 'كتاب أو ورقة عمل بصيغة PDF. تستمر المعالجة في الخلفية.', images: 'صور لصفحات كتاب أو كراسة أو أوراق عمل أو السبورة، وتصبح صفحاتٍ لمصدر واحد.', youTube: 'درس على يوتيوب. تُقرأ ترجمته النصية وتُنظَّم حسب الموضوعات.' },
     drop: 'أفلت ملف PDF هنا أو انقر للاختيار',
     limits: 'PDF · حتى {mb} ميغابايت', change: 'انقر للتغيير', chooseSubject: 'اختر المادة', bookTitle: 'عنوان الكتاب', academicYear: 'العام الدراسي',
     tags: 'وسوم', tagsPlaceholder: 'مثال: الفصل الأول، مراجعة', notPdf: 'هذا الملف ليس PDF.', tooLarge: 'حجم الملف أكبر من {mb} ميغابايت.',
@@ -357,6 +357,11 @@ export const AR: typeof EN = {
     export: 'تصدير بياناتي (JSON)', deleteTitle: 'حذف الحساب', deleteLead: 'سيحذف هذا حسابك وكتبك وملفاتك وكل بيانات مذاكرتك نهائيًا، ولا يمكن التراجع عنه.',
     deleteMessage: 'سيُحذف كل شيء نهائيًا. هل أنت متأكد؟', deleteConfirm: 'احذف حسابي'
   },
+  studyPack: {
+    title: 'حزمة المذاكرة', lead: 'ملخص سريع وبطاقات واختبار قصير لكل فصل (أول {n} فصول)، تُجهَّز في الخلفية.', prepare: 'جهّز الحزمة',
+    waiting: 'ستبدأ عندما تكتمل معالجة المصدر.', starting: 'تبدأ الآن…', running: 'جارٍ التجهيز: {done} من {total} فصول.',
+    done: 'جاهزة: {summaries} ملخص، {cards} بطاقة، {quizzes} اختبار.', stopped: 'توقفت بعد {summaries} ملخص و{cards} بطاقة و{quizzes} اختبار.', retry: 'أكمل التجهيز'
+  },
   usage: {
     lead: 'استخدامك للذكاء الاصطناعي في آخر أيام: عدد الطلبات والتوكنز لكل يوم ولكل ميزة.',
     todayRequests: 'طلبات اليوم', todayTokens: 'توكنز الإخراج اليوم', resets: 'يتجدد الحد اليومي عند منتصف الليل (UTC).',
@@ -379,7 +384,7 @@ export const AR: typeof EN = {
     nextReview: 'المراجعة القادمة {date}', timesWrong: 'أخطأت فيه {n} مرة', correctAnswer: 'الإجابة الصحيحة', explanation: 'الشرح',
     emptyTitle: 'لا أخطاء مسجّلة', emptyText: 'عندما تخطئ في سؤال اختبار يُضاف هنا لتراجعه لاحقًا.'
   },
-  notifications: { empty: 'لا إشعارات', book_ready: '«{title}» جاهز للمذاكرة', quiz_ready: 'اختبار «{title}» جاهز', quiz_failed: 'تعذّر إنشاء اختبار «{title}»' },
+  notifications: { empty: 'لا إشعارات', book_ready: '«{title}» جاهز للمذاكرة', quiz_ready: 'اختبار «{title}» جاهز', study_pack_ready: 'حزمة مذاكرة «{title}» جاهزة', study_pack_stopped: 'توقفت حزمة مذاكرة «{title}»', quiz_failed: 'تعذّر إنشاء اختبار «{title}»' },
   achievements: {
     first_book: { title: 'أول كتاب', text: 'رفعت أول كتاب مدرسي.' },
     first_chapter: { title: 'أول فصل', text: 'أكملت أول فصل.' },
@@ -430,6 +435,6 @@ export const AR: typeof EN = {
     request_failed: 'فشل الطلب.', unknown_error: 'حدث خطأ ما.', attempt_submitted: 'سُلّمت هذه المحاولة بالفعل.',
     time_expired: 'انتهى الوقت — سُلّمت إجاباتك.', answer_locked: 'تم التحقق من هذه الإجابة بالفعل.', empty_question: 'اكتب سؤالًا أولًا.',
     question_too_long: 'السؤال طويل جدًا.', empty_note: 'تحتاج الملاحظة إلى عنوان أو محتوى.', invalid_query: 'ابحث بحرفين على الأقل.',
-    unauthorized: 'سجّل الدخول مجددًا.', no_due_mistakes: 'لا أخطاء مستحقة للمراجعة في هذه المادة الآن.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
+    unauthorized: 'سجّل الدخول مجددًا.', study_pack_failed: 'تعذّر إكمال حزمة المذاكرة.', processing_failed: 'فشلت معالجة المصدر.', no_due_mistakes: 'لا أخطاء مستحقة للمراجعة في هذه المادة الآن.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
   }
 };

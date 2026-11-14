@@ -64,7 +64,7 @@ export const EN = {
     deleted: 'Book deleted'
   },
   upload: {
-    title: 'Add a study source', subtitle: { pdf: 'A PDF textbook or worksheet. Processing continues in the background.', images: 'Photos of book or notebook pages, worksheets or a board — they become the pages of one source.', youTube: 'A YouTube lesson. Its captions are read and organised by topic.' },
+    studyPack: 'Prepare a summary, flashcards and a quiz per chapter', studyPackHint: 'Runs in the background after processing for the first {n} chapters and uses your Claude plan.', title: 'Add a study source', subtitle: { pdf: 'A PDF textbook or worksheet. Processing continues in the background.', images: 'Photos of book or notebook pages, worksheets or a board — they become the pages of one source.', youTube: 'A YouTube lesson. Its captions are read and organised by topic.' },
     drop: 'Drop a PDF here or click to choose',
     limits: 'PDF · up to {mb} MB', change: 'click to change', chooseSubject: 'Choose a subject', bookTitle: 'Book title', academicYear: 'Academic year',
     tags: 'Tags', tagsPlaceholder: 'e.g. term 1, revision', notPdf: 'This file is not a PDF.', tooLarge: 'The file is larger than {mb} MB.',
@@ -354,6 +354,11 @@ export const EN = {
     export: 'Export my data (JSON)', deleteTitle: 'Delete account', deleteLead: 'This permanently deletes your account, books, files and all study data. It cannot be undone.',
     deleteMessage: 'Everything will be permanently deleted. Are you sure?', deleteConfirm: 'Delete my account'
   },
+  studyPack: {
+    title: 'Study pack', lead: 'A quick summary, flashcards and a short quiz for each chapter (first {n}), made in the background.', prepare: 'Prepare the pack',
+    waiting: 'It starts when the source has finished processing.', starting: 'Starting…', running: 'Preparing: {done} of {total} chapters.',
+    done: 'Ready: {summaries} summaries, {cards} cards, {quizzes} quizzes.', stopped: 'Stopped after {summaries} summaries, {cards} cards and {quizzes} quizzes.', retry: 'Finish preparing'
+  },
   usage: {
     lead: 'Your AI use over recent days: requests and tokens per day and per feature.',
     todayRequests: 'Requests today', todayTokens: 'Output tokens today', resets: 'The daily limit resets at midnight UTC.',
@@ -376,7 +381,7 @@ export const EN = {
     nextReview: 'Next review {date}', timesWrong: 'Wrong {n} time(s)', correctAnswer: 'Correct answer', explanation: 'Explanation',
     emptyTitle: 'No mistakes recorded', emptyText: 'When you answer a quiz question wrongly it is added here to review later.'
   },
-  notifications: { empty: 'No notifications', book_ready: '“{title}” is ready to study', quiz_ready: 'Quiz “{title}” is ready', quiz_failed: 'Quiz “{title}” could not be created' },
+  notifications: { empty: 'No notifications', book_ready: '“{title}” is ready to study', quiz_ready: 'Quiz “{title}” is ready', study_pack_ready: 'The study pack for “{title}” is ready', study_pack_stopped: 'The study pack for “{title}” stopped', quiz_failed: 'Quiz “{title}” could not be created' },
   achievements: {
     first_book: { title: 'First book', text: 'You uploaded your first textbook.' },
     first_chapter: { title: 'First chapter', text: 'You completed your first chapter.' },
@@ -427,6 +432,6 @@ export const EN = {
     request_failed: 'The request failed.', unknown_error: 'Something went wrong.', attempt_submitted: 'This attempt was already submitted.',
     time_expired: 'Time is up — your answers were submitted.', answer_locked: 'This answer was already checked.', empty_question: 'Type a question first.',
     question_too_long: 'The question is too long.', empty_note: 'A note needs a title or some content.', invalid_query: 'Search for at least 2 characters.',
-    no_due_mistakes: 'No mistakes are due for review in this subject right now.', quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
+    study_pack_failed: 'The study pack could not be finished.', processing_failed: 'The source could not be processed.', no_due_mistakes: 'No mistakes are due for review in this subject right now.', quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
   }
 };

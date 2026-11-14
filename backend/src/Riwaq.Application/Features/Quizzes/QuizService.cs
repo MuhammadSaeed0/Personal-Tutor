@@ -87,12 +87,15 @@ public sealed class QuizService(
     /// in the background (<see cref="RunGenerationAsync"/>); the student is told over SignalR (quizUpdated) and by a
     /// notification when the quiz is ready or has failed.
     /// </summary>
-    public async Task<QuizDetailDto> GenerateAsync(Guid userId, GenerateQuizRequest request, CancellationToken ct)
+    public Task<QuizDetailDto> GenerateAsync(Guid userId, GenerateQuizRequest request, CancellationToken ct) =>
+        EnqueueAsync(userId, request, limitParallel: true, ct);
+
+    /// <summary>Queues a quiz. The study pack queues several at once, so it skips the per-student limit.</summary>
+    public async Task<QuizDetailDto> EnqueueAsync(Guid userId, GenerateQuizRequest request, bool limitParallel, CancellationToken ct)
     {
         await usage.EnsureAllowedAsync(userId, ct);
         if (!chat.IsConfigured) throw new AiUnavailableException("ai_not_configured", "No AI provider is configured.");
-        var busy = await db.Quizzes.CountAsync(q => q.UserId == userId && q.Status == QuizStatus.Generating, ct);
-        if (busy >= MaxGeneratingPerUser)
+        if (limitParallel && await db.Quizzes.CountAsync(q => q.UserId == userId && q.Status == QuizStatus.Generating, ct) >= MaxGeneratingPerUser)
             throw new ConflictException("quiz_generation_busy", "Wait for the quizzes being prepared before starting another.");
 
         var scope = request.ChapterId is not null ? SummaryScope.Chapter

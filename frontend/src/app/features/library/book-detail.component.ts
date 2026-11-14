@@ -13,9 +13,10 @@ import { IconComponent } from '../../shared/icon.component';
 import { ConfirmService } from '../../shared/ui';
 import { ProcessingTimelineComponent } from './processing-timeline.component';
 
+import { StudyPackComponent } from './study-pack.component';
 @Component({
   selector: 'rw-book-detail',
-  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, ProcessingTimelineComponent],
+  imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, ProcessingTimelineComponent, StudyPackComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './book-detail.component.html',
   styleUrl: './book-detail.component.scss'

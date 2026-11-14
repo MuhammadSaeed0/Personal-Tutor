@@ -161,3 +161,32 @@ public class DocumentWarning
     public WarningSeverity Severity { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+public enum StudyPackStatus
+{
+    Pending = 0,
+    Running = 1,
+    Completed = 2,
+    Failed = 3
+}
+
+/// <summary>
+/// "Prepare a study pack": after a source is processed, a quick summary, flashcards and a short quiz are made for each of
+/// its first chapters in the background. <see cref="Done"/> counts finished chapters, so the work resumes after a restart.
+/// </summary>
+public class StudyPack
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid BookId { get; set; }
+    public Book? Book { get; set; }
+    public StudyPackStatus Status { get; set; } = StudyPackStatus.Pending;
+    public int Total { get; set; }
+    public int Done { get; set; }
+    public int Summaries { get; set; }
+    public int Cards { get; set; }
+    public int Quizzes { get; set; }
+    public string? ErrorCode { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}

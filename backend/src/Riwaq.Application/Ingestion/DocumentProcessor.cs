@@ -48,6 +48,7 @@ public sealed class DocumentProcessor(
     TranscriptStructurer structurer,
     IEmbeddingModel embedder,
     IRealtimeNotifier notifier,
+    IStudyPackSignal studyPacks,
     IOptions<ProcessingOptions> options,
     TimeProvider clock,
     ILogger<DocumentProcessor> logger)
@@ -195,6 +196,7 @@ public sealed class DocumentProcessor(
             Data = book.Title, CreatedAt = clock.GetUtcNow().UtcDateTime
         });
         await Stage(job, book, ProcessingStage.Completed, 100, ct);
+        studyPacks.Notify(); // a study pack may be waiting for this source
         logger.LogInformation("Book {BookId} processed: {Pages} pages, {Chunks} chunks, {Chapters} chapters", book.Id, book.PageCount, chunkEntities.Count, chapters.Count);
     }
 

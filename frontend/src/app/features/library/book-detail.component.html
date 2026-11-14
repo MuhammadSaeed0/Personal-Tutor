@@ -33,6 +33,7 @@
         <button class="btn ghost" type="button" (click)="editing.set(!editing())"><rw-icon name="pencil" [size]="16" /> {{ 'common.edit' | t }}</button>
       </div>
     </header>
+    @if (d.book.status !== 'failed') { <rw-study-pack [bookId]="d.book.id" [ready]="ready()" /> }
 
     @if (processing() || status()?.bookStatus === 'failed') {
       <section class="card status-card">
