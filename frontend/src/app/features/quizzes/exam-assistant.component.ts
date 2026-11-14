@@ -6,6 +6,7 @@ import { SourceReference } from '../../core/models';
 import { errorMessage } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
 import { MarkdownComponent } from '../../shared/markdown.component';
+import { MicButtonComponent, SpeakButtonComponent } from '../../shared/voice-buttons.component';
 import { TutorStreamService } from '../tutor/tutor-stream';
 
 interface AssistantMessage { role: 'user' | 'assistant'; content: string; citations: SourceReference[]; error?: string; streaming?: boolean; }
@@ -21,7 +22,7 @@ type AssistantEvent =
  */
 @Component({
   selector: 'rw-exam-assistant',
-  imports: [FormsModule, TranslatePipe, IconComponent, MarkdownComponent],
+  imports: [FormsModule, TranslatePipe, IconComponent, MarkdownComponent, MicButtonComponent, SpeakButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="head">
@@ -41,11 +42,12 @@ type AssistantEvent =
           }
         </div>
       }
-      @for (m of messages(); track $index) {
+      @for (m of messages(); track $index; let i = $index) {
         <div class="msg" [class.user]="m.role === 'user'">
           @if (m.role === 'user') { <p dir="auto">{{ m.content }}</p> }
           @else if (m.error) { <p class="error small" role="alert">{{ m.error }}</p> }
           @else { <rw-markdown [content]="m.content" [citations]="m.citations" [streaming]="!!m.streaming" />
+            @if (!m.streaming && m.content) { <rw-speak-button [id]="'assistant-' + i" [text]="m.content" [language]="language()" /> }
             @if (m.streaming && !m.content) { <span class="typing small muted"><span class="spinner"></span> {{ 'examAssistant.typing' | t }}</span> } }
         </div>
       }
@@ -54,6 +56,7 @@ type AssistantEvent =
     <form class="composer" (ngSubmit)="ask(draft)">
       <textarea class="textarea" name="draft" [(ngModel)]="draft" rows="2" dir="auto" [placeholder]="'examAssistant.placeholder' | t"
         (keydown.enter)="$event.preventDefault(); ask(draft)" [attr.aria-label]="'examAssistant.placeholder' | t"></textarea>
+      <rw-mic-button [language]="language()" [disabled]="busy()" (heard)="onHeard($event)" />
       @if (busy()) {
         <button class="btn icon" type="button" (click)="stop()" [attr.aria-label]="'tutor.stop' | t"><rw-icon name="square" [size]="16" /></button>
       } @else {
@@ -95,6 +98,13 @@ export class ExamAssistantComponent implements OnDestroy {
   protected draft = '';
   protected readonly suggestions = ['examAssistant.suggestMeaning', 'examAssistant.suggestLaw', 'examAssistant.suggestFigure'];
   private controller?: AbortController;
+  private voiceBase: string | null = null;
+
+  protected onHeard(e: { text: string; final: boolean }): void {
+    this.voiceBase ??= this.draft.trim();
+    this.draft = [this.voiceBase, e.text].filter(Boolean).join(' ');
+    if (e.final) this.voiceBase = null;
+  }
 
   protected async ask(text: string): Promise<void> {
     const question = text.trim();

@@ -357,6 +357,7 @@ export const AR: typeof EN = {
     export: 'تصدير بياناتي (JSON)', deleteTitle: 'حذف الحساب', deleteLead: 'سيحذف هذا حسابك وكتبك وملفاتك وكل بيانات مذاكرتك نهائيًا، ولا يمكن التراجع عنه.',
     deleteMessage: 'سيُحذف كل شيء نهائيًا. هل أنت متأكد؟', deleteConfirm: 'احذف حسابي'
   },
+  voice: { speak: 'اسأل بصوتك', stopListening: 'إيقاف الاستماع', listen: 'استمع إلى الإجابة', stopReading: 'إيقاف القراءة' },
   studyPack: {
     title: 'حزمة المذاكرة', lead: 'ملخص سريع وبطاقات واختبار قصير لكل فصل (أول {n} فصول)، تُجهَّز في الخلفية.', prepare: 'جهّز الحزمة',
     waiting: 'ستبدأ عندما تكتمل معالجة المصدر.', starting: 'تبدأ الآن…', running: 'جارٍ التجهيز: {done} من {total} فصول.',
@@ -435,6 +436,6 @@ export const AR: typeof EN = {
     request_failed: 'فشل الطلب.', unknown_error: 'حدث خطأ ما.', attempt_submitted: 'سُلّمت هذه المحاولة بالفعل.',
     time_expired: 'انتهى الوقت — سُلّمت إجاباتك.', answer_locked: 'تم التحقق من هذه الإجابة بالفعل.', empty_question: 'اكتب سؤالًا أولًا.',
     question_too_long: 'السؤال طويل جدًا.', empty_note: 'تحتاج الملاحظة إلى عنوان أو محتوى.', invalid_query: 'ابحث بحرفين على الأقل.',
-    unauthorized: 'سجّل الدخول مجددًا.', study_pack_failed: 'تعذّر إكمال حزمة المذاكرة.', processing_failed: 'فشلت معالجة المصدر.', no_due_mistakes: 'لا أخطاء مستحقة للمراجعة في هذه المادة الآن.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
+    unauthorized: 'سجّل الدخول مجددًا.', voice_denied: 'اسمح للمتصفح باستخدام الميكروفون لتسأل بصوتك.', voice_unavailable: 'تعذّر تشغيل الميكروفون.', study_pack_failed: 'تعذّر إكمال حزمة المذاكرة.', processing_failed: 'فشلت معالجة المصدر.', no_due_mistakes: 'لا أخطاء مستحقة للمراجعة في هذه المادة الآن.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
   }
 };

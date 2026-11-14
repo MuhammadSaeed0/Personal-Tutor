@@ -6,7 +6,7 @@ import {
   History, House, Info, Languages, Layers, Lightbulb, ListChecks, ListTree, LoaderCircle, LogOut, Maximize, Menu, MessageCircle,
   MessageSquarePlus, Minimize, Minus, Moon, MoreHorizontal, NotebookPen, PanelLeft, PanelRight, Pause, Pencil, Pin, Play, Plus, RefreshCw,
   RotateCcw, Save, ScrollText, Search, Send, Settings, Shield, Sigma, Sparkles, Square, Star, StickyNote, Sun, Target, ThumbsDown, ThumbsUp,
-  Timer, Trash2, TrendingUp, TriangleAlert, Trophy, Upload, User, Wand2, X, ZoomIn, ZoomOut, Monitor, Mountain, Shuffle, Undo2, Image as ImageIcon
+  Timer, Trash2, TrendingUp, TriangleAlert, Trophy, Upload, User, Wand2, X, ZoomIn, ZoomOut, Monitor, Mountain, Shuffle, Undo2, Image as ImageIcon, Mic, Volume2
 } from 'lucide';
 import type { IconNode } from 'lucide';
 
@@ -23,7 +23,7 @@ const ICONS: Record<string, IconNode> = {
   'notebook-pen': NotebookPen, 'panel-left': PanelLeft, 'panel-right': PanelRight, pause: Pause, pencil: Pencil, pin: Pin, play: Play,
   plus: Plus, refresh: RefreshCw, 'rotate-ccw': RotateCcw, save: Save, 'scroll-text': ScrollText, search: Search, send: Send,
   settings: Settings, shield: Shield, sigma: Sigma, sparkles: Sparkles, square: Square, star: Star, 'sticky-note': StickyNote, sun: Sun,
-  target: Target, 'thumbs-down': ThumbsDown, 'thumbs-up': ThumbsUp, timer: Timer, trash: Trash2, 'trending-up': TrendingUp,
+  target: Target, 'thumbs-down': ThumbsDown, 'thumbs-up': ThumbsUp, mic: Mic, 'volume-2': Volume2, timer: Timer, trash: Trash2, 'trending-up': TrendingUp,
   'alert-triangle': TriangleAlert, trophy: Trophy, upload: Upload, user: User, wand: Wand2, x: X, 'zoom-in': ZoomIn, 'zoom-out': ZoomOut,
   monitor: Monitor, mountain: Mountain, shuffle: Shuffle, undo: Undo2, image: ImageIcon
 };

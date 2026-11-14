@@ -19,9 +19,10 @@ import { TutorStreamService } from './tutor-stream';
 
 interface Pending { action: string | null; question: string; selectedText: string | null; page: number | null; }
 
+import { MicButtonComponent, SpeakButtonComponent } from '../../shared/voice-buttons.component';
 @Component({
   selector: 'rw-tutor-panel',
-  imports: [FormsModule, TranslatePipe, IconComponent, MarkdownComponent, CdkMenuTrigger, CdkMenu, CdkMenuItem],
+  imports: [FormsModule, TranslatePipe, IconComponent, MarkdownComponent, CdkMenuTrigger, CdkMenu, CdkMenuItem, MicButtonComponent, SpeakButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tutor-panel.component.html',
   styleUrl: './tutor-panel.component.scss'
@@ -55,6 +56,14 @@ export class TutorPanelComponent implements OnDestroy {
   protected readonly loading = signal(false);
   protected readonly attachSelection = signal(true);
   protected readonly language = signal<ExplanationLang>('ar');
+  private voiceBase: string | null = null;
+
+  /** Dictated text is appended to what was already typed. */
+  protected onHeard(e: { text: string; final: boolean }): void {
+    this.voiceBase ??= this.draft.trim();
+    this.draft = [this.voiceBase, e.text].filter(Boolean).join(' ');
+    if (e.final) this.voiceBase = null;
+  }
   protected readonly renaming = signal(false);
   protected draft = '';
   protected renameDraft = '';

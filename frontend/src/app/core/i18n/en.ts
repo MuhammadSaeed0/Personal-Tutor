@@ -354,6 +354,7 @@ export const EN = {
     export: 'Export my data (JSON)', deleteTitle: 'Delete account', deleteLead: 'This permanently deletes your account, books, files and all study data. It cannot be undone.',
     deleteMessage: 'Everything will be permanently deleted. Are you sure?', deleteConfirm: 'Delete my account'
   },
+  voice: { speak: 'Ask by voice', stopListening: 'Stop listening', listen: 'Listen to the answer', stopReading: 'Stop reading' },
   studyPack: {
     title: 'Study pack', lead: 'A quick summary, flashcards and a short quiz for each chapter (first {n}), made in the background.', prepare: 'Prepare the pack',
     waiting: 'It starts when the source has finished processing.', starting: 'Starting…', running: 'Preparing: {done} of {total} chapters.',
@@ -432,6 +433,6 @@ export const EN = {
     request_failed: 'The request failed.', unknown_error: 'Something went wrong.', attempt_submitted: 'This attempt was already submitted.',
     time_expired: 'Time is up — your answers were submitted.', answer_locked: 'This answer was already checked.', empty_question: 'Type a question first.',
     question_too_long: 'The question is too long.', empty_note: 'A note needs a title or some content.', invalid_query: 'Search for at least 2 characters.',
-    study_pack_failed: 'The study pack could not be finished.', processing_failed: 'The source could not be processed.', no_due_mistakes: 'No mistakes are due for review in this subject right now.', quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
+    voice_denied: 'Allow the browser to use the microphone to ask by voice.', voice_unavailable: 'The microphone could not be started.', study_pack_failed: 'The study pack could not be finished.', processing_failed: 'The source could not be processed.', no_due_mistakes: 'No mistakes are due for review in this subject right now.', quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
   }
 };

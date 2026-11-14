@@ -85,6 +85,7 @@
             }
             <div class="msg-actions">
               <button class="btn ghost icon sm" type="button" (click)="copy(m)" [attr.aria-label]="'common.copy' | t"><rw-icon name="copy" [size]="14" /></button>
+              <rw-speak-button [id]="m.id" [text]="m.content" [language]="language()" />
               <button class="btn ghost icon sm" type="button" (click)="feedback(m, 1)" [class.on]="m.feedback === 1" [attr.aria-label]="'tutor.helpful' | t"><rw-icon name="thumbs-up" [size]="14" /></button>
               <button class="btn ghost icon sm" type="button" (click)="feedback(m, -1)" [class.on]="m.feedback === -1" [attr.aria-label]="'tutor.notHelpful' | t"><rw-icon name="thumbs-down" [size]="14" /></button>
               <button class="btn ghost icon sm" type="button" (click)="saveToNotes(m)" [attr.aria-label]="'tutor.saveToNotes' | t"><rw-icon name="notebook-pen" [size]="14" /></button>
@@ -125,6 +126,7 @@
     }
     <div class="input-row">
       <textarea #input class="textarea" rows="1" [(ngModel)]="draft" (keydown)="onKeydown($event)" [placeholder]="'tutor.placeholder' | t" dir="auto" [attr.aria-label]="'tutor.placeholder' | t"></textarea>
+      <rw-mic-button [language]="language()" [disabled]="streaming()" (heard)="onHeard($event)" />
       @if (streaming()) {
         <button class="btn icon" type="button" (click)="stop()" [attr.aria-label]="'tutor.stop' | t"><rw-icon name="square" [size]="16" /></button>
       } @else {
