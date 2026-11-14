@@ -37,6 +37,12 @@ public sealed class ChatProviderOptions
 
 public sealed class EmbeddingProviderOptions
 {
-    /// <summary>"Local": built-in lexical hashing, no key or download needed.</summary>
-    public string Provider { get; set; } = "Local";
+    /// <summary>
+    /// "OnnxE5": semantic search with multilingual-e5-small running on this machine (falls back to "Local" while the
+    /// model files are missing). "Local": built-in lexical hashing, nothing to download.
+    /// </summary>
+    public string Provider { get; set; } = "OnnxE5";
+
+    /// <summary>Folder holding the OnnxE5 model files (scripts/get-model.ps1 downloads them).</summary>
+    public string ModelPath { get; set; } = "App_Data/models/multilingual-e5-small";
 }

@@ -43,7 +43,11 @@ public static class DependencyInjection
 
         AddAiProviders(services);
 
-        if (runBackgroundWorker) services.AddHostedService<DocumentProcessingWorker>();
+        if (runBackgroundWorker)
+        {
+            services.AddHostedService<DocumentProcessingWorker>();
+            services.AddHostedService<EmbeddingBackfillWorker>();
+        }
         return services;
     }
 
@@ -64,6 +68,23 @@ public static class DependencyInjection
             };
         });
 
-        services.AddSingleton<IEmbeddingModel>(_ => new LocalHashingEmbeddingModel());
+        services.AddSingleton<IEmbeddingModel>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<AiOptions>>().Value.Embeddings;
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Riwaq.Embeddings");
+            if (!options.Provider.Equals("OnnxE5", StringComparison.OrdinalIgnoreCase)) return new LocalHashingEmbeddingModel();
+
+            var directory = Path.GetFullPath(options.ModelPath);
+            if (OnnxE5EmbeddingModel.IsAvailable(directory))
+            {
+                try { return new OnnxE5EmbeddingModel(directory); }
+                catch (Exception ex) { logger.LogError(ex, "The semantic search model could not be loaded; using keyword embeddings."); }
+            }
+            else
+            {
+                logger.LogWarning("Semantic search model not found in {Directory}; using keyword embeddings. Run scripts/get-model.ps1 to download it.", directory);
+            }
+            return new LocalHashingEmbeddingModel();
+        });
     }
 }

@@ -30,7 +30,7 @@ Legend: ✅ done and tested · 🟡 done, verified only partly (see note) · ⬜
 ## Phase 3 — AI tutoring
 - ✅ Provider abstraction: Anthropic (official SDK, streaming, structured output, fallback), your Claude account (Claude Code CLI), disabled
 - ✅ Claude-account provider (`ClaudeCode`): headless Claude Code CLI with all tools/settings disabled; streaming, JSON schema, history
-- ✅ Embeddings: local lexical model; hybrid BM25 + vector retrieval, page references
+- ✅ Embeddings: local semantic model (multilingual-e5-small, ONNX) with lexical fallback and background backfill; hybrid BM25 + vector retrieval, page references
 - ✅ Tutor: conversations, SSE streaming, stop, retry, feedback, follow-ups, selection actions, cross-book scope
 - ✅ Server-side citation validation; prompt-injection containment
 - ✅ Summaries (10 styles, map-reduce, page citations, edit, regenerate, export)

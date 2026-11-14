@@ -43,6 +43,13 @@ if (-not (Test-Path (Join-Path $frontend 'node_modules'))) {
     Push-Location $frontend; try { npm install --no-audit --no-fund | Out-Null } finally { Pop-Location }
 }
 
+$modelDir = Join-Path $backend 'src/Riwaq.Api/App_Data/models/multilingual-e5-small'
+if (-not (Test-Path (Join-Path $modelDir 'model_qint8_avx512_vnni.onnx'))) {
+    Write-Host 'Downloading the semantic search model (first run, about 120 MB)...'
+    try { & (Join-Path $root 'scripts/get-model.ps1') }
+    catch { Write-Host "  Model download failed ($_); search will use keywords only for now." -ForegroundColor Yellow }
+}
+
 if (-not $SkipBuild) {
     Write-Host 'Building the API...'
     dotnet build (Join-Path $backend 'src/Riwaq.Api/Riwaq.Api.csproj') -v q -nologo

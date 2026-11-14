@@ -15,7 +15,7 @@ The interface is Arabic-first (RTL) with a full English (LTR) mode.
 |---|---|
 | Backend | ASP.NET Core 10 (LTS) Web API · EF Core 10 · SQL Server (tested on 2025) · ASP.NET Core Identity + JWT · SignalR · background job worker |
 | Frontend | Angular 22 (standalone, zoneless, signals, strict) · Angular CDK · pdf.js 6 · KaTeX + mhchem · Chart.js · Lucide icons |
-| AI | Provider abstraction: your own Claude account through Claude Code, Anthropic Claude API (official C# SDK, default `claude-opus-5-5`); built-in local embeddings for search |
+| AI | Provider abstraction: your own Claude account through Claude Code, Anthropic Claude API (official C# SDK, default `claude-opus-5-5`); semantic search by meaning on your own machine (multilingual-e5-small, ONNX) with a keyword fallback |
 | Sources | PDFs (PdfPig extraction with Arabic RTL repair, Claude vision or Tesseract for scanned pages), photos (SkiaSharp + Claude vision), YouTube lessons (captions via YoutubeExplode, tidied and split by topic with Claude) |
 
 ## Quick start (local development)
@@ -74,7 +74,8 @@ In Development a random JWT signing key is generated at start when none is confi
 
 ### 4. Run
 One command (PowerShell, from the repository root) builds the API, starts the API and the web app in the background,
-waits until both answer and opens the browser; logs go to `backend/api-run.log` and `frontend/ng-serve.log`:
+waits until both answer and opens the browser. The first run also downloads the semantic search model (about 120 MB,
+`scripts/get-model.ps1`); logs go to `backend/api-run.log` and `frontend/ng-serve.log`:
 ```powershell
 .\run.ps1            # options: -NoBrowser, -SkipBuild
 .\stop.ps1           # stops only Riwaq's processes (API, dev server, PDF-export browser)

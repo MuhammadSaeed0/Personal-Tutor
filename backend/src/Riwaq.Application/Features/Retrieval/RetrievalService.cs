@@ -149,9 +149,12 @@ public sealed class RetrievalService(
             .ToList();
     }
 
+    /// <summary>Cache key of a book's search index; drop it when the book's vectors change.</summary>
+    public static string IndexCacheKey(Guid bookId, int contentVersion, string model) => $"rag:{bookId}:{contentVersion}:{model}";
+
     private async Task<BookIndex> GetIndexAsync(Guid bookId, string title, int version, CancellationToken ct)
     {
-        var key = $"rag:{bookId}:{version}:{embedder.ModelName}";
+        var key = IndexCacheKey(bookId, version, embedder.ModelName);
         if (cache.TryGetValue(key, out BookIndex? cached) && cached is not null) return cached with { BookTitle = title };
 
         var chunks = await db.DocumentChunks.AsNoTracking().Where(c => c.BookId == bookId)

@@ -18,7 +18,8 @@ user-secrets (development) or a vault — never from committed files.
 | `Ai:Chat:UseServerSideFallback` | `true` | Claude: re-serve declined requests on Anthropic's recommended fallback model |
 | `Ai:Chat:CliPath` / `MaxConcurrency` | `claude` / 2 | ClaudeCode: CLI command or full path; parallel CLI processes |
 | `Ai:Chat:TimeoutSeconds` | 180 | per-request timeout |
-| `Ai:Embeddings:Provider` | `Local` | `Local` (lexical, no key or download) |
+| `Ai:Embeddings:Provider` | `OnnxE5` | `OnnxE5` (semantic, runs locally; falls back to `Local` while the model is missing), `Local` (lexical, nothing to download) |
+| `Ai:Embeddings:ModelPath` | `App_Data/models/multilingual-e5-small` | folder with `model_qint8_avx512_vnni.onnx` and `tokenizer.json` (`scripts/get-model.ps1`) |
 | `Ai:Limits:DailyRequestsPerUser` / `DailyOutputTokensPerUser` | 300 / 600000 | per-student AI quota |
 | `Retrieval:TopK` | 8 | passages per tutor answer |
 | `Summaries:SingleCallChars` / `BatchChars` / `MaxBatches` | 180000 / 120000 / 12 | map-reduce thresholds |
@@ -61,10 +62,12 @@ default to save plan usage; `opus` for the strongest answers).
 streaming, effort control, JSON-schema structured outputs (quizzes, flashcards, grading) and the server-side refusal
 fallback (`server-side-fallback-2026-07-01`). Sampling parameters are not sent (current models reject them).
 
-**Embeddings.** `Local` works offline and needs no key; it captures word and character overlap. Retrieval is hybrid
-(BM25 keyword ranking plus vectors). Vectors are stored per model name, so after changing the embedding model
-**reprocess books** (Library → Manage → Reprocess) to rebuild vectors; until then retrieval falls back to keyword
-ranking for those books.
+**Embeddings.** `OnnxE5` runs multilingual-e5-small (int8 ONNX, 384 dimensions) inside the API process: it matches
+questions to passages by meaning, across Arabic, English and French, with no key and no network calls. Get the files once
+with `scripts/get-model.ps1` (`run.ps1` does it on first run). Without them the API logs a warning and uses `Local`, which
+only captures word and character overlap. Retrieval is hybrid (BM25 keyword ranking plus vectors). Vectors are stored per
+model name; when the model changes, a background task adds vectors for the new model to every ready source from its stored
+passages (no re-extraction, OCR or Claude calls), and until a source is done its search falls back to keyword ranking.
 
 **Without any AI key** the platform still works for reading, highlights, notes, flashcards (manual), planning,
 analytics and search; AI features return `ai_not_configured` and the UI says so.

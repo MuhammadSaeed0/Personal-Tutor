@@ -72,7 +72,7 @@ i18n coverage check, browser smoke test.
   end with a scripted model. Prompt quality should still be reviewed on real textbooks.
 - **Claude-account mode is personal.** It uses the server owner's plan limits and must not be offered to other users;
   multi-user deployments need an API key.
-- **Embeddings default to a lexical fallback.** They capture word overlap, not meaning.
+- **Semantic search needs the local model files.** Without them (`scripts/get-model.ps1`) search falls back to word overlap.
 - **Scanned pages** cost one Claude request each and count against the plan's limits; pages with low legibility are
   flagged and recognition can contain small errors. With Tesseract instead, Arabic quality is much lower.
 - **Figures on pages with embedded text are not interpreted**; figures on scanned pages are described by Claude. Questions based
@@ -93,7 +93,7 @@ i18n coverage check, browser smoke test.
 1. Validate prompts with real textbooks and a live Claude key; tune effort/model per feature and add prompt caching.
 2. Email provider for password resets and optional study reminders.
 3. Vision support for figures/diagrams (render page regions and send them to a vision-capable model).
-4. SQL Server 2025 native vector search; background re-embedding when the embedding model changes.
+4. SQL Server 2025 native vector search.
 5. Teacher/parent sharing (explicit, permissioned) and an admin area for multi-tenant deployments.
 6. Offline-friendly PWA for the reader and flashcard review.
 7. Richer subject tools: formula library extraction per chapter, conjugation drills, rock, mineral and fossil reference images for geology.
