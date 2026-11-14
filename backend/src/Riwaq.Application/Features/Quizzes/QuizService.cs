@@ -30,7 +30,11 @@ public sealed record GenerateQuizRequest(
     QuizMode Mode = QuizMode.Practice,
     string? Language = null,
     string? Title = null,
-    int DiagramCount = 0);
+    int DiagramCount = 0,
+    bool MinistryFormat = false,
+    bool ExtractFromSource = false,
+    int TwoMarkChoiceCount = 0,
+    double EssayPoints = 2);
 
 public sealed record QuestionDto(Guid Id, int Ordinal, QuestionType Type, string Prompt, JsonElement Options, string? Hint, Difficulty Difficulty, string? Topic, double Points,
     string? DiagramSvg = null, string? DiagramAlt = null);
@@ -38,7 +42,8 @@ public sealed record QuestionDto(Guid Id, int Ordinal, QuestionType Type, string
 public sealed record QuizDto(
     Guid Id, int SubjectId, Guid? BookId, Guid? ChapterId, string Title, QuizMode Mode, Difficulty Difficulty, int? PageStart, int? PageEnd,
     int? TimeLimitSeconds, bool HintsAllowed, bool RevealImmediately, string Language, int QuestionCount, int ExcludedQuestionCount,
-    DateTime CreatedAt, int AttemptCount, double? BestPercent, QuizStatus Status = QuizStatus.Ready, string? ErrorCode = null);
+    DateTime CreatedAt, int AttemptCount, double? BestPercent, QuizStatus Status = QuizStatus.Ready, string? ErrorCode = null,
+    bool MinistryFormat = false, double TotalPoints = 0);
 
 public sealed record QuizDetailDto(QuizDto Quiz, IReadOnlyList<QuestionDto> Questions);
 
@@ -71,6 +76,7 @@ public sealed class QuizService(
     AiUsageGuard usage,
     MasteryService mastery,
     Mistakes.MistakeService mistakes,
+    ExamTemplateService templates,
     IQuizGenerationQueue queue,
     IRealtimeNotifier notifier,
     TimeProvider clock,
@@ -93,6 +99,26 @@ public sealed class QuizService(
     /// <summary>Queues a quiz. The study pack queues several at once, so it skips the per-student limit.</summary>
     public async Task<QuizDetailDto> EnqueueAsync(Guid userId, GenerateQuizRequest request, bool limitParallel, CancellationToken ct)
     {
+        if (request.ExtractFromSource)
+        {
+            request = request with { Mode = QuizMode.Exam, MinistryFormat = false, Blueprint = null, DiagramCount = 0, FocusWeakAreas = false, ChapterId = null, PageStart = null, PageEnd = null };
+        }
+        else if (request.MinistryFormat)
+        {
+            var subjectId = await db.Books.AsNoTracking().Where(b => b.Id == request.BookId && b.UserId == userId).Select(b => (int?)b.SubjectId).FirstOrDefaultAsync(ct)
+                            ?? throw new NotFoundException("Book");
+            var t = await templates.GetEffectiveAsync(userId, subjectId, ct);
+            var diagrams = Math.Min(t.DiagramCount, t.MultipleChoiceCount);
+            var blueprint = new Dictionary<QuestionType, int> { [QuestionType.MultipleChoice] = t.MultipleChoiceCount - diagrams };
+            if (t.EssayCount > 0) blueprint[QuestionType.Structured] = t.EssayCount;
+            request = request with
+            {
+                Mode = QuizMode.Exam, Difficulty = Difficulty.Mixed, Blueprint = blueprint, Count = t.MultipleChoiceCount + t.EssayCount,
+                TimeLimitMinutes = t.DurationMinutes, DiagramCount = diagrams, TwoMarkChoiceCount = t.TwoMarkChoiceCount, EssayPoints = t.EssayPoints,
+                HintsAllowed = false, RevealImmediately = false
+            };
+        }
+
         await usage.EnsureAllowedAsync(userId, ct);
         if (!chat.IsConfigured) throw new AiUnavailableException("ai_not_configured", "No AI provider is configured.");
         if (limitParallel && await db.Quizzes.CountAsync(q => q.UserId == userId && q.Status == QuizStatus.Generating, ct) >= MaxGeneratingPerUser)
@@ -114,6 +140,7 @@ public sealed class QuizService(
             HintsAllowed = request.Mode == QuizMode.Practice && request.HintsAllowed,
             RevealImmediately = request.Mode == QuizMode.Practice && request.RevealImmediately,
             FocusWeakAreas = request.FocusWeakAreas, Language = language, CreatedAt = clock.GetUtcNow().UtcDateTime,
+            MinistryFormat = request.MinistryFormat,
             RequestJson = JsonSerializer.Serialize(request with { Language = language }, RequestJsonOptions)
         };
         db.Quizzes.Add(quiz);
@@ -176,9 +203,9 @@ public sealed class QuizService(
     private async Task WriteQuestionsAsync(Quiz quiz, GenerateQuizRequest request, CancellationToken ct)
     {
         var userId = quiz.UserId;
-        var count = Math.Clamp(request.Count, 1, 40);
-        var blueprint = request.Blueprint?.Where(b => b.Value > 0).ToDictionary(b => b.Key, b => Math.Min(b.Value, 20));
-        if (blueprint is { Count: > 0 }) count = Math.Min(40, blueprint.Values.Sum());
+        var count = Math.Clamp(request.Count, 1, MaxQuestions);
+        var blueprint = request.Blueprint?.Where(b => b.Value > 0).ToDictionary(b => b.Key, b => Math.Min(b.Value, MaxQuestions));
+        if (blueprint is { Count: > 0 }) count = Math.Min(MaxQuestions, blueprint.Values.Sum());
         var types = blueprint?.Keys.ToList() ?? (request.Types is { Count: > 0 } ? request.Types.Distinct().ToList() : DefaultTypes());
 
         var scope = request.ChapterId is not null ? SummaryScope.Chapter
@@ -217,20 +244,39 @@ public sealed class QuizService(
         var difficultyLine = DifficultyInstruction(request.Difficulty);
 
         var calls = new List<(bool Diagram, Task<ChatResult> Task)>();
-        if (textCount > 0)
+        if (request.ExtractFromSource)
         {
+            // A past paper: its own questions are copied, not new ones written.
             var userTurn = new StringBuilder(Prompts.SourcePages(pages));
-            userTurn.AppendLine().AppendLine($"Write {Math.Min(40, textCount + Math.Max(2, textCount / 4))} candidate questions (some may be discarded during validation).");
-            userTurn.AppendLine(blueprint is { Count: > 0 }
-                ? "Use exactly this mix of types: " + string.Join(", ", blueprint.Select(b => $"{b.Value} × {QuestionValidator.TypeName(b.Key)}")) + "."
-                : "Allowed types: " + string.Join(", ", types.Select(QuestionValidator.TypeName)) + ".");
-            userTurn.AppendLine(difficultyLine);
-            if (weakTopics.Count > 0) userTurn.AppendLine("Prioritise these topics where the student has been making mistakes: " + string.Join("; ", weakTopics.Select(Prompts.Escape)) + ".");
+            userTurn.AppendLine().AppendLine($"Extract up to {MaxQuestions} exam questions from these pages, in their order.");
             calls.Add((false, chat.CompleteAsync(new ChatRequest
             {
-                Feature = "quiz", SystemPrompt = GenerationPrompt(source.Subject.Code, language), JsonSchema = QuestionSchema,
-                Messages = [new ChatTurn(ChatRole.User, userTurn.ToString())], MaxTokens = 16000, Effort = "medium"
+                Feature = "quiz", SystemPrompt = ExtractionPrompt(source.Subject.Code, language), JsonSchema = ExtractionSchema,
+                Messages = [new ChatTurn(ChatRole.User, userTurn.ToString())], MaxTokens = 32000, Effort = "medium"
             }, ct)));
+        }
+        else if (textCount > 0)
+        {
+            // Long exams are written in parts of up to 20 questions, each from its own share of the pages, side by side:
+            // one request for 40+ questions would overrun the output limit.
+            var textBatches = (int)Math.Ceiling(textCount / (double)TextBatchSize);
+            for (var b = 0; b < textBatches; b++)
+            {
+                var wanted = Math.Min(TextBatchSize, textCount - b * TextBatchSize);
+                var share = textBatches == 1 ? pages : pages.Where((_, i) => i % textBatches == b).ToList();
+                var userTurn = new StringBuilder(Prompts.SourcePages(textBatches == 1 ? pages : SamplePages(share.Count > 0 ? share : pages, 60_000)));
+                userTurn.AppendLine().AppendLine($"Write {wanted + Math.Max(2, wanted / 4)} candidate questions (some may be discarded during validation).");
+                userTurn.AppendLine(blueprint is { Count: > 0 }
+                    ? "Use this mix of types: " + string.Join(", ", blueprint.Select(x => $"{Share(x.Value, b, textBatches)} × {QuestionValidator.TypeName(x.Key)}").Where(x => !x.StartsWith("0 ", StringComparison.Ordinal))) + "."
+                    : "Allowed types: " + string.Join(", ", types.Select(QuestionValidator.TypeName)) + ".");
+                userTurn.AppendLine(difficultyLine);
+                if (weakTopics.Count > 0) userTurn.AppendLine("Prioritise these topics where the student has been making mistakes: " + string.Join("; ", weakTopics.Select(Prompts.Escape)) + ".");
+                calls.Add((false, chat.CompleteAsync(new ChatRequest
+                {
+                    Feature = "quiz", SystemPrompt = GenerationPrompt(source.Subject.Code, language), JsonSchema = QuestionSchema,
+                    Messages = [new ChatTurn(ChatRole.User, userTurn.ToString())], MaxTokens = 16000, Effort = "medium"
+                }, ct)));
+            }
         }
 
         var batches = (int)Math.Ceiling(diagramCount / (double)DiagramBatchSize);
@@ -257,31 +303,31 @@ public sealed class QuizService(
         await db.SaveChangesAsync(CancellationToken.None);
 
         // The quiz stands on the text questions; failed diagram requests only reduce the number of drawings.
-        var textCall = calls.FirstOrDefault(c => !c.Diagram);
+        var textCalls = calls.Where(c => !c.Diagram).ToList();
         if (calls.All(c => !c.Task.IsCompletedSuccessfully))
-            await (textCall.Task ?? calls[0].Task); // nothing succeeded: rethrow the provider error (rate limit, not configured, ...)
+            await (textCalls.FirstOrDefault().Task ?? calls[0].Task); // nothing succeeded: rethrow the provider error (rate limit, not configured, ...)
         var result = calls.First(c => c.Task.IsCompletedSuccessfully).Task.Result;
 
         var random = new Random();
         var accepted = new List<ValidatedQuestion>();
         var rejected = 0;
         var perType = new Dictionary<QuestionType, int>();
-        if (textCall.Task is { IsCompletedSuccessfully: true })
+        var wantedText = request.ExtractFromSource ? MaxQuestions : textCount;
+        foreach (var raw in textCalls.Where(c => c.Task.IsCompletedSuccessfully).SelectMany(c => ParseQuestions(c.Task.Result.Text)))
         {
-            foreach (var raw in ParseQuestions(textCall.Task.Result.Text))
+            if (accepted.Count >= wantedText) break;
+            var outcome = QuestionValidator.Validate(raw, pageMap, random, keepChoiceOrder: request.ExtractFromSource);
+            if (outcome.Question is null || (!request.ExtractFromSource && !types.Contains(outcome.Question.Type)) || IsDuplicate(accepted, outcome.Question))
             {
-                var outcome = QuestionValidator.Validate(raw, pageMap, random);
-                if (outcome.Question is null || !types.Contains(outcome.Question.Type) || IsDuplicate(accepted, outcome.Question))
-                {
-                    rejected++;
-                    continue;
-                }
-                var q = outcome.Question;
-                if (blueprint is { Count: > 0 } && perType.GetValueOrDefault(q.Type) >= blueprint.GetValueOrDefault(q.Type)) continue;
-                perType[q.Type] = perType.GetValueOrDefault(q.Type) + 1;
-                accepted.Add(q);
-                if (accepted.Count >= textCount) break;
+                rejected++;
+                continue;
             }
+            var q = outcome.Question;
+            if (blueprint is { Count: > 0 } && perType.GetValueOrDefault(q.Type) >= blueprint.GetValueOrDefault(q.Type)) continue;
+            // A past paper without its answer: the answer was worked out, so the student is told it is a suggestion.
+            if (request.ExtractFromSource && raw.FromPaper == false) q = q with { Explanation = SuggestedAnswerLabel(language) + q.Explanation };
+            perType[q.Type] = perType.GetValueOrDefault(q.Type) + 1;
+            accepted.Add(q);
         }
 
         var drawn = new List<ValidatedQuestion>();
@@ -305,7 +351,7 @@ public sealed class QuizService(
             rejected += drawn.Count - kept.Count;
             drawn = kept;
         }
-        accepted = Arrange(accepted, drawn, request.Difficulty);
+        if (!request.ExtractFromSource) accepted = Arrange(accepted, drawn, request.Difficulty);
         if (accepted.Count == 0) throw new AiUnavailableException("ai_invalid_output", "No reliable questions could be generated from this content. Try a different range.");
 
         var chapters = await db.Chapters.AsNoTracking().Where(c => c.BookId == source.Book.Id).Select(c => new { c.Id, c.StartPage, c.EndPage, c.Level }).ToListAsync(ct);
@@ -321,6 +367,7 @@ public sealed class QuizService(
                 ? chapters.Where(c => p >= c.StartPage && p <= c.EndPage).OrderByDescending(c => c.Level).Select(c => (Guid?)c.Id).FirstOrDefault()
                 : null)
         }).ToList();
+        if (request.MinistryFormat) ApplyMinistryMarks(quiz.Questions, request.TwoMarkChoiceCount, request.EssayPoints);
         // The questions carry their ids already, so they are added explicitly (otherwise EF would treat them as existing rows).
         ((DbContext)db).AddRange(quiz.Questions);
     }
@@ -689,6 +736,55 @@ public sealed class QuizService(
         ? "Target difficulty: a graded mix — about 30% easy, 40% medium and 30% hard questions; set each question's difficulty accordingly."
         : $"Target difficulty: {difficulty.ToString().ToLowerInvariant()}.";
 
+    private const int MaxQuestions = 60;
+    private const int TextBatchSize = 20;
+
+    /// <summary>Part <paramref name="batch"/> of <paramref name="total"/> spread over <paramref name="batches"/> requests.</summary>
+    private static int Share(int total, int batch, int batches) => total / batches + (batch < total % batches ? 1 : 0);
+
+    /// <summary>
+    /// Ministry marking: the hardest multiple-choice questions carry two marks (as many as the template says), the rest one;
+    /// essay questions carry the template's essay marks.
+    /// </summary>
+    internal static void ApplyMinistryMarks(List<QuizQuestion> questions, int twoMarkChoices, double essayPoints)
+    {
+        var choices = questions.Where(q => q.Type is QuestionType.MultipleChoice or QuestionType.TrueFalse or QuestionType.Numerical).ToList();
+        foreach (var q in choices) q.Points = 1;
+        foreach (var q in choices.OrderByDescending(q => q.Difficulty).ThenByDescending(q => q.Ordinal).Take(Math.Max(0, twoMarkChoices))) q.Points = 2;
+        foreach (var q in questions.Where(q => q.Type is QuestionType.Structured or QuestionType.ShortAnswer)) q.Points = Math.Clamp(essayPoints, 0.5, 20);
+    }
+
+    private static string SuggestedAnswerLabel(string language) => language switch
+    {
+        "en" => "(Suggested answer: the paper does not give one.) ",
+        "fr" => "(Réponse proposée : le sujet ne la donne pas.) ",
+        _ => "(إجابة مقترحة: الورقة لا تذكر الإجابة.) "
+    };
+
+    private static string ExtractionPrompt(string subjectCode, string language) => $$"""
+        The source pages are a {{subjectCode}} exam paper (a past or sample exam), possibly scanned, possibly with a model answer section.
+        Copy its questions into the JSON structure, one entry per question the student must answer, keeping their wording and order.
+        Keep the paper's language for the questions; write explanations in {{Prompts.LanguageName(language)}}.
+
+        Field rules per type:
+        - multiple_choice: "options" = the paper's choices in order; "correctIndex" = the correct one.
+        - true_false: "correctBool". fill_blank: "____" where the answer goes, "acceptedAnswers".
+        - numerical: "numericAnswer", "unit", "tolerance" (relative, e.g. 0.02).
+        - essay or explain questions: type "structured" with "modelAnswer" and "rubric" (key points).
+        Unused fields must be null or empty arrays.
+
+        "fromPaper" = true when the paper (for example its answer key or model answers) gives the answer; otherwise solve the
+        question correctly yourself and set "fromPaper" = false. "page" = the page the question is printed on; "sourceQuote" = 5–25
+        words copied exactly from the question as printed. Skip questions that cannot be answered without a figure you cannot see,
+        unless the figure is fully described in the text. Never invent questions that are not in the paper. Math in LaTeX ($...$).
+
+        {{Prompts.SecurityRules}}
+        """;
+
+    private static readonly string ExtractionSchema = QuestionSchema
+        .Replace("\"sourceQuote\":{\"type\":[\"string\",\"null\"]}},", "\"sourceQuote\":{\"type\":[\"string\",\"null\"]},\"fromPaper\":{\"type\":[\"boolean\",\"null\"]}},")
+        .Replace("\"page\",\"sourceQuote\"]", "\"page\",\"sourceQuote\",\"fromPaper\"]");
+
     private const int DiagramReviewBatch = 5;
 
     private const string DiagramReviewPrompt = """
@@ -906,7 +1002,8 @@ public sealed class QuizService(
 
     private static QuizDto ToDto(Quiz q, int questionCount, int attempts, double? best) => new(q.Id, q.SubjectId, q.BookId, q.ChapterId, q.Title, q.Mode,
         q.Difficulty, q.PageStart, q.PageEnd, q.TimeLimitSeconds, q.HintsAllowed, q.RevealImmediately, q.Language, questionCount, q.ExcludedQuestionCount,
-        q.CreatedAt, attempts, best, q.Status, q.Status == QuizStatus.Failed ? q.ErrorMessage : null);
+        q.CreatedAt, attempts, best, q.Status, q.Status == QuizStatus.Failed ? q.ErrorMessage : null, q.MinistryFormat,
+        q.Questions.Sum(x => x.Points));
 
     private static QuizDetailDto ToDetail(Quiz quiz, int attempts, double? best) =>
         new(ToDto(quiz, quiz.Questions.Count, attempts, best), quiz.Questions.OrderBy(q => q.Ordinal).Select(q => ToQuestionDto(q, quiz.HintsAllowed)).ToList());

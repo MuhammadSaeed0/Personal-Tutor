@@ -298,7 +298,7 @@ export interface Quiz {
   mode: 'practice' | 'exam'; difficulty: Difficulty; pageStart: number | null; pageEnd: number | null;
   timeLimitSeconds: number | null; hintsAllowed: boolean; revealImmediately: boolean; language: string;
   questionCount: number; excludedQuestionCount: number; createdAt: string; attemptCount: number; bestPercent: number | null;
-  status: QuizStatus; errorCode: string | null;
+  status: QuizStatus; errorCode: string | null; ministryFormat: boolean; totalPoints: number;
 }
 
 export type QuizStatus = 'generating' | 'ready' | 'failed';
@@ -429,4 +429,9 @@ export interface AiUsage {
 export interface StudyPack {
   id: string; bookId: string; status: 'pending' | 'running' | 'completed' | 'failed'; total: number; done: number;
   summaries: number; cards: number; quizzes: number; errorCode: string | null; createdAt: string; updatedAt: string;
+}
+
+export interface ExamTemplate {
+  subjectId: number; multipleChoiceCount: number; twoMarkChoiceCount: number; essayCount: number; essayPoints: number;
+  durationMinutes: number; diagramCount: number; totalPoints: number; isDefault: boolean; isOfficial: boolean;
 }

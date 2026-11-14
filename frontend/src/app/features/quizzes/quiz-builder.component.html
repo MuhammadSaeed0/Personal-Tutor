@@ -42,57 +42,69 @@
         }
       </section>
 
-      <section class="grid cols-2">
-        <div class="field"><span class="field-label">{{ 'builder.difficulty' | t }}</span>
-          <div class="segmented" role="group">
-            @for (d of ['easy', 'medium', 'hard', 'mixed']; track d) {
-              <button type="button" [attr.aria-pressed]="difficulty === d" (click)="difficulty = $any(d)">{{ 'difficulty.' + d | t }}</button>
-            }
-          </div></div>
-        @if (!(mode() === 'exam' && useBlueprint)) {
-          <div class="field"><label for="q-count">{{ 'builder.count' | t }}: <strong class="num">{{ count }}</strong></label>
-            <input id="q-count" type="range" min="3" max="40" [(ngModel)]="count" class="slider" /></div>
-        }
-      </section>
-
-      <section class="field diagrams">
-        <label for="q-diagrams">{{ 'builder.diagrams' | t }}: <strong class="num">{{ diagramCount() }}</strong></label>
-        <input id="q-diagrams" type="range" min="0" [max]="maxDiagrams()" [ngModel]="diagramCount()" (ngModelChange)="diagramCount.set(+$event)" class="slider" />
-        <p class="xsmall subtle">{{ ('builder.diagramHint.' + diagramSubject()) | t }} {{ 'builder.diagramCost' | t }}</p>
-      </section>
-
-      @if (!(mode() === 'exam' && useBlueprint)) {
-        <section class="field"><span class="field-label">{{ 'builder.types' | t }}</span>
-          <div class="chips">
-            @for (t of allTypes; track t) {
-              <button type="button" class="chip" [class.active]="types().includes(t)" (click)="toggleType(t)" [attr.aria-pressed]="types().includes(t)">{{ 'questionTypes.' + t | t }}</button>
-            }
-          </div></section>
+      @if (mode() === 'exam' && template(); as t) {
+        <label class="card ministry">
+          <span class="row"><input type="checkbox" [checked]="ministry()" (change)="ministry.set(!ministry())" /> <strong>{{ 'builder.ministry' | t }}</strong></span>
+          <span class="xsmall subtle">{{ 'builder.ministryShape' | t: { mcq: t.multipleChoiceCount, essay: t.essayCount, marks: t.totalPoints, minutes: t.durationMinutes } }}
+            @if (t.isDefault && t.isOfficial) { · {{ 'builder.ministryOfficial' | t }} }
+            · <a routerLink="/settings" [queryParams]="{ tab: 'examTemplates' }">{{ 'builder.ministryEdit' | t }}</a></span>
+        </label>
       }
 
-      @if (mode() === 'exam') {
-        <section class="exam-box">
-          <label class="check"><input type="checkbox" [(ngModel)]="useBlueprint" /> {{ 'builder.useBlueprint' | t }}</label>
-          @if (useBlueprint) {
-            <p class="xsmall subtle">{{ 'builder.blueprintHint' | t }}</p>
-            <div class="blueprint">
-              @for (t of allTypes; track t) {
-                <label class="bp"><span class="small">{{ 'questionTypes.' + t | t }}</span>
-                  <input class="input num" type="number" min="0" max="20" [(ngModel)]="blueprint[t]" [attr.aria-label]="'questionTypes.' + t | t" /></label>
+      @if (!ministryOn()) {
+        <section class="grid cols-2">
+          <div class="field"><span class="field-label">{{ 'builder.difficulty' | t }}</span>
+            <div class="segmented" role="group">
+              @for (d of ['easy', 'medium', 'hard', 'mixed']; track d) {
+                <button type="button" [attr.aria-pressed]="difficulty === d" (click)="difficulty = $any(d)">{{ 'difficulty.' + d | t }}</button>
               }
-            </div>
-            <p class="small">{{ 'builder.total' | t }}: <strong class="num">{{ blueprintTotal() }}</strong></p>
+            </div></div>
+          @if (!(mode() === 'exam' && useBlueprint)) {
+            <div class="field"><label for="q-count">{{ 'builder.count' | t }}: <strong class="num">{{ count }}</strong></label>
+              <input id="q-count" type="range" min="3" max="40" [(ngModel)]="count" class="slider" /></div>
           }
-          <div class="field"><label for="q-time">{{ 'builder.timeLimit' | t }}</label>
-            <input id="q-time" class="input num" type="number" min="5" max="600" [(ngModel)]="timeLimit" /></div>
         </section>
-      } @else {
-        <section class="options">
-          <label class="check"><input type="checkbox" [(ngModel)]="reveal" /> {{ 'builder.revealImmediately' | t }}</label>
-          <label class="check"><input type="checkbox" [(ngModel)]="hints" /> {{ 'builder.hints' | t }}</label>
-          <div class="field inline"><label for="q-time2">{{ 'builder.timeLimitOptional' | t }}</label>
-            <input id="q-time2" class="input num" type="number" min="0" max="600" [(ngModel)]="timeLimit" /></div>
+
+        <section class="field diagrams">
+          <label for="q-diagrams">{{ 'builder.diagrams' | t }}: <strong class="num">{{ diagramCount() }}</strong></label>
+          <input id="q-diagrams" type="range" min="0" [max]="maxDiagrams()" [ngModel]="diagramCount()" (ngModelChange)="diagramCount.set(+$event)" class="slider" />
+          <p class="xsmall subtle">{{ ('builder.diagramHint.' + diagramSubject()) | t }} {{ 'builder.diagramCost' | t }}</p>
         </section>
+
+        @if (!(mode() === 'exam' && useBlueprint)) {
+          <section class="field"><span class="field-label">{{ 'builder.types' | t }}</span>
+            <div class="chips">
+              @for (t of allTypes; track t) {
+                <button type="button" class="chip" [class.active]="types().includes(t)" (click)="toggleType(t)" [attr.aria-pressed]="types().includes(t)">{{ 'questionTypes.' + t | t }}</button>
+              }
+            </div></section>
+        }
+
+        @if (mode() === 'exam') {
+          <section class="exam-box">
+            <label class="check"><input type="checkbox" [(ngModel)]="useBlueprint" /> {{ 'builder.useBlueprint' | t }}</label>
+            @if (useBlueprint) {
+              <p class="xsmall subtle">{{ 'builder.blueprintHint' | t }}</p>
+              <div class="blueprint">
+                @for (t of allTypes; track t) {
+                  <label class="bp"><span class="small">{{ 'questionTypes.' + t | t }}</span>
+                    <input class="input num" type="number" min="0" max="20" [(ngModel)]="blueprint[t]" [attr.aria-label]="'questionTypes.' + t | t" /></label>
+                }
+              </div>
+              <p class="small">{{ 'builder.total' | t }}: <strong class="num">{{ blueprintTotal() }}</strong></p>
+            }
+            <div class="field"><label for="q-time">{{ 'builder.timeLimit' | t }}</label>
+              <input id="q-time" class="input num" type="number" min="5" max="600" [(ngModel)]="timeLimit" /></div>
+          </section>
+        } @else {
+          <section class="options">
+            <label class="check"><input type="checkbox" [(ngModel)]="reveal" /> {{ 'builder.revealImmediately' | t }}</label>
+            <label class="check"><input type="checkbox" [(ngModel)]="hints" /> {{ 'builder.hints' | t }}</label>
+            <div class="field inline"><label for="q-time2">{{ 'builder.timeLimitOptional' | t }}</label>
+              <input id="q-time2" class="input num" type="number" min="0" max="600" [(ngModel)]="timeLimit" /></div>
+          </section>
+        }
+
       }
 
       <section class="options">

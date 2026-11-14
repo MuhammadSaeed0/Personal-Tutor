@@ -271,3 +271,19 @@ public sealed class StudyPackController(StudyPackService packs) : ControllerBase
     [EnableRateLimiting(RateLimitPolicies.Ai)]
     public Task<StudyPackDto> Request(Guid bookId, CancellationToken ct) => packs.RequestAsync(User.GetUserId(), bookId, ct);
 }
+
+[ApiController]
+[Route("api/exam-templates")]
+public sealed class ExamTemplatesController(ExamTemplateService templates) : ControllerBase
+{
+    /// <summary>The Ministry exam shape for every subject (the student's own, or the default).</summary>
+    [HttpGet]
+    public Task<IReadOnlyList<ExamTemplateDto>> List(CancellationToken ct) => templates.ListAsync(User.GetUserId(), ct);
+
+    [HttpPut("{subjectId:int}")]
+    public Task<ExamTemplateDto> Save(int subjectId, SaveExamTemplateRequest request, CancellationToken ct) =>
+        templates.SaveAsync(User.GetUserId(), subjectId, request, ct);
+
+    [HttpDelete("{subjectId:int}")]
+    public Task<ExamTemplateDto> Reset(int subjectId, CancellationToken ct) => templates.ResetAsync(User.GetUserId(), subjectId, ct);
+}

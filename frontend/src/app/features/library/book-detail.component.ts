@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { I18nService, TranslatePipe } from '../../core/i18n.service';
-import { Book, BookDetail, Chapter, ChapterStatus, ProcessingStatus } from '../../core/models';
+import { Book, BookDetail, Chapter, ChapterStatus, ProcessingStatus, QuizDetail } from '../../core/models';
 import { formatClock } from '../../core/source-times.service';
 import { shrinkPhoto } from './upload-dialog.component';
 import { RealtimeService } from '../../core/realtime.service';
@@ -14,6 +14,7 @@ import { ConfirmService } from '../../shared/ui';
 import { ProcessingTimelineComponent } from './processing-timeline.component';
 
 import { StudyPackComponent } from './study-pack.component';
+import { QuizGenerationService } from '../../core/quiz-generation.service';
 @Component({
   selector: 'rw-book-detail',
   imports: [FormsModule, RouterLink, TranslatePipe, IconComponent, ProcessingTimelineComponent, StudyPackComponent],
@@ -46,6 +47,25 @@ export class BookDetailComponent {
   protected readonly ready = computed(() => ['ready', 'readyWithWarnings'].includes(this.status()?.bookStatus ?? this.detail()?.book.status ?? ''));
   protected readonly scannedPages = computed(() => this.detail()?.pages.filter(p => p.isScanned).length ?? 0);
   protected readonly ocrPages = computed(() => this.detail()?.pages.filter(p => p.extractionMethod === 'ocr').length ?? 0);
+
+  private readonly quizJobs = inject(QuizGenerationService);
+  protected readonly extracting = signal(false);
+
+  /** Copies the questions of a past paper (or sample exam) into an exam; it is prepared in the background. */
+  protected async toExam(): Promise<void> {
+    const d = this.detail();
+    if (!d) return;
+    this.extracting.set(true);
+    try {
+      const queued = await this.api.post<QuizDetail>('/api/quizzes', { bookId: d.book.id, extractFromSource: true, title: d.book.title });
+      this.quizJobs.track(queued.quiz.id, queued.quiz.title);
+      this.toast.show(this.i18n.t('book.toExamStarted'));
+    } catch (e) {
+      this.toast.error(e);
+    } finally {
+      this.extracting.set(false);
+    }
+  }
 
   constructor() {
     effect(() => void this.load(this.bookId()));

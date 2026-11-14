@@ -111,7 +111,7 @@ export const EN = {
     topics_generated: 'Sections were named by AI from the video’s topics. You can rename them.'
   },
   book: {
-    watch: 'Watch', openOnYouTube: 'Open on YouTube', photoCount: '{n} photos', addPhotos: 'Add photos', fromTopics: 'From the video’s topics',
+    toExam: 'Turn into an exam', toExamHint: 'For a past or sample exam: its questions are copied in order, with its answers when given.', toExamStarted: 'Extracting the exam questions… we’ll let you know when it’s ready.', watch: 'Watch', openOnYouTube: 'Open on YouTube', photoCount: '{n} photos', addPhotos: 'Add photos', fromTopics: 'From the video’s topics',
     segments: 'Transcript segments', duration: 'Length', photos: 'Photos', photosRead: 'Read by AI', photoN: 'Photo {n}', photoRange: 'Photos {from}–{to}',
     read: 'Read', quiz: 'Make a quiz', processing: 'Processing', details: 'Book details', semester: 'Semester', collection: 'Collection',
     structure: 'Chapters', estimated: 'Estimated', fromOutline: 'From the PDF outline', noStructure: 'No chapters were detected for this book.',
@@ -236,7 +236,7 @@ export const EN = {
     inProgress: 'In progress', noHistory: 'No attempts yet.', deleteTitle: 'Delete this quiz?', deleteMessage: 'All attempts of this quiz will be deleted.'
   },
   builder: {
-    diagrams: 'Questions with diagrams', diagramHint: { physics: 'Free-body diagrams, inclined planes, motion graphs and circuits.', chemistry: 'Lab apparatus, cells, particle diagrams and structural formulas; reactions are written as equations.', biology: 'Labelled cells, organs and processes with numbered parts.', geology: 'Rock layers, folds and faults, crystal systems and the rock cycle.', other: 'Labelled figures and graphs drawn from your book.' }, diagramCost: 'Diagram questions take longer to create and use more of your AI plan.',
+    ministry: 'Ministry-format exam', ministryShape: '{mcq} multiple choice and {essay} essay, {marks} marks, {minutes} min', ministryOfficial: 'Ministry 2026 specification', ministryEdit: 'Edit template', diagrams: 'Questions with diagrams', diagramHint: { physics: 'Free-body diagrams, inclined planes, motion graphs and circuits.', chemistry: 'Lab apparatus, cells, particle diagrams and structural formulas; reactions are written as equations.', biology: 'Labelled cells, organs and processes with numbered parts.', geology: 'Rock layers, folds and faults, crystal systems and the rock cycle.', other: 'Labelled figures and graphs drawn from your book.' }, diagramCost: 'Diagram questions take longer to create and use more of your AI plan.',
     title: 'Create a quiz', examTitle: 'Create a mock exam', subtitle: 'Choose what to practise. Questions that are not supported by your book are discarded.',
     noBooks: 'No books ready yet', noBooksText: 'Upload a textbook and wait for it to finish processing.', book: 'Book', wholeBook: 'Whole book',
     chapter: 'Chapter', pages: 'Page range', fromPage: 'From page', toPage: 'To page', difficulty: 'Difficulty', count: 'Number of questions',
@@ -259,7 +259,7 @@ export const EN = {
     suggestMeaning: 'What does this term in the question mean?', suggestLaw: 'Remind me of the law this question is about', suggestFigure: 'What does the figure show?'
   },
   attempt: {
-    answered: '{n} of {total} answered', saving: 'saving…', timer: 'Time', sheet: 'Answer sheet', submit: 'Submit', questionN: 'Question {n} of {total}',
+    bubbleSheet: 'Bubble answer sheet', bubbleLabel: 'Question {n}: choice {letter}', marks: '{n} marks', essaySection: 'Essay and other questions', answered: '{n} of {total} answered', saving: 'saving…', timer: 'Time', sheet: 'Answer sheet', submit: 'Submit', questionN: 'Question {n} of {total}',
     points: '{n} points', markReview: 'Mark for review', true: 'True', false: 'False', yourAnswer: 'Your answer',
     numericHint: 'Type a number. You may include the unit; decimals with . or , are accepted.', choose: 'Choose…', moveUp: 'Move up', moveDown: 'Move down',
     confirmOrder: 'Use this order', writeAnswer: 'Write your answer…', openHint: 'Written answers are marked against a model answer and rubric.',
@@ -338,7 +338,7 @@ export const EN = {
   },
   settings: {
     title: 'Settings',
-    tabs: { profile: 'Profile', preferences: 'Preferences', academic: 'Academic profile', exams: 'Exams', usage: 'Usage', sessions: 'Devices', privacy: 'Privacy & data' },
+    tabs: { profile: 'Profile', preferences: 'Preferences', academic: 'Academic profile', exams: 'Exams', examTemplates: 'Ministry exam templates', usage: 'Usage', sessions: 'Devices', privacy: 'Privacy & data' },
     changePassword: 'Change password', currentPassword: 'Current password', passwordChanged: 'Password changed',
     interfaceLanguage: 'Interface language', theme: 'Theme', themes: { system: 'Match my device', light: 'Light', dark: 'Dark' },
     teachingStyle: 'Teaching style', styles: { guided: 'Guided (step by step)', concise: 'Concise' }, weeklyGoal: 'Weekly goal (minutes)',
@@ -355,6 +355,11 @@ export const EN = {
     deleteMessage: 'Everything will be permanently deleted. Are you sure?', deleteConfirm: 'Delete my account'
   },
   voice: { speak: 'Ask by voice', stopListening: 'Stop listening', listen: 'Listen to the answer', stopReading: 'Stop reading' },
+  examTemplates: {
+    lead: 'The shape of a “Ministry-format exam” per subject. Science defaults follow the Ministry’s 2026 specification; edit them if the system changes (for example 50% essay from 2027).',
+    mcq: 'Multiple choice', twoMark: 'of which two-mark', essay: 'Essay', essayPoints: 'Marks per essay question', minutes: 'Time (min)', diagrams: 'With diagrams',
+    total: 'Total: {n} marks', official: 'Ministry specification', general: 'General template', custom: 'Edited', save: 'Save', reset: 'Back to default', saved: 'Template saved.'
+  },
   studyPack: {
     title: 'Study pack', lead: 'A quick summary, flashcards and a short quiz for each chapter (first {n}), made in the background.', prepare: 'Prepare the pack',
     waiting: 'It starts when the source has finished processing.', starting: 'Starting…', running: 'Preparing: {done} of {total} chapters.',
@@ -433,6 +438,6 @@ export const EN = {
     request_failed: 'The request failed.', unknown_error: 'Something went wrong.', attempt_submitted: 'This attempt was already submitted.',
     time_expired: 'Time is up — your answers were submitted.', answer_locked: 'This answer was already checked.', empty_question: 'Type a question first.',
     question_too_long: 'The question is too long.', empty_note: 'A note needs a title or some content.', invalid_query: 'Search for at least 2 characters.',
-    voice_denied: 'Allow the browser to use the microphone to ask by voice.', voice_unavailable: 'The microphone could not be started.', study_pack_failed: 'The study pack could not be finished.', processing_failed: 'The source could not be processed.', no_due_mistakes: 'No mistakes are due for review in this subject right now.', quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
+    voice_denied: 'Allow the browser to use the microphone to ask by voice.', voice_unavailable: 'The microphone could not be started.', invalid_template: 'Check the question counts, marks and time.', study_pack_failed: 'The study pack could not be finished.', processing_failed: 'The source could not be processed.', no_due_mistakes: 'No mistakes are due for review in this subject right now.', quiz_not_ready: 'This quiz is not ready yet.', quiz_generation_busy: 'Some quizzes are already being prepared. Wait for one to finish.', quiz_generation_failed: 'The quiz could not be created. Try again.', unauthorized: 'Please sign in again.', missing_client_header: 'Please refresh the page.', cancelled: 'Cancelled.'
   }
 };

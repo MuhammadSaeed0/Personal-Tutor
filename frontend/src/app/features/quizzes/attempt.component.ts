@@ -170,6 +170,11 @@ export class AttemptComponent implements OnDestroy {
     if (reveal) this.reveals.update(m => ({ ...m, [q.id]: reveal }));
   }
 
+  /** Choice letters: أ ب ج د on Arabic Ministry exams (as on the real answer sheet), A B C D otherwise. */
+  protected letter(i: number): string {
+    return (this.quiz()?.ministryFormat && this.quiz()?.language === 'ar' ? 'أبجدهو' : 'ABCDEF')[i] ?? String(i + 1);
+  }
+
   protected go(i: number): void {
     this.index.set(Math.max(0, Math.min(this.questions().length - 1, i)));
     this.sheetOpen.set(false);

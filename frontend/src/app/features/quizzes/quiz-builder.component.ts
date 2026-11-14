@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiError, ApiService } from '../../core/api.service';
 import { QuizGenerationService } from '../../core/quiz-generation.service';
 import { I18nService, TranslatePipe } from '../../core/i18n.service';
-import { Attempt, Book, BookDetail, Chapter, Difficulty, QuestionType, QuizDetail } from '../../core/models';
+import { Attempt, Book, BookDetail, Chapter, Difficulty, ExamTemplate, QuestionType, QuizDetail } from '../../core/models';
 import { StoreService } from '../../core/store.service';
 import { ToastService } from '../../core/toast.service';
 import { IconComponent } from '../../shared/icon.component';
@@ -43,6 +43,12 @@ export class QuizBuilderComponent implements OnDestroy {
   protected readonly chapters = signal<Chapter[]>([]);
   protected readonly loaded = signal(false);
   protected readonly generating = signal(false);
+  /** Exam built from the student's Ministry template for the book's subject. */
+  protected readonly ministry = signal(false);
+  protected readonly templates = signal<ExamTemplate[]>([]);
+  protected readonly template = computed(() => this.templates().find(t => t.subjectId === this.book()?.subjectId) ?? null);
+  /** The Ministry template decides counts, types, marks and time, so those settings are hidden. */
+  protected readonly ministryOn = computed(() => this.mode() === 'exam' && this.ministry() && !!this.template());
   private readonly jobs = inject(QuizGenerationService);
   private readonly pendingId = signal<string | null>(null);
   protected readonly followResult = effect(() => {
@@ -75,6 +81,7 @@ export class QuizBuilderComponent implements OnDestroy {
   protected readonly blueprintTotal = () => Object.values(this.blueprint).reduce((a, b) => a + (Number(b) || 0), 0);
 
   constructor() {
+    this.api.get<ExamTemplate[]>('/api/exam-templates').then(t => this.templates.set(t)).catch(() => { /* the option stays hidden */ });
     void this.init();
   }
 
@@ -132,6 +139,10 @@ export class QuizBuilderComponent implements OnDestroy {
     if (this.scope === 'chapter' && this.chapterId) body['chapterId'] = this.chapterId;
     if (this.scope === 'pages') { body['pageStart'] = this.pageStart; body['pageEnd'] = this.pageEnd; }
     if (this.mode() === 'exam' && this.useBlueprint) body['blueprint'] = Object.fromEntries(Object.entries(this.blueprint).filter(([, v]) => Number(v) > 0));
+    if (this.ministryOn()) {
+      body['ministryFormat'] = true;
+      delete body['blueprint'];
+    }
 
     this.generating.set(true);
     try {

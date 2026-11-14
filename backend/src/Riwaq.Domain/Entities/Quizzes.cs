@@ -23,6 +23,9 @@ public class Quiz
     /// <summary>Error code when generation failed (never provider messages or source text).</summary>
     public string? ErrorMessage { get; set; }
 
+    /// <summary>Built from the student's Ministry exam template (marks per question, time); shown with a bubble sheet.</summary>
+    public bool MinistryFormat { get; set; }
+
     /// <summary>The generation request, kept so a quiz written in the background survives restarts.</summary>
     public string? RequestJson { get; set; }
     public string? Model { get; set; }
@@ -114,5 +117,20 @@ public class QuizResponse
     public GradingMethod GradingMethod { get; set; } = GradingMethod.Pending;
     public string? Feedback { get; set; }
     public bool HintUsed { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>A student's Ministry exam shape for one subject (missing = the Ministry default).</summary>
+public class ExamTemplate
+{
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public int SubjectId { get; set; }
+    public int MultipleChoiceCount { get; set; }
+    public int TwoMarkChoiceCount { get; set; }
+    public int EssayCount { get; set; }
+    public double EssayPoints { get; set; }
+    public int DurationMinutes { get; set; }
+    public int DiagramCount { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

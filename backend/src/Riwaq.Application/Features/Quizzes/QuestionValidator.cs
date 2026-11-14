@@ -11,7 +11,7 @@ public sealed record RawQuestion(
     string? Type, string? Prompt, List<string>? Options, List<string>? MatchRight, int? CorrectIndex, bool? CorrectBool,
     List<string>? AcceptedAnswers, double? NumericAnswer, double? Tolerance, string? Unit, string? ModelAnswer, List<string>? Rubric,
     string? Explanation, string? Hint, string? Difficulty, string? Topic, int? Page, string? SourceQuote,
-    string? Diagram = null, string? DiagramAlt = null);
+    string? Diagram = null, string? DiagramAlt = null, bool? FromPaper = null);
 
 public sealed record ValidatedQuestion(
     QuestionType Type, string Prompt, string OptionsJson, string AnswerKeyJson, string Explanation, string? Hint,
@@ -27,7 +27,8 @@ public sealed record ValidationOutcome(ValidatedQuestion? Question, string? Reje
 public static class QuestionValidator
 {
     /// <param name="requireDiagram">Diagram questions must carry a safe SVG whose labels match the question and that does not show the answer.</param>
-    public static ValidationOutcome Validate(RawQuestion raw, IReadOnlyDictionary<int, string> sourcePages, Random random, bool requireDiagram = false)
+    public static ValidationOutcome Validate(RawQuestion raw, IReadOnlyDictionary<int, string> sourcePages, Random random, bool requireDiagram = false,
+        bool keepChoiceOrder = false)
     {
         var type = ParseType(raw.Type);
         if (type is null) return Reject("unknown_type");
@@ -48,7 +49,8 @@ public static class QuestionValidator
                 var choices = Clean(raw.Options);
                 if (choices.Count is < 3 or > 6 || HasDuplicates(choices)) return Reject("invalid_choices");
                 if (raw.CorrectIndex is not int correct || correct < 0 || correct >= choices.Count) return Reject("invalid_answer");
-                var order = Shuffle(choices.Count, random);
+                // A past paper keeps its own choice order (أ ب ج د); new questions are shuffled.
+                var order = keepChoiceOrder ? Enumerable.Range(0, choices.Count).ToArray() : Shuffle(choices.Count, random);
                 options = Json(new { choices = order.Select(i => choices[i]).ToArray() });
                 key = Json(new { correct = Array.IndexOf(order, correct) });
                 break;

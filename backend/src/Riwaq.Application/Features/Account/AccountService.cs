@@ -63,6 +63,7 @@ public sealed class AccountService(IAppDbContext db, IFileStorage storage, Retri
 
         await db.QuizAttempts.Where(a => a.UserId == userId).ExecuteDeleteAsync(ct);
         await db.Quizzes.Where(q => q.UserId == userId).ExecuteDeleteAsync(ct);
+        await db.ExamTemplates.Where(t => t.UserId == userId).ExecuteDeleteAsync(ct);
         await db.Flashcards.Where(f => f.UserId == userId).ExecuteDeleteAsync(ct);
         await db.Notes.Where(n => n.UserId == userId).ExecuteDeleteAsync(ct);
         await db.StudyPlans.Where(p => p.UserId == userId).ExecuteDeleteAsync(ct);

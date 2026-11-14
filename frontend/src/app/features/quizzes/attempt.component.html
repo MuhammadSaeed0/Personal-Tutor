@@ -40,7 +40,7 @@
                   <label class="choice" [class.selected]="answers()[q.id] === i"
                     [class.correct]="reveal && reveal.correctAnswer === c" [class.wrong]="reveal && answers()[q.id] === i && !reveal.isCorrect">
                     <input type="radio" [name]="'q' + q.id" [checked]="answers()[q.id] === i" (change)="setAnswer(q, i, true)" [disabled]="!!reveal" />
-                    <span class="letter">{{ 'ABCDEF'[i] }}</span>
+                    <span class="letter">{{ letter(i) }}</span>
                     <span class="grow"><rw-markdown [content]="c" /></span>
                   </label>
                 }
@@ -133,12 +133,32 @@
     </main>
 
     <aside class="sheet" [class.open]="sheetOpen()" [attr.aria-label]="'attempt.sheet' | t">
-      <h3 class="small">{{ 'attempt.sheet' | t }}</h3>
+      <h3 class="small">{{ (quiz()?.ministryFormat ? 'attempt.bubbleSheet' : 'attempt.sheet') | t }}</h3>
+      @if (quiz()?.ministryFormat) {
+        <div class="bubbles" role="group" [attr.aria-label]="'attempt.bubbleSheet' | t">
+          @for (q of questions(); track q.id; let i = $index) {
+            @if (q.type === 'multipleChoice') {
+              <div class="bubble-row" [class.current]="i === index()">
+                <button type="button" class="qn num" (click)="go(i)" [attr.aria-label]="'attempt.questionN' | t: { n: i + 1, total: questions().length }">{{ i + 1 }}</button>
+                @for (c of q.options.choices ?? []; track $index; let j = $index) {
+                  <button type="button" class="bubble" [class.filled]="answers()[q.id] === j" (click)="setAnswer(q, j, true)"
+                    [disabled]="!!reveals()[q.id]" [attr.aria-pressed]="answers()[q.id] === j"
+                    [attr.aria-label]="'attempt.bubbleLabel' | t: { n: i + 1, letter: letter(j) }">{{ letter(j) }}</button>
+                }
+                @if (q.points > 1) { <span class="xsmall subtle marks">{{ 'attempt.marks' | t: { n: q.points } }}</span> }
+              </div>
+            }
+          }
+        </div>
+        <h3 class="small">{{ 'attempt.essaySection' | t }}</h3>
+      }
       <div class="sheet-grid">
         @for (q of questions(); track q.id; let i = $index) {
+          @if (!quiz()?.ministryFormat || q.type !== 'multipleChoice') {
           <button type="button" class="cell num" [class.current]="i === index()" [class.answered]="isAnswered(q.id)" [class.marked]="marked()[q.id]"
             [class.ok]="reveals()[q.id]?.isCorrect === true" [class.bad]="reveals()[q.id]?.isCorrect === false" (click)="go(i)"
             [attr.aria-label]="'attempt.questionN' | t: { n: i + 1, total: questions().length }">{{ i + 1 }}</button>
+          }
         }
       </div>
       <div class="legend xsmall subtle">

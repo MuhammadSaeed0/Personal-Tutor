@@ -23,6 +23,7 @@
         @if (ready()) {
           <a class="btn primary" [routerLink]="['/read', d.book.id]"><rw-icon [name]="d.book.kind === 'youTube' ? 'play' : 'book-open'" [size]="16" /> {{ (d.book.kind === 'youTube' ? 'book.watch' : 'book.read') | t }}</a>
           <a class="btn" routerLink="/quizzes/new" [queryParams]="{ bookId: d.book.id }"><rw-icon name="list-checks" [size]="16" /> {{ 'book.quiz' | t }}</a>
+          <button class="btn" type="button" (click)="toExam()" [disabled]="extracting()" [title]="'book.toExamHint' | t"><rw-icon name="graduation-cap" [size]="16" /> {{ 'book.toExam' | t }}</button>
         }
         @if (d.book.kind === 'images') {
           <label class="btn" [class.disabled]="processing() || addingPhotos()">

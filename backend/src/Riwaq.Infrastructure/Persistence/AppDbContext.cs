@@ -44,6 +44,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<MistakeEntry> Mistakes => Set<MistakeEntry>();
     public DbSet<StudyPack> StudyPacks => Set<StudyPack>();
+    public DbSet<ExamTemplate> ExamTemplates => Set<ExamTemplate>();
     public DbSet<AiUsageRecord> AiUsage => Set<AiUsageRecord>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
@@ -376,6 +377,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasIndex(x => new { x.UserId, x.Code }).IsUnique();
             e.Property(x => x.Code).HasMaxLength(60);
         });
+
+        b.Entity<ExamTemplate>(e => e.HasIndex(x => new { x.UserId, x.SubjectId }).IsUnique());
 
         b.Entity<StudyPack>(e =>
         {

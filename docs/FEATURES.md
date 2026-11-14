@@ -26,14 +26,18 @@ screen, keyboard shortcuts, page text view (accessibility / scanned pages), mobi
 **AI tutor** — conversations per book or per subject (explicit cross-book scope), streaming with stop/retry/regenerate,
 hybrid retrieval, explicit page questions, selected-text context, verified page citations that open the page,
 not-grounded notice, "beyond the textbook" labelling, follow-up suggestions, feedback, copy, save to notebook, answer
-language selector, prompt-injection containment, per-user quotas.
+language selector, prompt-injection containment, per-user quotas; **voice**: ask by speaking (browser speech recognition,
+Egyptian Arabic) and listen to answers (browser speech synthesis), also in the exam assistant. Retrieval matches meaning
+with a local multilingual-e5-small model (no key, no network) and falls back to keyword matching.
 
-**Study resources** — ten summary styles for selection/page/range/chapter/book with page citations, extraction
+**Study resources** — five summary styles (older summaries in other styles still open) for selection/page/range/chapter/book with page citations, extraction
 warnings, editing, regeneration in another style/language, **PDF download** (rendered on the server by the installed
 Edge/Chrome: real selectable Arabic text, KaTeX math, citations as pages, photos or video times, page numbers),
 Markdown export and print; flashcards (manual, from
 selection, AI drafts with review, from summaries, notes and quiz mistakes) scheduled with FSRS-5, interval preview,
-due queue, statistics, retention, forecast, suspend.
+due queue, statistics, retention, forecast, suspend. **Study pack**: on upload (checked by default) or later from the
+source page, a quick summary, flashcards and a short quiz are made in the background for each of the first 10 chapters,
+with progress on the source page and a notification.
 
 **Assessment** — 8 question types, subject-aware defaults, difficulty (easy, medium, hard or a graded mix ordered from
 easy to hard), **diagram questions** (free-body diagrams, circuits, apparatus, labelled biological figures, crystal
@@ -43,19 +47,29 @@ with server-side deadlines, autosave, answer sheet, mark for review, hints with 
 practice mode, AI-generated questions validated against the source (unsupported/ambiguous ones discarded), deterministic
 grading, AI rubric grading with self-assessment fallback, results with topic breakdown, review pages, explanations and
 personal bests, attempt history; an **exam assistant** side chat available for the whole quiz or exam (no daily
-quota) that explains meanings, terms and laws but never gives or confirms answers, with each use counted on the result.
+quota) that explains meanings, terms and laws but never gives or confirms answers (replies are checked against the answer
+key before the student sees them), with each use counted on the result. Quizzes are written in the background (the
+student can leave the page and is told when they are ready); drawings get a second review before use. **Ministry-format
+exams** (Thanaweya Amma) follow an editable template per subject (defaults from the Ministry's 2026 specification for the
+science subjects: 44 multiple choice of which 12 carry two marks, 2 essay questions, 60 marks, 3 hours) and show a bubble
+answer sheet; any source that is a past or sample paper can be **turned into an exam** (questions copied in order, with
+the paper's answers or marked suggested answers). **Mistakes notebook**: wrong answers come back after 1 and 3 days in
+review quizzes copied from the originals (no AI call) until answered correctly twice in a row.
 
 **Planning & progress** — adaptive 7-day plan (exams, weakness, difficulty, backlog, due cards, availability, no
-pile-up), complete/skip/reschedule, focus timer with Pomodoro presets, goals, notes and history, dashboard, subject
+pile-up), complete/skip/reschedule, **today's study** (one guided session: due cards, due mistakes, today's plan tasks),
+focus timer with Pomodoro presets, goals, notes and history, dashboard, subject
 workspaces, analytics (study time, quiz trend, retention, subject progress, concept/chapter mastery heatmap with
-measured vs estimated), data-derived recommendations, private achievements (can be disabled), notifications.
+measured vs estimated), data-derived recommendations, private achievements (can be disabled), notifications, an **AI usage**
+page (requests and tokens per day and feature against the daily limits).
 
 **Tools** — periodic table (118 elements, Arabic names) with molar-mass calculator, exact chemical-equation balancer
-with "check my coefficients", SI units and converters, language practice with writing feedback.
+with "check my coefficients"; the units converter and language practice still exist at /tools/units and /tools/practice
+but are no longer linked.
 
 **Platform** — clean architecture, EF Core migrations, problem-details errors, rate limiting, health checks, Swagger,
-AI through your own Claude account (Claude Code) or an API key, 73 backend tests (incl. end-to-end journey, ownership
-isolation and opt-in live-model tests), 30 frontend tests,
+AI through your own Claude account (Claude Code) or an API key, 160 backend tests (incl. end-to-end journey, ownership
+isolation and opt-in live-model tests), 36 frontend tests, `run.ps1`/`stop.ps1`, GitHub Actions CI,
 i18n coverage check, browser smoke test.
 
 ## Known limitations

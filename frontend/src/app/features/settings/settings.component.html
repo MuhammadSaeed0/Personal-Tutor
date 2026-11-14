@@ -85,6 +85,11 @@
           </div>
         }
 
+        @case ('examTemplates') {
+          <h2>{{ 'settings.tabs.examTemplates' | t }}</h2>
+          <rw-exam-templates />
+        }
+
         @case ('usage') {
           <h2>{{ 'settings.tabs.usage' | t }}</h2>
           <rw-ai-usage />

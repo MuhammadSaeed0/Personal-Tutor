@@ -114,7 +114,7 @@ export const AR: typeof EN = {
     topics_generated: 'سمّى الذكاء الاصطناعي الأقسام من موضوعات الفيديو، ويمكنك تعديل أسمائها.'
   },
   book: {
-    watch: 'مشاهدة', openOnYouTube: 'فتح على يوتيوب', photoCount: '{n} صور', addPhotos: 'إضافة صور', fromTopics: 'من موضوعات الفيديو',
+    toExam: 'حوّل إلى امتحان', toExamHint: 'لامتحان سابق أو نموذج امتحان: تُنسخ أسئلته بالترتيب، مع إجاباته إن وُجدت.', toExamStarted: 'جارٍ استخراج أسئلة الامتحان… سننبّهك عندما يجهز.', watch: 'مشاهدة', openOnYouTube: 'فتح على يوتيوب', photoCount: '{n} صور', addPhotos: 'إضافة صور', fromTopics: 'من موضوعات الفيديو',
     segments: 'مقاطع النص', duration: 'المدة', photos: 'الصور', photosRead: 'قُرئت بالذكاء الاصطناعي', photoN: 'صورة {n}', photoRange: 'الصور {from}–{to}',
     read: 'قراءة', quiz: 'إنشاء اختبار', processing: 'المعالجة', details: 'بيانات الكتاب', semester: 'الفصل الدراسي', collection: 'المجموعة',
     structure: 'الفصول', estimated: 'تقديري', fromOutline: 'من فهرس الملف', noStructure: 'لم تُكتشف فصول لهذا الكتاب.',
@@ -239,7 +239,7 @@ export const AR: typeof EN = {
     inProgress: 'قيد الحل', noHistory: 'لا محاولات بعد.', deleteTitle: 'حذف هذا الاختبار؟', deleteMessage: 'ستُحذف كل محاولات هذا الاختبار.'
   },
   builder: {
-    diagrams: 'أسئلة بالرسومات', diagramHint: { physics: 'مخططات القوى، والمستوى المائل، ومنحنيات الحركة، والدوائر الكهربية.', chemistry: 'أجهزة التجارب، والخلايا، ورسومات الجسيمات، والصيغ البنائية، وتُكتب التفاعلات كمعادلات.', biology: 'رسومات توضيحية للخلايا والأعضاء والعمليات بأجزاء مرقّمة.', geology: 'طبقات الصخور، والطيّات والفوالق، والأنظمة البلورية، ودورة الصخور.', other: 'رسومات وأشكال بيانية مأخوذة من كتابك.' }, diagramCost: 'تستغرق أسئلة الرسومات وقتًا أطول، وتستهلك قدرًا أكبر من خطتك.',
+    ministry: 'امتحان بنظام الوزارة', ministryShape: 'اختيار من متعدد: {mcq}، مقالي: {essay}، الدرجة: {marks}، الزمن: {minutes} دقيقة', ministryOfficial: 'حسب مواصفات الوزارة 2026', ministryEdit: 'تعديل القالب', diagrams: 'أسئلة بالرسومات', diagramHint: { physics: 'مخططات القوى، والمستوى المائل، ومنحنيات الحركة، والدوائر الكهربية.', chemistry: 'أجهزة التجارب، والخلايا، ورسومات الجسيمات، والصيغ البنائية، وتُكتب التفاعلات كمعادلات.', biology: 'رسومات توضيحية للخلايا والأعضاء والعمليات بأجزاء مرقّمة.', geology: 'طبقات الصخور، والطيّات والفوالق، والأنظمة البلورية، ودورة الصخور.', other: 'رسومات وأشكال بيانية مأخوذة من كتابك.' }, diagramCost: 'تستغرق أسئلة الرسومات وقتًا أطول، وتستهلك قدرًا أكبر من خطتك.',
     title: 'إنشاء اختبار', examTitle: 'إنشاء امتحان تجريبي', subtitle: 'اختر ما تريد التدرّب عليه. تُستبعد الأسئلة غير المدعومة بكتابك.',
     noBooks: 'لا كتب جاهزة بعد', noBooksText: 'ارفع كتابًا وانتظر حتى تكتمل معالجته.', book: 'الكتاب', wholeBook: 'الكتاب كاملًا',
     chapter: 'فصل', pages: 'نطاق صفحات', fromPage: 'من الصفحة', toPage: 'إلى الصفحة', difficulty: 'الصعوبة', count: 'عدد الأسئلة',
@@ -262,7 +262,7 @@ export const AR: typeof EN = {
     suggestMeaning: 'ما معنى المصطلح الوارد في السؤال؟', suggestLaw: 'ذكّرني بالقانون الذي يتناوله هذا السؤال', suggestFigure: 'ماذا يوضح الشكل؟'
   },
   attempt: {
-    answered: 'أجبت عن {n} من {total}', saving: 'جارٍ الحفظ…', timer: 'الوقت', sheet: 'ورقة الإجابات', submit: 'تسليم', questionN: 'السؤال {n} من {total}',
+    bubbleSheet: 'ورقة الإجابة (بابل شيت)', bubbleLabel: 'السؤال {n}: الاختيار {letter}', marks: '{n} درجة', essaySection: 'الأسئلة المقالية والأخرى', answered: 'أجبت عن {n} من {total}', saving: 'جارٍ الحفظ…', timer: 'الوقت', sheet: 'ورقة الإجابات', submit: 'تسليم', questionN: 'السؤال {n} من {total}',
     points: '{n} درجات', markReview: 'تعليم للمراجعة', true: 'صح', false: 'خطأ', yourAnswer: 'إجابتك',
     numericHint: 'اكتب رقمًا، ويمكنك إضافة الوحدة. تُقبل الكسور العشرية بالنقطة أو الفاصلة.', choose: 'اختر…', moveUp: 'تحريك لأعلى', moveDown: 'تحريك لأسفل',
     confirmOrder: 'اعتمد هذا الترتيب', writeAnswer: 'اكتب إجابتك…', openHint: 'تُصحَّح الإجابات المكتوبة مقابل إجابة نموذجية ومعايير تصحيح.',
@@ -341,7 +341,7 @@ export const AR: typeof EN = {
   },
   settings: {
     title: 'الإعدادات',
-    tabs: { profile: 'الملف الشخصي', preferences: 'التفضيلات', academic: 'الملف الأكاديمي', exams: 'الامتحانات', usage: 'الاستخدام', sessions: 'الأجهزة', privacy: 'الخصوصية والبيانات' },
+    tabs: { profile: 'الملف الشخصي', preferences: 'التفضيلات', academic: 'الملف الأكاديمي', exams: 'الامتحانات', examTemplates: 'قوالب امتحانات الوزارة', usage: 'الاستخدام', sessions: 'الأجهزة', privacy: 'الخصوصية والبيانات' },
     changePassword: 'تغيير كلمة المرور', currentPassword: 'كلمة المرور الحالية', passwordChanged: 'تم تغيير كلمة المرور',
     interfaceLanguage: 'لغة الواجهة', theme: 'المظهر', themes: { system: 'مثل جهازي', light: 'فاتح', dark: 'داكن' },
     teachingStyle: 'أسلوب الشرح', styles: { guided: 'موجَّه (خطوة بخطوة)', concise: 'مختصر' }, weeklyGoal: 'الهدف الأسبوعي (بالدقائق)',
@@ -358,6 +358,11 @@ export const AR: typeof EN = {
     deleteMessage: 'سيُحذف كل شيء نهائيًا. هل أنت متأكد؟', deleteConfirm: 'احذف حسابي'
   },
   voice: { speak: 'اسأل بصوتك', stopListening: 'إيقاف الاستماع', listen: 'استمع إلى الإجابة', stopReading: 'إيقاف القراءة' },
+  examTemplates: {
+    lead: 'شكل «امتحان بنظام الوزارة» لكل مادة. القيم الافتراضية للمواد العلمية من مواصفات الوزارة 2026؛ عدّلها إن تغيّر النظام (مثل 50% مقالي لدفعة 2027).',
+    mcq: 'اختيار من متعدد', twoMark: 'منها بدرجتين', essay: 'مقالي', essayPoints: 'درجة السؤال المقالي', minutes: 'الزمن (دقيقة)', diagrams: 'برسومات',
+    total: 'المجموع: {n} درجة', official: 'مواصفات الوزارة', general: 'قالب عام', custom: 'معدّل', save: 'حفظ', reset: 'الرجوع للافتراضي', saved: 'حُفظ القالب.'
+  },
   studyPack: {
     title: 'حزمة المذاكرة', lead: 'ملخص سريع وبطاقات واختبار قصير لكل فصل (أول {n} فصول)، تُجهَّز في الخلفية.', prepare: 'جهّز الحزمة',
     waiting: 'ستبدأ عندما تكتمل معالجة المصدر.', starting: 'تبدأ الآن…', running: 'جارٍ التجهيز: {done} من {total} فصول.',
@@ -436,6 +441,6 @@ export const AR: typeof EN = {
     request_failed: 'فشل الطلب.', unknown_error: 'حدث خطأ ما.', attempt_submitted: 'سُلّمت هذه المحاولة بالفعل.',
     time_expired: 'انتهى الوقت — سُلّمت إجاباتك.', answer_locked: 'تم التحقق من هذه الإجابة بالفعل.', empty_question: 'اكتب سؤالًا أولًا.',
     question_too_long: 'السؤال طويل جدًا.', empty_note: 'تحتاج الملاحظة إلى عنوان أو محتوى.', invalid_query: 'ابحث بحرفين على الأقل.',
-    unauthorized: 'سجّل الدخول مجددًا.', voice_denied: 'اسمح للمتصفح باستخدام الميكروفون لتسأل بصوتك.', voice_unavailable: 'تعذّر تشغيل الميكروفون.', study_pack_failed: 'تعذّر إكمال حزمة المذاكرة.', processing_failed: 'فشلت معالجة المصدر.', no_due_mistakes: 'لا أخطاء مستحقة للمراجعة في هذه المادة الآن.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
+    unauthorized: 'سجّل الدخول مجددًا.', voice_denied: 'اسمح للمتصفح باستخدام الميكروفون لتسأل بصوتك.', voice_unavailable: 'تعذّر تشغيل الميكروفون.', invalid_template: 'راجع أعداد الأسئلة والدرجات والزمن.', study_pack_failed: 'تعذّر إكمال حزمة المذاكرة.', processing_failed: 'فشلت معالجة المصدر.', no_due_mistakes: 'لا أخطاء مستحقة للمراجعة في هذه المادة الآن.', quiz_not_ready: 'هذا الاختبار لم يجهز بعد.', quiz_generation_busy: 'هناك اختبارات قيد الإنشاء بالفعل. انتظر حتى يجهز أحدها.', quiz_generation_failed: 'تعذّر إنشاء الاختبار. حاول مرة أخرى.', missing_client_header: 'حدّث الصفحة من فضلك.', cancelled: 'أُلغي.'
   }
 };

@@ -946,6 +946,48 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                     b.ToTable("Exams");
                 });
 
+            modelBuilder.Entity("Riwaq.Domain.Entities.ExamTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DiagramCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EssayCount")
+                        .HasColumnType("int");
+
+                    b.Property<double>("EssayPoints")
+                        .HasColumnType("float");
+
+                    b.Property<int>("MultipleChoiceCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TwoMarkChoiceCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "SubjectId")
+                        .IsUnique();
+
+                    b.ToTable("ExamTemplates");
+                });
+
             modelBuilder.Entity("Riwaq.Domain.Entities.Flashcard", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1394,6 +1436,9 @@ namespace Riwaq.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(5)
                         .HasColumnType("nvarchar(5)");
+
+                    b.Property<bool>("MinistryFormat")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Mode")
                         .HasColumnType("int");
