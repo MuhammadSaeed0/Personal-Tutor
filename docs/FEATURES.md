@@ -72,7 +72,7 @@ i18n coverage check, browser smoke test.
   end with a scripted model. Prompt quality should still be reviewed on real textbooks.
 - **Claude-account mode is personal.** It uses the server owner's plan limits and must not be offered to other users;
   multi-user deployments need an API key.
-- **Embeddings default to a lexical fallback.** Semantic search quality requires Voyage or another embedding provider.
+- **Embeddings default to a lexical fallback.** They capture word overlap, not meaning.
 - **Scanned pages** cost one Claude request each and count against the plan's limits; pages with low legibility are
   flagged and recognition can contain small errors. With Tesseract instead, Arabic quality is much lower.
 - **Figures on pages with embedded text are not interpreted**; figures on scanned pages are described by Claude. Questions based

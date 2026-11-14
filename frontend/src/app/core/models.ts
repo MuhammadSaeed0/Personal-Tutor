@@ -395,7 +395,7 @@ export interface SearchHit {
   snippet: string; score: number; matchType: string;
 }
 
-export interface SystemStatus { ai: { configured: boolean; provider: 'anthropic' | 'claude-account' | 'openai-compatible' | 'none'; model: string | null }; embeddings: { model: string; semantic: boolean }; ocr: { available: boolean; engine: 'ai-vision' | 'tesseract' | 'none' }; }
+export interface SystemStatus { ai: { configured: boolean; provider: 'anthropic' | 'claude-account' | 'none'; model: string | null }; embeddings: { model: string; semantic: boolean }; ocr: { available: boolean; engine: 'ai-vision' | 'tesseract' | 'none' }; }
 
 export interface SessionInfo { id: string; createdAt: string; lastUsedAt: string; userAgent: string | null; isCurrent: boolean; }
 

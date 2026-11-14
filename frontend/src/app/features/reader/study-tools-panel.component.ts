@@ -11,7 +11,8 @@ import { ReaderStore } from './reader-store';
 
 import { downloadSummaryPdf } from '../summaries/summary-pdf';
 
-export const SUMMARY_STYLES: SummaryStyle[] = ['quick', 'simple', 'detailed', 'keyPoints', 'definitions', 'formulas', 'comparisons', 'causesEffects', 'examQuestions', 'revisionSheet'];
+/** Styles offered when creating a summary. Older styles stay readable on summaries saved before. */
+export const SUMMARY_STYLES: SummaryStyle[] = ['quick', 'detailed', 'keyPoints', 'formulas', 'revisionSheet'];
 
 @Component({
   selector: 'rw-study-tools-panel',

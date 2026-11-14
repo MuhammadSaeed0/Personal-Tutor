@@ -11,15 +11,14 @@ user-secrets (development) or a vault — never from committed files.
 | `Database:MigrateOnStartup` | `true` in Development | apply EF migrations on start |
 | `Jwt:SigningKey` | random in Development | HMAC key, 32+ bytes, required in Production |
 | `Jwt:AccessTokenMinutes` / `RefreshTokenDays` | 15 / 30 | token lifetimes |
-| `Ai:Chat:Provider` | `Anthropic` (`ClaudeCode` in Development) | `ClaudeCode`, `Anthropic`, `OpenAICompatible`, or anything else = disabled |
+| `Ai:Chat:Provider` | `Anthropic` (`ClaudeCode` in Development) | `ClaudeCode`, `Anthropic`, or anything else = disabled |
 | `Ai:Chat:Model` | `claude-opus-5-5` (`sonnet` in Development) | chat model id or Claude Code alias (`sonnet`, `opus`) |
-| `Ai:Chat:ApiKey` / `BaseUrl` | — | provider credentials / endpoint (BaseUrl required for OpenAI-compatible) |
+| `Ai:Chat:ApiKey` / `BaseUrl` | — | Anthropic API key / optional custom endpoint |
 | `Ai:Chat:Effort` | `medium` | Claude effort for tutoring (`low`/`medium`/`high`) |
 | `Ai:Chat:UseServerSideFallback` | `true` | Claude: re-serve declined requests on Anthropic's recommended fallback model |
 | `Ai:Chat:CliPath` / `MaxConcurrency` | `claude` / 2 | ClaudeCode: CLI command or full path; parallel CLI processes |
 | `Ai:Chat:TimeoutSeconds` | 180 | per-request timeout |
-| `Ai:Embeddings:Provider` | `Local` | `Local` (lexical, no key), `Voyage`, `OpenAICompatible` |
-| `Ai:Embeddings:Model` / `Dimensions` / `ApiKey` / `BaseUrl` | `voyage-3.5` / 1024 | embedding model settings |
+| `Ai:Embeddings:Provider` | `Local` | `Local` (lexical, no key or download) |
 | `Ai:Limits:DailyRequestsPerUser` / `DailyOutputTokensPerUser` | 300 / 600000 | per-student AI quota |
 | `Retrieval:TopK` | 8 | passages per tutor answer |
 | `Summaries:SingleCallChars` / `BatchChars` / `MaxBatches` | 180000 / 120000 / 12 | map-reduce thresholds |
@@ -61,14 +60,10 @@ default to save plan usage; `opus` for the strongest answers).
 streaming, effort control, JSON-schema structured outputs (quizzes, flashcards, grading) and the server-side refusal
 fallback (`server-side-fallback-2026-07-01`). Sampling parameters are not sent (current models reject them).
 
-**OpenAI-compatible.** `Ai:Chat:Provider=OpenAICompatible`, `Ai:Chat:BaseUrl=https://api.openai.com/v1` (or Ollama
-`http://localhost:11434/v1`, LM Studio, vLLM…), `Ai:Chat:Model`, `Ai:Chat:ApiKey` if required. Structured output uses
-`response_format: json_schema`; smaller local models may produce more rejected quiz questions.
-
-**Embeddings.** `Local` works offline but only captures word/character overlap. For meaning-based retrieval use
-`Voyage` (`voyage-3.5`, 1024 dims) or an OpenAI-compatible embedding model. Vectors are stored per model name, so after
-changing the embedding model **reprocess books** (Library → Manage → Reprocess) to rebuild vectors; until then retrieval
-falls back to keyword ranking for those books.
+**Embeddings.** `Local` works offline and needs no key; it captures word and character overlap. Retrieval is hybrid
+(BM25 keyword ranking plus vectors). Vectors are stored per model name, so after changing the embedding model
+**reprocess books** (Library → Manage → Reprocess) to rebuild vectors; until then retrieval falls back to keyword
+ranking for those books.
 
 **Without any AI key** the platform still works for reading, highlights, notes, flashcards (manual), planning,
 analytics and search; AI features return `ai_not_configured` and the UI says so.

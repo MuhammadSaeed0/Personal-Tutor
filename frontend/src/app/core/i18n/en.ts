@@ -350,7 +350,7 @@ export const EN = {
     privacy3: 'Your study data (progress, cards, notes, quiz results) is used only to personalise your plan and recommendations.',
     privacy4: 'You can export everything you created, and deleting your account permanently removes your books, files and study data.',
     aiProvider: 'AI provider on this server', aiModel: 'model {model}',
-    aiProviders: { 'claude-account': 'Claude — the server owner’s Claude account', anthropic: 'Claude API', 'openai-compatible': 'OpenAI-compatible service', none: 'Not configured' },
+    aiProviders: { 'claude-account': 'Claude — the server owner’s Claude account', anthropic: 'Claude API', none: 'Not configured' },
     export: 'Export my data (JSON)', deleteTitle: 'Delete account', deleteLead: 'This permanently deletes your account, books, files and all study data. It cannot be undone.',
     deleteMessage: 'Everything will be permanently deleted. Are you sure?', deleteConfirm: 'Delete my account'
   },

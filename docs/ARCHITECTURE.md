@@ -10,7 +10,7 @@
  │ analytics · notes · tools   │   SignalR      │ SignalR hub (processing progress)   │            │ vectors, ...  │
  └────────────────────────────┘                 │ Background worker (DB job queue)    │            └──────────────┘
                                                 │   PDF extraction · OCR · embeddings │──▶ file storage (PDFs)
-                                                │ AI providers: Claude / OpenAI-compat │──▶ LLM + embedding APIs
+                                                │ AI providers: Claude (API/account)   │──▶ Claude
                                                 └──────────────────────────────────┘
 ```
 
@@ -20,7 +20,7 @@ The backend follows a pragmatic clean architecture:
 |---|---|---|
 | `Riwaq.Domain` | Entities and enums only | — |
 | `Riwaq.Application` | Use cases (one service per feature), DTOs, interfaces (`IAppDbContext`, `IChatModel`, `IEmbeddingModel`, `IPdfExtractor`, `IOcrEngine`, `IFileStorage`), and pure algorithms (FSRS, grading, chunking, RTL text repair, structure detection, planning) | Domain, EF Core abstractions |
-| `Riwaq.Infrastructure` | EF Core context + migrations, PdfPig extraction, Tesseract OCR, local file storage, AI providers (Claude API, your Claude account via the Claude Code CLI, OpenAI-compatible), background worker | Application |
+| `Riwaq.Infrastructure` | EF Core context + migrations, PdfPig extraction, Tesseract OCR, local file storage, AI providers (Claude API, your Claude account via the Claude Code CLI), background worker | Application |
 | `Riwaq.Api` | HTTP surface: controllers, JWT auth, problem-details errors, rate limiting, SignalR, Swagger, health checks | Infrastructure |
 
 Services take the authenticated user id explicitly (from the validated token, never from the request body) and every

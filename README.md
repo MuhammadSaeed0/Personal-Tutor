@@ -15,7 +15,7 @@ The interface is Arabic-first (RTL) with a full English (LTR) mode.
 |---|---|
 | Backend | ASP.NET Core 10 (LTS) Web API · EF Core 10 · SQL Server (tested on 2025) · ASP.NET Core Identity + JWT · SignalR · background job worker |
 | Frontend | Angular 22 (standalone, zoneless, signals, strict) · Angular CDK · pdf.js 6 · KaTeX + mhchem · Chart.js · Lucide icons |
-| AI | Provider abstraction: your own Claude account through Claude Code, Anthropic Claude API (official C# SDK, default `claude-opus-5-5`), any OpenAI-compatible endpoint; embeddings via Voyage, OpenAI-compatible, or a built-in lexical fallback |
+| AI | Provider abstraction: your own Claude account through Claude Code, Anthropic Claude API (official C# SDK, default `claude-opus-5-5`); built-in local embeddings for search |
 | Sources | PDFs (PdfPig extraction with Arabic RTL repair, Claude vision or Tesseract for scanned pages), photos (SkiaSharp + Claude vision), YouTube lessons (captions via YoutubeExplode, tidied and split by topic with Claude) |
 
 ## Quick start (local development)
@@ -68,8 +68,6 @@ cd backend/src/Riwaq.Api
 dotnet user-secrets init
 dotnet user-secrets set "Ai:Chat:Provider" "Anthropic"         # optional: API key instead of your Claude account
 dotnet user-secrets set "Ai:Chat:ApiKey" "sk-ant-..."
-dotnet user-secrets set "Ai:Embeddings:Provider" "Voyage"       # optional: semantic search
-dotnet user-secrets set "Ai:Embeddings:ApiKey" "pa-..."
 ```
 In Development a random JWT signing key is generated at start when none is configured. Outside Development
 `Jwt:SigningKey` (32+ chars) is required.

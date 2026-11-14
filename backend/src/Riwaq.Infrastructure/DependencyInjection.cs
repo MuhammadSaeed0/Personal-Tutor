@@ -60,22 +60,10 @@ public static class DependencyInjection
                 "anthropic" when !string.IsNullOrWhiteSpace(options.ApiKey) =>
                     new AnthropicChatModel(options, logger.CreateLogger<AnthropicChatModel>()),
                 "claudecode" => new ClaudeCodeChatModel(options, logger.CreateLogger<ClaudeCodeChatModel>()),
-                "openaicompatible" when !string.IsNullOrWhiteSpace(options.BaseUrl) =>
-                    new OpenAiCompatibleChatModel(sp.GetRequiredService<IHttpClientFactory>().CreateClient("ai"), options),
                 _ => new UnconfiguredChatModel()
             };
         });
 
-        services.AddSingleton<IEmbeddingModel>(sp =>
-        {
-            var options = sp.GetRequiredService<IOptions<AiOptions>>().Value.Embeddings;
-            var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient("ai");
-            return options.Provider.ToLowerInvariant() switch
-            {
-                "voyage" when !string.IsNullOrWhiteSpace(options.ApiKey) => new VoyageEmbeddingModel(http, options),
-                "openaicompatible" => new OpenAiCompatibleEmbeddingModel(http, options),
-                _ => new LocalHashingEmbeddingModel()
-            };
-        });
+        services.AddSingleton<IEmbeddingModel>(_ => new LocalHashingEmbeddingModel());
     }
 }

@@ -42,7 +42,7 @@ public interface IChatModel
     bool IsConfigured { get; }
     string ModelName { get; }
 
-    /// <summary>"anthropic", "claude-account", "openai-compatible" or "none".</summary>
+    /// <summary>"anthropic", "claude-account" or "none".</summary>
     string Provider { get; }
 
     /// <summary>Whether the provider accepts <see cref="ChatRequest.Images"/>.</summary>

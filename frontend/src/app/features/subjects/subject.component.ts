@@ -12,11 +12,7 @@ import { UploadDialogComponent } from '../library/upload-dialog.component';
 interface SubjectTool { route: string; icon: string; label: string; }
 
 const TOOLS: Record<string, SubjectTool[]> = {
-  chemistry: [{ route: 'periodic-table', icon: 'flask-conical', label: 'tools.periodicTable' }, { route: 'equation-balancer', icon: 'sigma', label: 'tools.balancer' }],
-  physics: [{ route: 'units', icon: 'atom', label: 'tools.units' }],
-  french: [{ route: 'practice', icon: 'languages', label: 'tools.languagePractice' }],
-  english: [{ route: 'practice', icon: 'languages', label: 'tools.languagePractice' }],
-  arabic: [{ route: 'practice', icon: 'scroll-text', label: 'tools.languagePractice' }]
+  chemistry: [{ route: 'periodic-table', icon: 'flask-conical', label: 'tools.periodicTable' }, { route: 'equation-balancer', icon: 'sigma', label: 'tools.balancer' }]
 };
 
 @Component({

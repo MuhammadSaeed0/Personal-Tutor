@@ -111,7 +111,7 @@ export class SummaryViewComponent {
       const id = this.id();
       untracked(() => void this.api.get<Summary>(`/api/summaries/${id}`).then(s => {
         this.summary.set(s);
-        this.regenStyle = s.style;
+        this.regenStyle = SUMMARY_STYLES.includes(s.style) ? s.style : 'quick';
         this.regenLanguage = s.language;
       }).catch(e => { this.toast.error(e); void this.router.navigateByUrl('/summaries'); }));
     });

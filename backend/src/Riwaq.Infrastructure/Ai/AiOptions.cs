@@ -12,7 +12,7 @@ public sealed class ChatProviderOptions
 {
     /// <summary>
     /// "Anthropic" (API key), "ClaudeCode" (the server owner's Claude account through the Claude Code CLI),
-    /// "OpenAICompatible" or "None".
+    /// or "None".
     /// </summary>
     public string Provider { get; set; } = "Anthropic";
     public string Model { get; set; } = "claude-opus-5-5";
@@ -37,11 +37,6 @@ public sealed class ChatProviderOptions
 
 public sealed class EmbeddingProviderOptions
 {
-    /// <summary>"Local" (built-in lexical hashing, no key needed), "Voyage" or "OpenAICompatible".</summary>
+    /// <summary>"Local": built-in lexical hashing, no key or download needed.</summary>
     public string Provider { get; set; } = "Local";
-    public string Model { get; set; } = "voyage-3.5";
-    public string? ApiKey { get; set; }
-    public string? BaseUrl { get; set; }
-    public int Dimensions { get; set; } = 1024;
-    public int BatchSize { get; set; } = 64;
 }

@@ -28,9 +28,9 @@ Legend: ✅ done and tested · 🟡 done, verified only partly (see note) · ⬜
       descriptions, chapters from recognised headings, photo viewer with selectable text, add photos later; verified live
 
 ## Phase 3 — AI tutoring
-- ✅ Provider abstraction: Anthropic (official SDK, streaming, structured output, fallback), OpenAI-compatible, disabled
+- ✅ Provider abstraction: Anthropic (official SDK, streaming, structured output, fallback), your Claude account (Claude Code CLI), disabled
 - ✅ Claude-account provider (`ClaudeCode`): headless Claude Code CLI with all tools/settings disabled; streaming, JSON schema, history
-- ✅ Embeddings: Voyage, OpenAI-compatible, local lexical fallback; hybrid BM25 + vector retrieval, page references
+- ✅ Embeddings: local lexical model; hybrid BM25 + vector retrieval, page references
 - ✅ Tutor: conversations, SSE streaming, stop, retry, feedback, follow-ups, selection actions, cross-book scope
 - ✅ Server-side citation validation; prompt-injection containment
 - ✅ Summaries (10 styles, map-reduce, page citations, edit, regenerate, export)

@@ -353,7 +353,7 @@ export const AR: typeof EN = {
     privacy3: 'تُستخدم بيانات مذاكرتك (التقدّم والبطاقات والملاحظات ونتائج الاختبارات) فقط لتخصيص خطتك ومقترحاتك.',
     privacy4: 'يمكنك تصدير كل ما أنشأته، وحذف حسابك يزيل كتبك وملفاتك وبيانات مذاكرتك نهائيًا.',
     aiProvider: 'مزوّد الذكاء الاصطناعي على هذا الخادم', aiModel: 'النموذج {model}',
-    aiProviders: { 'claude-account': 'Claude — حساب Claude الخاص بمالك الخادم', anthropic: 'واجهة Claude البرمجية (API)', 'openai-compatible': 'خدمة متوافقة مع OpenAI', none: 'غير مُعدّ' },
+    aiProviders: { 'claude-account': 'Claude — حساب Claude الخاص بمالك الخادم', anthropic: 'واجهة Claude البرمجية (API)', none: 'غير مُعدّ' },
     export: 'تصدير بياناتي (JSON)', deleteTitle: 'حذف الحساب', deleteLead: 'سيحذف هذا حسابك وكتبك وملفاتك وكل بيانات مذاكرتك نهائيًا، ولا يمكن التراجع عنه.',
     deleteMessage: 'سيُحذف كل شيء نهائيًا. هل أنت متأكد؟', deleteConfirm: 'احذف حسابي'
   },
