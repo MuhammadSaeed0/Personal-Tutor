@@ -111,7 +111,7 @@ public sealed partial class BrowserPdfRenderer(IOptions<PdfRenderOptions> option
             // address is read from the DevToolsActivePort file it writes into its (private, temporary) profile.
             _profile = Path.Combine(Path.GetTempPath(), $"{ProfilePrefix}{Guid.NewGuid():N}");
             Directory.CreateDirectory(_profile);
-            var start = new ProcessStartInfo(path) { UseShellExecute = false, CreateNoWindow = true };
+            var start = new ProcessStartInfo(path) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true };
             foreach (var arg in new[]
                      {
                          "--headless=new", "--remote-debugging-port=0", "--remote-debugging-address=127.0.0.1", $"--user-data-dir={_profile}",
@@ -121,6 +121,15 @@ public sealed partial class BrowserPdfRenderer(IOptions<PdfRenderOptions> option
                 start.ArgumentList.Add(arg);
             if (_options.NoSandbox) start.ArgumentList.Insert(0, "--no-sandbox");
             _process = Process.Start(start) ?? throw new InvalidOperationException("The browser did not start.");
+            // Kept only to explain a failed start (the last lines are logged); nothing from it reaches the student.
+            var errors = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            _process.ErrorDataReceived += (sender, e) =>
+            {
+                if (e.Data is null) return;
+                errors.Enqueue(e.Data);
+                while (errors.Count > 40) errors.TryDequeue(out _);
+            };
+            _process.BeginErrorReadLine();
 
             // msedge.exe may hand over to child processes and exit at once, so only the port file is awaited.
             var portFile = Path.Combine(_profile, "DevToolsActivePort");
@@ -136,7 +145,11 @@ public sealed partial class BrowserPdfRenderer(IOptions<PdfRenderOptions> option
                 await Task.Delay(100);
             }
             if (lines is not { Length: >= 2 })
+            {
+                logger.LogWarning("The PDF browser did not open its debugging port (exited: {Exited}). Its output:\n{Output}",
+                    _process.HasExited, string.Join('\n', errors));
                 throw new Application.Common.ServiceUnavailableException("pdf_unavailable", "The browser for PDF export could not be started.");
+            }
 
             _browser = await Puppeteer.ConnectAsync(new ConnectOptions { BrowserWSEndpoint = $"ws://127.0.0.1:{lines[0].Trim()}{lines[1].Trim()}" });
             return _browser;

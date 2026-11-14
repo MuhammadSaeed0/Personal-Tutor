@@ -98,12 +98,23 @@ public sealed class BrowserFactAttribute : FactAttribute
     }
 }
 
-public class BrowserPdfRendererTests
+public class BrowserPdfRendererTests(Xunit.Abstractions.ITestOutputHelper output)
 {
+    /// <summary>Shows the renderer's log (including the browser's own output if it fails to start) in the test result.</summary>
+    private sealed class OutputLogger(Xunit.Abstractions.ITestOutputHelper output) : Microsoft.Extensions.Logging.ILogger<BrowserPdfRenderer>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+        public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            try { output.WriteLine($"[{logLevel}] {formatter(state, exception)}"); } catch (InvalidOperationException) { }
+        }
+    }
+
     [BrowserFact]
     public async Task Prints_an_arabic_summary_with_math_to_pdf()
     {
-        await using var renderer = new BrowserPdfRenderer(Options.Create(new PdfRenderOptions { NoSandbox = Environment.GetEnvironmentVariable("RIWAQ_PDF_NO_SANDBOX") == "1" }), NullLogger<BrowserPdfRenderer>.Instance);
+        await using var renderer = new BrowserPdfRenderer(Options.Create(new PdfRenderOptions { NoSandbox = Environment.GetEnvironmentVariable("RIWAQ_PDF_NO_SANDBOX") == "1" }), new OutputLogger(output));
         var summary = new GeneratedSummary
         {
             Title = "ملخص الحركة", Language = "ar", Style = SummaryStyle.Detailed,
